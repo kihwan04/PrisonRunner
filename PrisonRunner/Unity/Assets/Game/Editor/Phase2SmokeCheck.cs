@@ -26,11 +26,22 @@ namespace PrisonRunner.Editor
         [MenuItem("PrisonRunner/Run Phase 2 Smoke Check")]
         public static void Run()
         {
+            RunScene("Assets/Game/Scenes/RunnerMVP.unity");
+        }
+
+        [MenuItem("PrisonRunner/Run Cell Block Slice Smoke Check")]
+        public static void RunCellBlock()
+        {
+            RunScene("Assets/Game/Scenes/CellBlockVerticalSlice.unity");
+        }
+
+        private static void RunScene(string path)
+        {
             SessionState.SetBool(RunningKey, true);
             SessionState.SetInt(StepKey, 0);
             SessionState.SetInt(ExitKey, 1);
             SessionState.SetBool(ExitPendingKey, false);
-            EditorSceneManager.OpenScene("Assets/Game/Scenes/RunnerMVP.unity");
+            EditorSceneManager.OpenScene(path);
             EditorApplication.isPlaying = true;
         }
 
@@ -110,6 +121,12 @@ namespace PrisonRunner.Editor
 
                 if (step == 0)
                 {
+                    if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "CellBlockVerticalSlice")
+                    {
+                        CellBlockSliceSmokeCheck.Validate(chunks);
+                        if (Environment.GetCommandLineArgs().Contains("-captureCellBlock"))
+                            CellBlockSliceSmokeCheck.CapturePreview();
+                    }
                     VisualSliceSmokeCheck.Validate(player, chunks);
                 }
 

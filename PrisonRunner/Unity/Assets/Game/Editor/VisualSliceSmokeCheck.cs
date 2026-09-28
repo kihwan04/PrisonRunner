@@ -4,6 +4,8 @@ using PrisonRunner.Application;
 using PrisonRunner.Core;
 using PrisonRunner.Presentation;
 using PrisonRunner.Presentation.Map;
+using Unity.Cinemachine;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -31,15 +33,18 @@ namespace PrisonRunner.Editor
                 Require(!chunk.VisualRoot.GetComponentsInChildren<Collider>(true).Any(c => c.enabled),
                     "Environment visual has collision.");
                 int collisionCount = chunk.GameplayRoot.GetComponentsInChildren<Collider>().Length;
+                bool debugVisible = chunk.VisualRoot.Find("LaneDebugLines").gameObject.activeSelf;
                 chunk.SetLaneDebugLinesVisible(false);
                 Require(!chunk.VisualRoot.Find("LaneDebugLines").gameObject.activeSelf, "Lane debug off failed.");
                 chunk.SetLaneDebugLinesVisible(true);
                 Require(chunk.VisualRoot.Find("LaneDebugLines").gameObject.activeSelf, "Lane debug on failed.");
                 Require(collisionCount == chunk.GameplayRoot.GetComponentsInChildren<Collider>().Length,
                     "Debug toggle changed gameplay collision.");
+                chunk.SetLaneDebugLinesVisible(debugVisible);
             }
 
             MapChunk sample = chunks[0];
+            GameObject originalPrefab = new SerializedObject(sample).FindProperty("visualPrefab").objectReferenceValue as GameObject;
             BoxCollider ground = sample.GameplayRoot.Find("GroundCollider").GetComponent<BoxCollider>();
             Vector3 groundSize = ground.size;
             Transform entry = sample.EntrySocket;
@@ -61,28 +66,41 @@ namespace PrisonRunner.Editor
             Require(sample.VisualRoot.Find("PlaceholderVisual").gameObject.activeSelf, "Placeholder fallback failed.");
             Require(ground.enabled && ground.size == groundSize && sample.EntrySocket == entry && sample.ExitSocket == exit
                 && sample.GetObstacleSocket(0, 0) == socket, "Visual replacement changed gameplay structure.");
+            sample.SetVisualPrefab(originalPrefab);
 
             MapGenerator generator = UnityEngine.Object.FindFirstObjectByType<MapGenerator>();
-            generator.ConfigureVisuals(null, null, null, false);
+            var generatorSettings = new SerializedObject(generator);
+            GameObject corridor = generatorSettings.FindProperty("corridorVisualPrefab").objectReferenceValue as GameObject;
+            GameObject cellBlock = generatorSettings.FindProperty("cellBlockVisualPrefab").objectReferenceValue as GameObject;
+            GameObject yard = generatorSettings.FindProperty("prisonYardVisualPrefab").objectReferenceValue as GameObject;
+            bool laneDebug = generatorSettings.FindProperty("showLaneDebugLines").boolValue;
+            generator.ConfigureVisuals(corridor, cellBlock, yard, false);
             Require(generator.GetComponentsInChildren<MapChunk>(true).All(c => !c.VisualRoot.Find("LaneDebugLines").gameObject.activeSelf),
                 "Generator debug settings missed pooled chunks.");
-            generator.ConfigureVisuals(null, null, null, true);
+            generator.ConfigureVisuals(corridor, cellBlock, yard, laneDebug);
 
             Camera camera = Camera.main;
-            RunnerCamera rig = camera.GetComponentInParent<RunnerCamera>();
-            Require(rig != null && rig.transform != camera.transform, "Camera effects are not separated from follow.");
-            Vector3 neutralPosition = camera.transform.localPosition;
-            Quaternion neutralRotation = camera.transform.localRotation;
-            float neutralFov = camera.fieldOfView;
-            rig.SetPresentationEffects(Vector3.right * 0.1f, Vector3.up * 2f, 5f);
-            rig.SendMessage("LateUpdate");
-            Require(Vector3.Distance(camera.transform.localPosition, neutralPosition + Vector3.right * 0.1f) < 0.0001f
-                && Mathf.Abs(camera.fieldOfView - neutralFov - 5f) < 0.0001f, "Camera effect hook failed.");
-            rig.ResetPresentationEffects();
-            rig.SendMessage("LateUpdate");
-            Require(Vector3.Distance(camera.transform.localPosition, neutralPosition) < 0.0001f
-                && Quaternion.Angle(camera.transform.localRotation, neutralRotation) < 0.001f
-                && Mathf.Abs(camera.fieldOfView - neutralFov) < 0.0001f, "Camera effects did not return to neutral.");
+            if (camera.GetComponent<CinemachineBrain>() != null)
+            {
+                CellBlockSliceSmokeCheck.ValidateCamera(player, camera);
+            }
+            else
+            {
+                RunnerCamera rig = camera.GetComponentInParent<RunnerCamera>();
+                Require(rig != null && rig.transform != camera.transform, "Camera effects are not separated from follow.");
+                Vector3 neutralPosition = camera.transform.localPosition;
+                Quaternion neutralRotation = camera.transform.localRotation;
+                float neutralFov = camera.fieldOfView;
+                rig.SetPresentationEffects(Vector3.right * 0.1f, Vector3.up * 2f, 5f);
+                rig.SendMessage("LateUpdate");
+                Require(Vector3.Distance(camera.transform.localPosition, neutralPosition + Vector3.right * 0.1f) < 0.0001f
+                    && Mathf.Abs(camera.fieldOfView - neutralFov - 5f) < 0.0001f, "Camera effect hook failed.");
+                rig.ResetPresentationEffects();
+                rig.SendMessage("LateUpdate");
+                Require(Vector3.Distance(camera.transform.localPosition, neutralPosition) < 0.0001f
+                    && Quaternion.Angle(camera.transform.localRotation, neutralRotation) < 0.001f
+                    && Mathf.Abs(camera.fieldOfView - neutralFov) < 0.0001f, "Camera effects did not return to neutral.");
+            }
 
             Volume volume = UnityEngine.Object.FindFirstObjectByType<Volume>();
             Require(volume != null && volume.isGlobal && volume.sharedProfile.name == "PrisonVisualProfile",

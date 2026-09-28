@@ -1,5 +1,7 @@
 # Visual Vertical Slice 준비
 
+첫 Cell Block 제작 장면과 확인 방법은 [CELLBLOCK_VERTICAL_SLICE.md](CELLBLOCK_VERTICAL_SLICE.md)를 따른다. 아래는 기존 Prototype의 교체 구조 설명이다.
+
 ## 유지하는 동작
 
 입력, Movement, 충돌 반응, 점수, 맵 생성 규칙과 Pooling은 유지한다. 초기 상태에서는 Capsule, Cube, 세 가지 Placeholder Map과 Lane Debug Line이 그대로 표시된다. 최종 3D 에셋은 아직 추가하지 않는다.

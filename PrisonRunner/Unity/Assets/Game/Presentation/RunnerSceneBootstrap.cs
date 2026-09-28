@@ -12,6 +12,8 @@ namespace PrisonRunner.Presentation
         [SerializeField] private GameObject corridorVisualPrefab;
         [SerializeField] private GameObject cellBlockVisualPrefab;
         [SerializeField] private GameObject prisonYardVisualPrefab;
+        [Header("Camera Visual Preset (empty keeps prototype camera)")]
+        [SerializeField] private GameObject runnerCameraPrefab;
         [Header("Debug Visuals")]
         [SerializeField] private bool showLaneDebugLines = true;
 
@@ -116,10 +118,18 @@ namespace PrisonRunner.Presentation
             if (camera != null)
             {
                 camera.farClipPlane = 1000f;
-                GameObject cameraRig = new GameObject("Runner Camera Rig");
-                cameraRig.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
-                camera.transform.SetParent(cameraRig.transform, true);
-                cameraRig.AddComponent<RunnerCamera>().Configure(player.transform, camera);
+                if (runnerCameraPrefab != null)
+                {
+                    GameObject cameraPreset = Instantiate(runnerCameraPrefab);
+                    cameraPreset.GetComponent<RunnerCinemachineCamera>().Configure(player.transform, camera);
+                }
+                else
+                {
+                    GameObject cameraRig = new GameObject("Runner Camera Rig");
+                    cameraRig.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
+                    camera.transform.SetParent(cameraRig.transform, true);
+                    cameraRig.AddComponent<RunnerCamera>().Configure(player.transform, camera);
+                }
             }
 
             GameObject hud = new GameObject("Runner HUD");
