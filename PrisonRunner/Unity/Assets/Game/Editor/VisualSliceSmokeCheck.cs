@@ -88,6 +88,15 @@ namespace PrisonRunner.Editor
             Require(volume != null && volume.isGlobal && volume.sharedProfile.name == "PrisonVisualProfile",
                 "Dedicated visual post processing profile is missing.");
             Require(camera.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing, "Camera post processing is off.");
+            Require(volume.sharedProfile.components.Count == 4 && volume.sharedProfile.components.All(c =>
+                c is Tonemapping || c is ColorAdjustments || c is Bloom || c is Vignette),
+                "Production profile must contain only the four requested effects.");
+            Require(volume.sharedProfile.TryGet<ColorAdjustments>(out var color) && color.postExposure.value == 0f
+                && color.contrast.value == 0f && color.hueShift.value == 0f && color.saturation.value == 0f,
+                "Initial color adjustments must remain neutral.");
+            Require(volume.sharedProfile.TryGet<Bloom>(out var bloom) && bloom.intensity.value <= 0.2f
+                && volume.sharedProfile.TryGet<Vignette>(out var vignette) && vignette.intensity.value <= 0.15f,
+                "Initial bloom or vignette is too strong.");
             Debug.Log("VISUAL_SLICE_SMOKE_PASS: visual replacement, colliders, debug lines, crouch, camera and volume.");
         }
 

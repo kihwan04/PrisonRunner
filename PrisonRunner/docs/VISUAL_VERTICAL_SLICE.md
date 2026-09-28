@@ -20,7 +20,7 @@ MapChunk
 │  ├─ GroundCollider
 │  ├─ EntrySocket / ExitSocket
 │  └─ ObstacleSocket → Obstacle(BoxCollider, RunnerObstacle) → Visual(Cube)
-└─ Visual
+└─ VisualRoot
    ├─ PlaceholderVisual
    ├─ PrefabVisual (교체 Prefab 지정 시)
    └─ LaneDebugLines
@@ -38,7 +38,7 @@ Environment Prefab은 청크 EntrySocket을 원점으로, +Z 방향 길이 36m, 
 
 `Runner Camera Rig`가 기존 위치 보간과 LookAt을 담당하고, 자식 `Main Camera`가 표시를 담당한다. `SetPresentationEffects(positionOffset, eulerOffset, fovOffset)`에 향후 Shake/FOV 연출을 연결한다. 현재 효과 값은 모두 0이고 기존 FOV와 시점을 유지한다. `ResetPresentationEffects()`로 기본 상태로 복귀한다.
 
-장면의 `Prison Visual Volume`은 `Assets/Settings/PrisonVisualProfile.asset`을 사용한다. 기존 SampleSceneProfile의 Bloom, Vignette, Tonemapping 값을 복사해 시작 화면을 유지했다. Motion Blur는 비활성 상태를 유지한다. Main Camera의 URP Post Processing과 Default Volume Layer 연결은 유지한다. 최종 아트가 들어온 뒤 이 전용 프로필에서 색감과 효과 강도를 조정한다.
+장면의 `Prison Visual Volume`은 `Assets/Settings/PrisonVisualProfile.asset`을 사용한다. 초기 효과는 Tonemapping(Neutral), Color Adjustments(중립), Bloom(Intensity 0.15), Vignette(Intensity 0.12)만 사용한다. Motion Blur 등 다른 효과는 프로필에서 제거했다. Main Camera의 URP Post Processing과 Default Volume Layer 연결은 유지한다. 최종 아트가 들어온 뒤 이 전용 프로필에서 색감과 효과 강도를 조정한다.
 
 ## 에셋 위치와 검증
 

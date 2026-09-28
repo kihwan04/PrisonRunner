@@ -54,7 +54,7 @@ namespace PrisonRunner.Presentation.Map
             Kind = kind;
             name = kind.ToString();
             GameplayRoot = CreateChild("Gameplay", transform);
-            VisualRoot = CreateChild("Visual", transform);
+            VisualRoot = CreateChild("VisualRoot", transform);
             placeholderRoot = CreateChild("PlaceholderVisual", VisualRoot);
             laneDebugRoot = CreateChild("LaneDebugLines", VisualRoot);
 
