@@ -7,6 +7,16 @@ namespace PrisonRunner.Presentation
 {
     public sealed class RunnerSceneBootstrap : MonoBehaviour
     {
+        [Header("Visual Prefabs (empty keeps placeholders)")]
+        [SerializeField] private GameObject playerVisualPrefab;
+        [SerializeField] private GameObject corridorVisualPrefab;
+        [SerializeField] private GameObject cellBlockVisualPrefab;
+        [SerializeField] private GameObject prisonYardVisualPrefab;
+        [Header("Debug Visuals")]
+        [SerializeField] private bool showLaneDebugLines = true;
+
+        private MapGenerator mapGenerator;
+        private bool visualSettingsDirty;
         private Material groundMaterial;
         private Material lineMaterial;
         private Material playerMaterial;
@@ -38,7 +48,23 @@ namespace PrisonRunner.Presentation
             };
             Material[] obstacles = { blockMaterial, jumpMaterial, crouchMaterial };
             GameObject map = new GameObject("Endless Map");
-            map.AddComponent<MapGenerator>().Configure(player, groundMaterial, lineMaterial, areas, obstacles);
+            mapGenerator = map.AddComponent<MapGenerator>();
+            mapGenerator.ConfigureVisuals(corridorVisualPrefab, cellBlockVisualPrefab, prisonYardVisualPrefab, showLaneDebugLines);
+            mapGenerator.Configure(player, groundMaterial, lineMaterial, areas, obstacles);
+        }
+
+        private void OnValidate()
+        {
+            visualSettingsDirty = true;
+        }
+
+        private void Update()
+        {
+            if (visualSettingsDirty && mapGenerator != null)
+            {
+                visualSettingsDirty = false;
+                mapGenerator.ConfigureVisuals(corridorVisualPrefab, cellBlockVisualPrefab, prisonYardVisualPrefab, showLaneDebugLines);
+            }
         }
 
         private static Material MakeMaterial(Shader shader, Color color)
@@ -50,7 +76,7 @@ namespace PrisonRunner.Presentation
 
         private Transform BuildPlayer()
         {
-            GameObject player = new GameObject("Capsule Player");
+            GameObject player = new GameObject("PlayerRoot");
             player.transform.position = new Vector3(0f, 0f, 2f);
             CharacterController collider = player.AddComponent<CharacterController>();
             collider.height = 2f;
@@ -58,18 +84,25 @@ namespace PrisonRunner.Presentation
             collider.center = Vector3.up;
             collider.stepOffset = 0.2f;
 
-            GameObject visualRoot = new GameObject("Visual");
+            GameObject visualRoot = new GameObject("PlayerVisual");
             visualRoot.transform.SetParent(player.transform);
             visualRoot.transform.localPosition = Vector3.up;
-            GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            capsule.name = "Orange Capsule Mesh";
-            capsule.transform.SetParent(visualRoot.transform);
-            capsule.transform.localPosition = Vector3.zero;
-            capsule.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
-            capsule.GetComponent<Renderer>().sharedMaterial = playerMaterial;
-            Collider meshCollider = capsule.GetComponent<Collider>();
-            meshCollider.enabled = false;
-            Destroy(meshCollider);
+            if (playerVisualPrefab != null)
+            {
+                VisualPrefabUtility.Instantiate(playerVisualPrefab, visualRoot.transform);
+            }
+            else
+            {
+                GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                capsule.name = "Orange Capsule Mesh";
+                capsule.transform.SetParent(visualRoot.transform);
+                capsule.transform.localPosition = Vector3.zero;
+                capsule.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
+                capsule.GetComponent<Renderer>().sharedMaterial = playerMaterial;
+                Collider meshCollider = capsule.GetComponent<Collider>();
+                meshCollider.enabled = false;
+                Destroy(meshCollider);
+            }
 
             PlayerMovement movement = player.AddComponent<PlayerMovement>();
             movement.Configure(visualRoot.transform);
@@ -83,7 +116,10 @@ namespace PrisonRunner.Presentation
             if (camera != null)
             {
                 camera.farClipPlane = 1000f;
-                camera.gameObject.AddComponent<RunnerCamera>().Configure(player.transform);
+                GameObject cameraRig = new GameObject("Runner Camera Rig");
+                cameraRig.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
+                camera.transform.SetParent(cameraRig.transform, true);
+                cameraRig.AddComponent<RunnerCamera>().Configure(player.transform, camera);
             }
 
             GameObject hud = new GameObject("Runner HUD");

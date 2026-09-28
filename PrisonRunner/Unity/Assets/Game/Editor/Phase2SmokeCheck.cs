@@ -108,6 +108,11 @@ namespace PrisonRunner.Editor
                     throw new Exception("One of the three placeholder chunk types is missing.");
                 }
 
+                if (step == 0)
+                {
+                    VisualSliceSmokeCheck.Validate(player, chunks);
+                }
+
                 if (step < 12)
                 {
                     player.transform.position += Vector3.forward * MapChunk.Length;
