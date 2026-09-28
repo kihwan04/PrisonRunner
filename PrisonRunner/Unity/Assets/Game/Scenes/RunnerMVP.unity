@@ -385,7 +385,7 @@ GameObject:
   - component: {fileID: 832575519}
   - component: {fileID: 832575518}
   m_Layer: 0
-  m_Name: Global Volume
+  m_Name: Prison Visual Volume
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -407,7 +407,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: 10fc4df2da32a41aaa32d77bc913491c, type: 2}
+  sharedProfile: {fileID: 11400000, guid: a7f5fc911cf848d3afb8e45823e485c0, type: 2}
 --- !u!4 &832575519
 Transform:
   m_ObjectHideFlags: 0
@@ -467,6 +467,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b46cfbaefb4c495d9d1f2d075938e221, type: 3}
   m_Name:
   m_EditorClassIdentifier:
+  playerVisualPrefab: {fileID: 0}
+  corridorVisualPrefab: {fileID: 0}
+  cellBlockVisualPrefab: {fileID: 0}
+  prisonYardVisualPrefab: {fileID: 0}
+  showLaneDebugLines: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

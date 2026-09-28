@@ -9,6 +9,12 @@ namespace PrisonRunner.Presentation.Map
         [SerializeField] private float spawnAhead = 180f;
         [SerializeField] private float recycleBehind = 20f;
         [SerializeField, Range(0f, 1f)] private float obstacleChance = 0.8f;
+        [Header("Environment Visuals")]
+        [SerializeField] private GameObject corridorVisualPrefab;
+        [SerializeField] private GameObject cellBlockVisualPrefab;
+        [SerializeField] private GameObject prisonYardVisualPrefab;
+        [SerializeField] private bool showLaneDebugLines = true;
+        private bool visualSettingsDirty;
 
         private readonly Queue<MapChunk> activeChunks = new Queue<MapChunk>();
         private readonly Queue<MapChunk>[] chunkPools =
@@ -27,6 +33,40 @@ namespace PrisonRunner.Presentation.Map
         private Material[] areaMaterials;
         private Material[] obstacleMaterials;
 
+        public void ConfigureVisuals(GameObject corridor, GameObject cellBlock, GameObject prisonYard, bool laneDebugLines)
+        {
+            corridorVisualPrefab = corridor;
+            cellBlockVisualPrefab = cellBlock;
+            prisonYardVisualPrefab = prisonYard;
+            showLaneDebugLines = laneDebugLines;
+            ApplyVisualSettings();
+        }
+
+        private GameObject GetVisualPrefab(MapChunkKind kind)
+        {
+            switch (kind)
+            {
+                case MapChunkKind.PrisonCorridor: return corridorVisualPrefab;
+                case MapChunkKind.CellBlock: return cellBlockVisualPrefab;
+                default: return prisonYardVisualPrefab;
+            }
+        }
+
+        private void ApplyVisualSettings()
+        {
+            // Include inactive pooled chunks so visual settings survive recycling.
+            foreach (MapChunk chunk in GetComponentsInChildren<MapChunk>(true))
+            {
+                chunk.SetVisualPrefab(GetVisualPrefab(chunk.Kind));
+                chunk.SetLaneDebugLinesVisible(showLaneDebugLines);
+            }
+        }
+
+        private void OnValidate()
+        {
+            visualSettingsDirty = true;
+        }
+
         public void Configure(Transform playerTarget, Material ground, Material line, Material[] areas, Material[] obstacles)
         {
             player = playerTarget;
@@ -40,6 +80,12 @@ namespace PrisonRunner.Presentation.Map
 
         private void Update()
         {
+            if (visualSettingsDirty)
+            {
+                visualSettingsDirty = false;
+                ApplyVisualSettings();
+            }
+
             if (player != null)
             {
                 UpdateChunks();
@@ -78,6 +124,8 @@ namespace PrisonRunner.Presentation.Map
                 chunk.Initialize(kind, groundMaterial, lineMaterial, areaMaterials[(int)kind]);
             }
 
+            chunk.SetVisualPrefab(GetVisualPrefab(kind));
+            chunk.SetLaneDebugLinesVisible(showLaneDebugLines);
             chunk.transform.position += nextEntry - chunk.EntrySocket.position;
             chunk.gameObject.SetActive(true);
             if (spawnedCount > 0)

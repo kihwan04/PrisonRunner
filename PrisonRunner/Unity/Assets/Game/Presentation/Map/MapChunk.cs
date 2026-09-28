@@ -16,6 +16,14 @@ namespace PrisonRunner.Presentation.Map
         public const float LaneSpacing = 3f;
         public const int RowCount = 2;
 
+        [SerializeField] private GameObject visualPrefab;
+        [SerializeField] private bool showLaneDebugLines = true;
+        private Transform placeholderRoot;
+        private Transform laneDebugRoot;
+        private GameObject visualInstance;
+        private GameObject appliedVisualPrefab;
+        private bool visualSettingsDirty;
+
         private readonly ObstacleSocket[,] obstacleSockets = new ObstacleSocket[RowCount, 3];
         private readonly List<GameObject> activeObstacles = new List<GameObject>();
 
@@ -47,6 +55,8 @@ namespace PrisonRunner.Presentation.Map
             name = kind.ToString();
             GameplayRoot = CreateChild("Gameplay", transform);
             VisualRoot = CreateChild("Visual", transform);
+            placeholderRoot = CreateChild("PlaceholderVisual", VisualRoot);
+            laneDebugRoot = CreateChild("LaneDebugLines", VisualRoot);
 
             EntrySocket = CreateChild("EntrySocket", GameplayRoot);
             ExitSocket = CreateChild("ExitSocket", GameplayRoot);
@@ -72,10 +82,65 @@ namespace PrisonRunner.Presentation.Map
             CreateVisualCube("Floor", new Vector3(0f, -0.25f, Length * 0.5f), new Vector3(11f, 0.5f, Length), groundMaterial);
             for (int side = -1; side <= 1; side += 2)
             {
-                CreateVisualCube("Lane Divider", new Vector3(side * LaneSpacing * 0.5f, 0.015f, Length * 0.5f), new Vector3(0.06f, 0.02f, Length), lineMaterial);
+                CreateVisualCube("Lane Divider", new Vector3(side * LaneSpacing * 0.5f, 0.015f, Length * 0.5f), new Vector3(0.06f, 0.02f, Length), lineMaterial, laneDebugRoot);
             }
 
             BuildPlaceholderArea(areaMaterial);
+            SetVisualPrefab(visualPrefab);
+            SetLaneDebugLinesVisible(showLaneDebugLines);
+        }
+
+        public void SetVisualPrefab(GameObject prefab)
+        {
+            visualPrefab = prefab;
+            if (VisualRoot == null)
+            {
+                return;
+            }
+
+            if (appliedVisualPrefab != prefab)
+            {
+                if (visualInstance != null)
+                {
+                    visualInstance.SetActive(false);
+                    Destroy(visualInstance);
+                }
+
+                visualInstance = prefab != null ? VisualPrefabUtility.Instantiate(prefab, VisualRoot) : null;
+                if (visualInstance != null)
+                {
+                    visualInstance.name = "PrefabVisual";
+                }
+                appliedVisualPrefab = prefab;
+            }
+
+            placeholderRoot.gameObject.SetActive(prefab == null);
+        }
+
+        public void SetLaneDebugLinesVisible(bool visible)
+        {
+            showLaneDebugLines = visible;
+            if (laneDebugRoot != null)
+            {
+                laneDebugRoot.gameObject.SetActive(visible);
+            }
+        }
+
+        private void OnValidate()
+        {
+            visualSettingsDirty = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!visualSettingsDirty)
+            {
+                return;
+            }
+
+            visualSettingsDirty = false;
+            SetVisualPrefab(visualPrefab);
+            SetLaneDebugLinesVisible(showLaneDebugLines);
         }
 
         private void BuildPlaceholderArea(Material material)
@@ -106,11 +171,11 @@ namespace PrisonRunner.Presentation.Map
             }
         }
 
-        private void CreateVisualCube(string objectName, Vector3 position, Vector3 scale, Material material)
+        private void CreateVisualCube(string objectName, Vector3 position, Vector3 scale, Material material, Transform parent = null)
         {
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = objectName;
-            cube.transform.SetParent(VisualRoot, false);
+            cube.transform.SetParent(parent != null ? parent : placeholderRoot, false);
             cube.transform.localPosition = position;
             cube.transform.localScale = scale;
             cube.GetComponent<Renderer>().sharedMaterial = material;
