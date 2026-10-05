@@ -1,36 +1,25 @@
-# PrisonRunner
+# 무한옥 (PrisonRunner)
 
-Unity 기반 3레인 감옥 테마 Endless Runner 캡스톤 프로젝트입니다. 키보드 조작을 먼저 완성하고, Python MediaPipe Pose에서 인식한 동작을 WebSocket으로 Unity에 전달합니다.
+키보드 또는 웹캠 몸동작으로 플레이하는 Windows 64비트 Unity 러너 게임입니다.
 
-## 현재 상태
+**처음 실행:** [Windows 실행용 ZIP](https://github.com/kihwan04/PrisonRunner/releases/latest/download/Muhanok-Windows-x64.zip) 전체를 압축 해제하고 `StartGame.cmd`를 더블클릭 → **게임 시작 → 입력 없이 시작**.
 
-Phase 1 러너 조작과 Phase 2 무한 맵을 포함한 Unity 6.3.10f1 URP 프로젝트와 키보드 플레이 장면이 있습니다. `PoseServer/`와 최종 아트 에셋은 아직 비어 있습니다.
+- [실행 방법과 폴더별 역할](START_HERE.md)
+- [최신 화면별 게임기획서 V13](docs/무한옥_화면별_게임기획서_V13.docx)
+- [문서 목록과 이전 버전 구분](docs/README.md)
+- [최신 게임 아트 V10](docs/ART_V10.md), [실제 게임 캡처](docs/previews/ArtV10/index.html)
+- [맵 운동·가속 기능과 검증](docs/MAP_EXERCISES_SPEED.md)
+- [웹캠 입력 최초 설치](PoseServer/README.md)
+- [리소스 출처와 공개 소스 애니메이션](THIRD_PARTY_NOTICES.md)
 
-## 실행
+로컬에서는 `StartGame.cmd` 또는 `Builds/Windows/Muhanok.exe`를 실행합니다. 게임 빌드는 Git 소스 대신 GitHub Releases에서 배포합니다. 키보드 플레이에는 Unity나 Python이 필요 없습니다.
 
-1. Unity Hub에서 `Unity/` 폴더를 Unity 6000.3.10f1로 엽니다.
-2. 패키지 임포트와 스크립트 컴파일이 끝나면 `Assets/Game/Scenes/RunnerMVP.unity`를 엽니다.
-3. Play를 누릅니다. Ground, Capsule Player, Cube 장애물은 장면의 `Runner MVP Bootstrap`이 플레이 시작 시 생성합니다.
+개발 실행은 Unity Hub에서 `Unity/`를 **6000.3.10f1**로 열고, 임포트·컴파일 완료 후 **Muhanok → Play GameScene**을 누릅니다. `PlayInUnity.cmd`도 같은 씬을 실행합니다. 설정은 `Unity/Assets/Game/Content/Data/GameSettings.asset`에 있습니다.
 
-| 입력 | 동작 |
-| --- | --- |
-| A / ← | 왼쪽 레인으로 한 칸 이동 |
-| D / → | 오른쪽 레인으로 한 칸 이동 |
-| Space | 점프 |
-| S / ↓ 누르고 있기 | 숙이기 |
+현재 게임은 V10 아트에 2026-10-05 운동·가속 기능을 적용한 버전입니다. 최신 기획서 V13은 거리와 속도 수치를 미정으로 둔 문서 수정본이며 게임 구현값과 구분합니다. 이전 기획서·캡처·시연 씬은 보존합니다. [이전 README 기록](docs/legacy/README_BEFORE_PUBLIC_RELEASE.md)은 과거 상태 설명이며 현재 실행 안내는 위 링크를 기준으로 합니다.
 
-전진은 자동입니다. 장애물에 부딪히면 잠시 느려집니다. 점수는 실제 전진 거리(m)입니다. 맵은 세 종류의 Placeholder Chunk를 앞에 생성하고 지나간 Chunk와 장애물을 재사용합니다.
+기본 경로는 광산 → 전용 수레 → 계단 → 감옥 복도 → 사육장입니다. A/D·←/→는 이동, Space는 점프, S·↓는 숙이기, W·↑는 하이니입니다. 수레에서는 좌우로 기울여 철로 붕괴를 피합니다. 몸동작 입력은 localhost UDP 5055를 사용합니다.
 
-## 구조
+공개 소스에서는 재배포 제한이 있는 Mixamo 원본 FBX를 제외하고 자체 Blender 동작으로 자동 연결합니다. 실행용 ZIP은 기존 동작을 유지합니다. 실제 웹캠 인식 정확도와 최고 속도의 체감 난이도는 현장 검수가 남아 있습니다.
 
-- `docs/`: 개발 계획, 아키텍처, 아트 방향
-- `References/`: 아트 참조 이미지
-- `Unity/`: Unity 프로젝트
-- `PoseServer/`: 웹캠 및 자세 인식 서버
-- `Tools/AssetPipeline/`: 에셋 준비 도구
-
-구현 순서와 완료 기준은 [개발 계획](docs/DEVELOPMENT_PLAN.md)을 참조하세요. 코드 작성 전 [작업 규칙](AGENTS.md)과 [아키텍처](docs/ARCHITECTURE.md)를 확인하세요.
-
-## Git 작업 흐름
-
-`main`은 발표용 버전, `develop`은 기능 통합 브랜치입니다. 개별 기능은 `feature/*`에서 작업합니다. 현재 구현은 `develop`에 통합하며, 발표 검증 후 `main`에 반영합니다. 자세한 규칙은 [Git 작업 흐름](docs/GIT_WORKFLOW.md)을 참조하세요.
+개발 규칙: [AGENTS.md](AGENTS.md), [설계](docs/ARCHITECTURE.md), [Git 작업 흐름](docs/GIT_WORKFLOW.md).

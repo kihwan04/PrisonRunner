@@ -1,0 +1,357 @@
+{
+  "result": "PASS",
+  "frames": [
+    {
+      "file": "Player_FirstLiveFrame_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_FirstPerson_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Idea_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Loading_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_LoadingReveal_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_00_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_00_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_01_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_01_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_02_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_02_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_03_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_03_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_04_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_04_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_05_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_05_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_06_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_06_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_07_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_07_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_08_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_08_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_09_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Map_09_Boundary_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Takeover_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Title_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_WeightSetup_1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_FirstLiveFrame_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_FirstPerson_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Idea_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Loading_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_LoadingReveal_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Takeover_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Title_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_WeightSetup_1702x726.png",
+      "size": [
+        1702,
+        726
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_FirstLiveFrame_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_FirstPerson_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Idea_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Loading_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_LoadingReveal_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Takeover_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_Title_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    },
+    {
+      "file": "Player_WeightSetup_1024x768.png",
+      "size": [
+        1024,
+        768
+      ],
+      "nonblank": true
+    }
+  ]
+}

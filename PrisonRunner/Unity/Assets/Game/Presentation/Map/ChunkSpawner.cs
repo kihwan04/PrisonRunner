@@ -1,0 +1,92 @@
+using System.Collections.Generic;
+using Muhanok.Domain;
+using UnityEngine;
+
+namespace Muhanok.Presentation.Map
+{
+    public sealed class ChunkPool
+    {
+        private readonly Queue<MuhanokMapChunk>[] pools;
+        public int CreatedCount { get; private set; }
+        public ChunkPool(MuhanokMapChunk[] prefabs, Transform parent)
+        {
+            pools = new Queue<MuhanokMapChunk>[prefabs.Length];
+            for (int i = 0; i < pools.Length; i++)
+            {
+                pools[i] = new Queue<MuhanokMapChunk>(2);
+                for (int j = 0; j < 2; j++)
+                {
+                    var chunk = Object.Instantiate(prefabs[i], parent);
+                    chunk.gameObject.SetActive(false); pools[i].Enqueue(chunk); CreatedCount++;
+                }
+            }
+        }
+        public MuhanokMapChunk Rent(int index)
+        {
+            if (pools[index].Count == 0) throw new System.InvalidOperationException("Chunk prewarm bound exceeded: " + index);
+            return pools[index].Dequeue();
+        }
+        public void Return(int index, MuhanokMapChunk chunk) { chunk.gameObject.SetActive(false); pools[index].Enqueue(chunk); }
+    }
+    public sealed class ChunkSpawner
+    {
+        public readonly struct ActiveChunk
+        {
+            public readonly int Type; public readonly MuhanokMapChunk Chunk;
+            public ActiveChunk(int type, MuhanokMapChunk chunk) { Type = type; Chunk = chunk; }
+        }
+        private readonly List<ActiveChunk> active = new List<ActiveChunk>(8);
+        private readonly ChunkPool pool;
+        private readonly int types;
+        private readonly RunSession session;
+        private System.Random random;
+        private int sequence;
+        private Vector3 nextPosition;
+        public IReadOnlyList<ActiveChunk> Active => active;
+        public int Spawned => sequence;
+        public int CreatedCount => pool.CreatedCount;
+        public ChunkSpawner(MuhanokMapChunk[] prefabs, Transform root, RunSession run)
+        {
+            types = prefabs.Length; session = run; pool = new ChunkPool(prefabs, root); Reset();
+        }
+        public void Reset()
+        {
+            for (int i = 0; i < active.Count; i++) pool.Return(active[i].Type, active[i].Chunk);
+            active.Clear(); random = new System.Random(723); nextPosition = Vector3.zero; sequence = 0; Tick(2f);
+        }
+        public void Tick(float z)
+        {
+            for (int i = active.Count - 1; i >= 0; i--)
+                if (active[i].Chunk.Exit.position.z < z - 30f) { pool.Return(active[i].Type, active[i].Chunk); active.RemoveAt(i); }
+            while (nextPosition.z < z + 96f)
+            {
+                int type = RouteSurface.TypeAt(sequence);
+                var chunk = pool.Rent(type);
+                chunk.transform.position += nextPosition - chunk.Entry.position;
+                chunk.Prepare(sequence, session.Difficulty.ObstacleChance(session.Score.Distance), random);
+                chunk.gameObject.SetActive(true); active.Add(new ActiveChunk(type, chunk));
+                nextPosition = chunk.Exit.position; sequence++;
+            }
+        }
+        public void Evaluate(float previousZ)
+        {
+            for (int i = 0; i < active.Count; i++)
+            {
+                var obstacles = active[i].Chunk.Obstacles;
+                for (int j = 0; j < obstacles.Length && session.Flow.State == GameFlowState.Running; j++) obstacles[j].Evaluate(session, previousZ);
+                var exercises=active[i].Chunk.ExerciseObstacles;
+                if(exercises!=null)foreach(var exercise in exercises)exercise.Evaluate(session,previousZ);
+                var coins=active[i].Chunk.Coins;
+                if(coins!=null) for(int j=0;j<coins.Length;j++) coins[j].Evaluate(session,previousZ);
+                var items=active[i].Chunk.FloorItems;
+                if(items!=null)foreach(var item in items)item.Evaluate(session,previousZ);
+                var gaps=active[i].Chunk.RailGaps;
+                if(gaps!=null)foreach(var gap in gaps)gap.Evaluate(session,previousZ);
+            }
+        }
+        public void AnimateGates(float runnerZ)
+        {
+            foreach(var item in active) item.Chunk.AnimateGates(runnerZ);
+        }
+    }
+}

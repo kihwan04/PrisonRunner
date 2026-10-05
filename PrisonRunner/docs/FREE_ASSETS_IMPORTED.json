@@ -1,0 +1,37 @@
+[
+  {
+    "kit": "factory-kit",
+    "source": "https://kenney.nl/assets/factory-kit",
+    "license": "CC0",
+    "models": 143,
+    "archive_sha256": "7e31fb2308e90304672bd15cd18fa9d9f02c03731a8cbc57a8e3e1c181dfb0a7"
+  },
+  {
+    "kit": "furniture-kit",
+    "source": "https://kenney.nl/assets/furniture-kit",
+    "license": "CC0",
+    "models": 140,
+    "archive_sha256": "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0"
+  },
+  {
+    "kit": "modular-cave-kit",
+    "source": "https://kenney.nl/assets/modular-cave-kit",
+    "license": "CC0",
+    "models": 40,
+    "archive_sha256": "48f37a6d4f241124cd7da17da1c6d4ed1bf1820bb149dcb233fbd5ebdd8ba996"
+  },
+  {
+    "kit": "nature-kit",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "license": "CC0",
+    "models": 329,
+    "archive_sha256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d"
+  },
+  {
+    "kit": "survival-kit",
+    "source": "https://kenney.nl/assets/survival-kit",
+    "license": "CC0",
+    "models": 80,
+    "archive_sha256": "c3586341b5932c87eb43d75d915434f47daed168b17ed36a03e8ca9977c7443e"
+  }
+]

@@ -35,6 +35,22 @@ venv/
 *.key
 
 # Generated artifacts
+Builds/
+References/AssetDownloads/
 dist/
 build/
 *.log
+Tools/BlenderDownloads/
+Tools/BlenderRuntime/
+Tools/DocumentRuntime/
+docs/document-qa/
+
+# Local distribution staging and backup files
+*.blend1
+*.blend2
+PoseServer/models/*.task
+
+# Mixamo raw files cannot be redistributed publicly
+References/MixamoDownloads/*.fbx
+Unity/Assets/External/Staging/Mixamo/Animations/*.fbx
+Unity/Assets/External/Staging/Mixamo/Animations/*.fbx.meta
