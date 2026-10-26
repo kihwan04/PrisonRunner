@@ -1,44 +1,50 @@
-# 무한옥: 처음 읽기
+# Mongscape 처음 실행하기
 
-## 바로 플레이
+기준일: **2026-10-26**. 이전 이름은 무한옥입니다. 현재 Windows 클라이언트는 중앙 얼굴 서버 주소 설정을 지원합니다.
 
-1. [Windows 실행용 ZIP](https://github.com/kihwan04/PrisonRunner/releases/latest/download/Muhanok-Windows-x64.zip)을 받습니다.
-2. ZIP 전체를 압축 해제합니다.
-3. `StartGame.cmd`를 더블클릭합니다.
-4. 게임 화면에서 **게임 시작 → 입력 없이 시작**을 누릅니다. 몸무게는 원하면 입력합니다.
+## 이 PC에서 실행
 
-실행 대상은 `Game/Muhanok.exe`입니다. 이 PC의 개발 폴더에서는 저장소 맨 위 또는 `PrisonRunner/StartGame.cmd`를 실행하면 `Builds/Windows/Muhanok.exe`가 열립니다.
+저장소 맨 위 또는 이 폴더의 `StartGame.cmd`를 실행합니다. 완료된 `Builds/Mongscape/Windows/Mongscape.exe`를 먼저 열고, 빌드가 없으면 현재 소스를 Unity에서 실행합니다.
 
-`Muhanok.exe`와 같은 위치의 `Muhanok_Data`, `UnityPlayer.dll`, `MonoBleedingEdge`, `D3D12` 등은 실행에 필요한 구성 파일입니다. 실행 파일 하나만 옮기지 말고 폴더 전체를 유지하세요. Windows 64비트용이며 키보드 플레이에는 Unity·Python·웹캠이 필요 없습니다.
+## 다른 PC에서 실행
+
+[최신 Windows 게임 ZIP](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/Mongscape-RemoteClient-Windows-x64.zip)을 내려받아 전부 압축 해제하고 `StartGame.cmd`를 실행합니다. `Game` 폴더 전체를 보관하세요. Unity·Python·Docker를 게임 PC에 따로 설치할 필요는 없습니다.
+
+타이틀 → 메인 메뉴 → 게임 시작 → 최초 PC 프로필 입력 → 탈출 준비에서 플레이 방식·칼로리 목표 선택 → 시작하기 순서입니다. 메인 메뉴에는 상점·거리 랭킹·프로필·얼굴 로그인도 있습니다. 얼굴 등록/로그인은 선택 사항이고 몸무게를 생략해도 플레이할 수 있습니다.
 
 | 키 | 동작 |
 | --- | --- |
-| A / ←, D / → | 레인 변경; 수레에서는 좌우 기울이기 |
+| A / ←, D / → | 레인 이동. 일반 단선 수레에서는 기울이기 |
+| C | 수레 갈림길 선택 구간에서 가운데 차선 |
 | Space | 점프 |
-| S / ↓ 누르고 있기 | 숙이기 / 슬라이드 |
-| W / ↑ | 하이니 (계단 운동) |
+| S / ↓ | 숙이기 |
+| W / ↑ | 하이니 |
+| F1 / F3 | 설정 / 성능 표시 |
 
-웹캠 몸동작도 사용하려면 `PoseServer/SetupPose.cmd`로 최초 설치한 뒤 `PoseServer/StartPose.cmd`를 실행합니다. Python 3.11 또는 3.12, 인터넷 연결, 웹캠이 필요합니다. 전신이 보이도록 서서 초기 보정을 기다립니다. R은 재보정, Esc는 카메라 프로그램 종료입니다. 상세 안내는 [PoseServer/README.md](PoseServer/README.md)를 확인하세요.
+전신·상체 조작과 자세 보정은 [몸동작 안내](docs/BODY_TRACKING.md)를 확인하세요.
 
-## 파일을 찾는 기준
+## 얼굴 로그인 서버 선택
 
-| 위치 | 용도 | 처음 확인할 파일 |
-| --- | --- | --- |
-| `StartGame.cmd` | 완성된 Windows 게임 실행 | 더블클릭 |
-| `PlayInUnity.cmd` | Unity 편집기에서 개발 실행 | Unity 6000.3.10f1 필요 |
-| `Unity/` | 게임 코드·씬·리소스 | `Assets/Game/Scenes/GameScene.unity` |
-| `PoseServer/` | 선택 사항인 웹캠 입력 | `SetupPose.cmd`, `StartPose.cmd` |
-| `docs/` | 기획서·설계·검수 기록 | `README.md`, **기획서 V13** |
-| `docs/previews/ArtV10/` | 최신 아트 실제 캡처 | `index.html` |
-| `References/` | 참고 자료·Blender 제작 원본·출처 | 제작 시 확인 |
-| `Tools/AssetPipeline/` | 제작·문서 검증용 도구 | 플레이에는 실행 불필요 |
-| `Tools/Distribution/` | 배포 ZIP 생성 도구 | 제작자용 |
-| `Builds/Windows/` | 이 PC의 로컬 실행 파일 | GitHub에는 Release ZIP으로 배포 |
+| 방식 | 준비 |
+| --- | --- |
+| 얼굴 없이 플레이 | 키보드 또는 몸동작 방식을 선택해 바로 시작 |
+| 여러 PC에서 기록 공유 | PostgreSQL/Docker 서버를 먼저 배포하고 각 게임의 EXE 옆 `identity-server.json`에 같은 HTTPS 주소 지정 |
+| 기존 로컬 얼굴 서버 | 개발 폴더에서 `SetupIdentity.cmd`로 준비한 뒤 `StartIdentity.cmd` 실행 |
 
-기획서 V10~V12와 ArtV2~V9 캡처는 이전 기록입니다. 현재 안내는 **기획서 V13**, **게임 아트 V10 + 운동·가속 구현**을 기준으로 합니다. V13에서 거리와 속도 수치를 미정으로 둔 것은 문서 기획이며, 현재 게임 구현 수치를 변경한 작업은 아닙니다.
+중앙 서버 설정 예시입니다. **실제 서버 주소로 바꾼 뒤** 사용합니다.
 
-## Unity로 개발하려면
+```json
+{
+  "url": "https://faces.your-domain.com"
+}
+```
 
-소스를 내려받고 Unity Hub에서 `PrisonRunner/Unity`를 **6000.3.10f1**로 엽니다. 임포트·컴파일이 끝나면 상단 **Muhanok → Play GameScene**을 누릅니다. `RunnerMVP.unity`는 이전 시연 씬입니다.
+ZIP에서는 `Game/identity-server.json`, 개발용 Unity에서는 `Unity/identity-server.json`입니다. 환경 변수 `MONGSCAPE_IDENTITY_URL`이 있으면 파일보다 우선합니다. 주소 변경 후 게임을 다시 실행하세요.
 
-공개 소스에는 Mixamo 원본 FBX가 포함되지 않습니다. 처음 열면 빠진 동작을 프로젝트의 자체 Blender 애니메이션으로 자동 연결합니다. 공개 실행용 게임에는 기존 Mixamo 동작이 들어 있으며, 소스 기본 애니메이션과 모양이 다를 수 있습니다. 원본을 직접 취득해 복원하는 방법은 [외부 리소스 안내](THIRD_PARTY_NOTICES.md)에 있습니다.
+얼굴 사진·특징·이름·운동 기록은 연결된 서버 DB에 저장됩니다. 원격 서버를 지정하면 로컬 Python 서버를 추가로 시작하지 않습니다. 서버·도메인은 아직 준비하지 않았으므로 [Docker 배포 안내](Services/Identity/README_DOCKER.md)에 따라 구성해야 합니다.
+
+2026-10-25의 이전 로컬 ZIP은 localhost 전용입니다. 이 ZIP에 설정 파일만 추가해서 원격 연결을 사용할 수는 없습니다. 이전 릴리스의 `Muhanok.exe`는 현재 실행 대상이 아닙니다.
+
+## 개발·확인 범위
+
+소스 편집은 Unity Hub에서 `Unity/`를 **6000.3.10f1**로 엽니다. 자세한 구조는 [기술 스택](docs/TECH_STACK.md), 빌드·테스트와 남은 확인 사항은 [진행 상태](docs/PROGRESS.md)를 확인하세요.

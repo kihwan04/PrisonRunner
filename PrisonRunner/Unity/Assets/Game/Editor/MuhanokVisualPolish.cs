@@ -11,7 +11,7 @@ namespace Muhanok.Editor
     public static class MuhanokVisualPolish
     {
         private const string Materials="Assets/Game/Content/ArtV2/Materials/";
-        [MenuItem("Muhanok/Upgrade Enclosed Cells and Foot Contact V10")]
+        [MenuItem("Mongscape/Upgrade Enclosed Cells and Foot Contact V10")]
         public static void UpgradeV10()
         {
             UpgradeV9();
@@ -22,7 +22,7 @@ namespace Muhanok.Editor
             }
             Debug.Log("MUHANOK_V10_PASS: enclosed deep cells / locked barred doors / two animated inmates per cell block / humanoid foot contact IK");
         }
-        [MenuItem("Muhanok/Upgrade Dedicated Cart Tracks and Exercise V9")]
+        [MenuItem("Mongscape/Upgrade Dedicated Cart Tracks and Exercise V9")]
         public static void UpgradeV9()
         {
             UpgradeV8();
@@ -35,7 +35,7 @@ namespace Muhanok.Editor
             }
             Debug.Log("MUHANOK_V9_PASS: single suspended cart track / four half-rail gaps / cart grip animation / motion-matched exercise rows / two-banana pursuit");
         }
-        [MenuItem("Muhanok/Upgrade Gameplay and Connected Maps V8")]
+        [MenuItem("Mongscape/Upgrade Gameplay and Connected Maps V8")]
         public static void UpgradeV8()
         {
             UpgradeV7();
@@ -44,7 +44,7 @@ namespace Muhanok.Editor
             var night=Shader.Find("Muhanok/NightSky");if(night==null||ShaderUtil.ShaderHasError(night))throw new InvalidOperationException("Night sky shader failed compilation.");
             Debug.Log("MUHANOK_V8_PASS: fatal collision / nonfatal floor slip / playable two-chunk cart / loading intro / service exit");
         }
-        [MenuItem("Muhanok/Upgrade Loading Continuity and Models V7")]
+        [MenuItem("Mongscape/Upgrade Loading Continuity and Models V7")]
         public static void UpgradeV7()
         {
             UpgradeV6();
@@ -53,12 +53,12 @@ namespace Muhanok.Editor
             if(mesh.blendShapeCount<2)throw new InvalidOperationException("Blender facial shapes were not imported.");
             Debug.Log("MUHANOK_VISUAL_V7_PASS: continuous skinned monkey / facial shapes / actual mine shadows / loading-to-live dissolve");
         }
-        [MenuItem("Muhanok/Upgrade Maps and Materials V6")]
+        [MenuItem("Mongscape/Upgrade Maps and Materials V6")]
         public static void UpgradeV6()
         {
             MuhanokArtUpgrade.UpgradeTools();Apply();
         }
-        [MenuItem("Muhanok/Apply Hand Painted Materials and Shadow Budget")]
+        [MenuItem("Mongscape/Apply Hand Painted Materials and Shadow Budget")]
         public static void Apply()
         {
             AssetDatabase.Refresh();

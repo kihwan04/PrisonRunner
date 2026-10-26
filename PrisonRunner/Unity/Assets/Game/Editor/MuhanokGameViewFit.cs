@@ -8,7 +8,7 @@ namespace Muhanok.Editor
     public static class MuhanokGameViewFit
     {
         private const BindingFlags Instance=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
-        [MenuItem("Muhanok/Fit Game View (16:9)")]
+        [MenuItem("Mongscape/Fit Game View (16:9)")]
         public static void Fit()
         {
             try

@@ -1,0 +1,12 @@
+{
+    "device": "MS-7A15 (MSI)",
+    "gpu": "NVIDIA GeForce GTX 1060 3GB",
+    "cameraStatus": "Deferred by user",
+    "started": "2026-10-25T19:03:42.5472214+09:00",
+    "width": 1280,
+    "height": 720,
+    "cameraFrames": 0,
+    "passed": true,
+    "error": "",
+    "samples": []
+}

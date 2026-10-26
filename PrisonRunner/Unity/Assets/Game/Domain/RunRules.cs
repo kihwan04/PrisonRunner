@@ -23,6 +23,8 @@ namespace Muhanok.Domain
                 || (State == GameFlowState.Running && next == GameFlowState.Caught)
                 || (State == GameFlowState.Caught && next == GameFlowState.Result)
                 || (State == GameFlowState.Result && next == GameFlowState.Retry)
+                // Leaving a run from the pause menu abandons it without a result.
+                || (State == GameFlowState.Running && next == GameFlowState.Retry)
                 || (State == GameFlowState.Retry && next == GameFlowState.TitleIdle);
             if (!valid) return false;
             State = next;
@@ -41,6 +43,15 @@ namespace Muhanok.Domain
         public float SlipSeconds = 2.4f, SlipSpeedMultiplier = .5f, CartSpeed = 9f;
         public float BananaCatchSeconds=1.2f;
         public float SpeedRampDistance = 120f;
+        // Jump/slide pressed shortly before landing runs on landing. Zero keeps the strict legacy rule.
+        public float InputBufferSeconds = 0f;
+        // Interval mode: walking sections are sprints, the mine cart ride is the rest.
+        public bool IntervalMode = false;
+        public float SprintSpeed = 6f, SprintSpeedStep = .5f, MaxSprintSpeed = 9.5f, RestSpeed = 5f;
+        public float SprintSeconds = 40f, RestSeconds = 20f, SpeedChangeRate = 2.5f;
+        public bool RandomizeLayout = false;
+        public bool ExtendedRoutes = true;
+        public float ExtendedSpeedRampDistance=160f,ExtendedSpeedStep=.6f;
     }
 
     public sealed class ChaseSystem
@@ -56,12 +67,19 @@ namespace Muhanok.Domain
     {
         public float Distance { get; private set; }
         public int Coins { get; private set; }
-        public int Score => (int)(Distance * 10f) + bonus;
+        public int Score => (int)(Distance * 10f) + bonus + (int)extra;
+        // Score items multiply points earned while they are active; already earned points never change.
+        public int Multiplier { get; set; } = 1;
         private int bonus;
-        public void Advance(float metres) { Distance += Math.Max(0f, metres); }
-        public void CleanPass(int points) { bonus += Math.Max(0, points); }
-        public void CollectCoin() { Coins++; bonus += 10; }
-        public void Reset() { Distance = 0f; bonus = 0; Coins = 0; }
+        private float extra;
+        public void Advance(float metres)
+        {
+            float step = Math.Max(0f, metres); Distance += step;
+            if (Multiplier > 1) extra += step * 10f * (Multiplier - 1);
+        }
+        public void CleanPass(int points) { bonus += Math.Max(0, points) * Math.Max(1, Multiplier); }
+        public void CollectCoin() { Coins++; bonus += 10 * Math.Max(1, Multiplier); }
+        public void Reset() { Distance = 0f; bonus = 0; Coins = 0; extra = 0f; Multiplier = 1; }
     }
 
     public sealed class DifficultyDirector
@@ -93,7 +111,7 @@ namespace Muhanok.Domain
     public sealed class RunnerController
     {
         private readonly RunConfig config;
-        private float laneFrom, laneTime, verticalSpeed, crouchLeft, kneeLeft, stumbleLeft, slowLeft;
+        private float laneFrom, laneTime, verticalSpeed, crouchLeft, kneeLeft, stumbleLeft, slowLeft, jumpBuffer, crouchBuffer;
         public int Lane { get; private set; }
         public float X { get; private set; }
         public float Y { get; private set; }
@@ -102,30 +120,36 @@ namespace Muhanok.Domain
         public bool HighKnee => kneeLeft > 0f;
         public bool Stumbling => stumbleLeft > 0f;
         public bool Riding => RouteSurface.IsCart(Z);
-        public float CartLean=>Riding?X/config.LaneSpacing:0;
-        public float WorldLaneOffset=>Riding?CartLean*.16f:X;
+        public float CartLean=>Riding&&!(RouteSurface.ActivePlan?.RailChoiceLocked(Z)??false)?X/config.LaneSpacing:0;
+        public float WorldLaneOffset=>Riding?(RouteSurface.ActivePlan?.CartLaneOffset(Z,X,CartLean*.16f)??CartLean*.16f):X;
         public bool Slowing => slowLeft > 0;
         public float SlowRemaining => slowLeft;
         public float SpeedMultiplier => slowLeft>0?config.SlipSpeedMultiplier:1;
         public RunnerController(RunConfig tuning) { config = tuning; Reset(); }
         public void Command(MotionCommand command)
         {
+            if(RouteSurface.ActivePlan?.RailChoiceLocked(Z)??false)return;
             int next = Lane;
             if (command == MotionCommand.Left) next = LaneRules.Move(Lane, -1);
             if (command == MotionCommand.Right) next = LaneRules.Move(Lane, 1);
-            if(Riding)
+            if(Riding && !(RouteSurface.ActivePlan?.ForkWindow(Z)??false))
             {
                 if(command==MotionCommand.Left)next=-1;
                 if(command==MotionCommand.Right)next=1;
                 if(command==MotionCommand.Center)next=0;
             }
+            else if(Riding&&command==MotionCommand.Center)next=0;
             if (next != Lane) { laneFrom = X; laneTime = 0f; Lane = next; }
-            if (command == MotionCommand.Jump && Y <= .001f && !Riding)
+            if (command == MotionCommand.Jump && !Riding)
             {
-                crouchLeft = 0f;
-                verticalSpeed = (float)Math.Sqrt(2f * config.Gravity * config.JumpHeight);
+                if (Y <= .001f) StartJump();
+                else jumpBuffer = config.InputBufferSeconds;
             }
-            if (command == MotionCommand.Crouch && Y <= .001f && verticalSpeed <= 0f) crouchLeft = config.CrouchSeconds;
+            if (command == MotionCommand.Crouch)
+            {
+                if (Y <= .001f && verticalSpeed <= 0f) crouchLeft = config.CrouchSeconds;
+                else crouchBuffer = config.InputBufferSeconds;
+            }
             if (command == MotionCommand.HighKnee && !Riding) kneeLeft = config.HighKneeSeconds;
         }
         public void Stumble() { stumbleLeft = config.StumbleSeconds; }
@@ -134,6 +158,10 @@ namespace Muhanok.Domain
         public void Tick(float dt, float speed)
         {
             if (dt <= 0f) return;
+            if(RouteSurface.ActivePlan?.RailChoiceLocked(Z)??false)
+            {
+                Lane=RouteSurface.ActivePlan.ChoiceAt(RouteSurface.SequenceAt(Z));laneFrom=X=Lane*config.LaneSpacing;laneTime=1;
+            }
             laneTime += dt;
             float t = Math.Min(1f, laneTime / Math.Max(.01f, config.LaneSeconds));
             t = t * t * (3f - 2f * t);
@@ -141,16 +169,29 @@ namespace Muhanok.Domain
             // Analytic gravity keeps the arc stable even at low frame rates.
             Y = Math.Max(0f, Y + verticalSpeed * dt - config.Gravity * dt * dt * .5f);
             verticalSpeed = Y <= 0f ? Math.Max(0f, verticalSpeed - config.Gravity * dt) : verticalSpeed - config.Gravity * dt;
-            if(Riding){Y=0;verticalSpeed=0;kneeLeft=0;}
+            if(Riding){Y=0;verticalSpeed=0;kneeLeft=0;jumpBuffer=0;}
+            if (Y <= .001f && verticalSpeed <= 0f)
+            {
+                if (jumpBuffer > 0f) { jumpBuffer = 0f; crouchBuffer = 0f; StartJump(); }
+                else if (crouchBuffer > 0f) { crouchBuffer = 0f; crouchLeft = config.CrouchSeconds; }
+            }
+            jumpBuffer = Math.Max(0f, jumpBuffer - dt);
+            crouchBuffer = Math.Max(0f, crouchBuffer - dt);
             bool wasRiding=Riding;
             Z += speed * SpeedMultiplier * dt;
             if(wasRiding!=Riding){laneFrom=X;Lane=0;laneTime=0;}
+            if(wasRiding&&!Riding&&(RouteSurface.ActivePlan?.Extended??false)){X=laneFrom=0;laneTime=1;}
             crouchLeft = Math.Max(0f, crouchLeft - dt);
             kneeLeft = Math.Max(0f, kneeLeft - dt);
             stumbleLeft = Math.Max(0f, stumbleLeft - dt);
             slowLeft = Math.Max(0f, slowLeft - dt);
         }
-        public void Reset() { Lane = 0; X = Y = 0f; Z = 2f; laneFrom = verticalSpeed = crouchLeft = kneeLeft = stumbleLeft = slowLeft = 0f; laneTime = 1f; }
+        private void StartJump()
+        {
+            crouchLeft = 0f;
+            verticalSpeed = (float)Math.Sqrt(2f * config.Gravity * config.JumpHeight);
+        }
+        public void Reset() { Lane = 0; X = Y = 0f; Z = 2f; laneFrom = verticalSpeed = crouchLeft = kneeLeft = stumbleLeft = slowLeft = jumpBuffer = crouchBuffer = 0f; laneTime = 1f; }
     }
 
     public sealed class RunSession
@@ -162,21 +203,40 @@ namespace Muhanok.Domain
         public readonly RunnerController Runner;
         public readonly RunConfig Config;
         public readonly WorkoutEstimate Workout=new WorkoutEstimate();
+        public readonly PowerUpState Items=new PowerUpState();
         public bool Paused {get; set;}
         public int BananaHits {get;private set;}
+        public int ShieldSaves {get;private set;}
+        public int DodgeStreak {get;private set;}
+        public int BestDodgeStreak {get;private set;}
+        public void RecordDodge() { DodgeStreak++;BestDodgeStreak=Math.Max(BestDodgeStreak,DodgeStreak);if(DodgeStreak%5==0)Score.CleanPass(Config.CleanBonus*2); }
         public bool BananaPursuit=>bananaCatchLeft>0;
-        public float TargetSpeed => Difficulty.Speed(Score.Distance, Config, Runner.Riding);
-        public float CurrentSpeed => Flow.State == GameFlowState.Running && !Paused ? TargetSpeed * Runner.SpeedMultiplier : 0f;
+        public float TargetSpeed => Config.IntervalMode ? IntervalSpeed() : Difficulty.Speed(Score.Distance, Config, Runner.Riding);
+        public float CurrentSpeed => Flow.State == GameFlowState.Running && !Paused ? MoveSpeed * Runner.SpeedMultiplier : 0f;
+        private float MoveSpeed => Config.IntervalMode ? smoothSpeed : TargetSpeed;
+        // Interval rhythm comes from the route: walking chunks sprint, the cart ride rests.
+        public bool Resting => Config.IntervalMode && Runner.Riding;
+        public int IntervalCycle => RouteSurface.CycleAt(RouteSurface.SequenceAt(Runner.Z));
+        public float PhaseRemainingSeconds => RouteSurface.SegmentRemaining(Runner.Z) / Math.Max(1f, TargetSpeed);
         public CaptureReason Reason {get;private set;}
-        private float bananaCatchLeft;
+        private float bananaCatchLeft, smoothSpeed;
         private float lastHit = -100f, clock;
-        public RunSession(RunConfig config) { Config = config; Runner = new RunnerController(config); }
+        public RunSession(RunConfig config) { Config = config; Runner = new RunnerController(config); smoothSpeed = TargetSpeed; }
+        private float IntervalSpeed()
+        {
+            if (Runner.Riding) return Config.RestSpeed;
+            float progression=Config.ExtendedRoutes?Math.Max(0,Score.Distance)/Math.Max(1,Config.ExtendedSpeedRampDistance)*Math.Max(0,Config.ExtendedSpeedStep):0;
+            return Math.Min(Config.MaxSprintSpeed, Config.SprintSpeed + Config.SprintSpeedStep * IntervalCycle+progression);
+        }
         public void Tick(float dt)
         {
             if (Flow.State != GameFlowState.Running || Paused) return;
             clock += dt;
+            float target = TargetSpeed;
+            smoothSpeed = smoothSpeed < target ? Math.Min(target, smoothSpeed + Config.SpeedChangeRate * dt) : Math.Max(target, smoothSpeed - Config.SpeedChangeRate * 1.6f * dt);
+            Items.Tick(dt); Score.Multiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1;
             float z = Runner.Z;
-            Runner.Tick(dt, TargetSpeed);
+            Runner.Tick(dt, MoveSpeed);
             Score.Advance(Runner.Z - z);
             if(BananaPursuit)
             {
@@ -187,10 +247,15 @@ namespace Muhanok.Domain
             else if (BananaHits==0&&clock - lastHit > 2f) Chase.Recover(Config.Recovery * dt);
         }
         public bool Hit(bool heavy)
-        {return Fail(CaptureReason.Collision);}
+        {DodgeStreak=0;return Fail(CaptureReason.Collision);}
         public bool Fail(CaptureReason reason)
         {
             if (Flow.State != GameFlowState.Running || Paused) return false;
+            if (reason == CaptureReason.Collision && Items.ConsumeShield())
+            {
+                // The shield absorbs one solid hit: a stumble instead of a capture.
+                ShieldSaves++; Runner.Stumble(); lastHit = clock; return false;
+            }
             Reason=reason;
             lastHit = clock;
             Runner.Stumble(); Chase.Hit(1f);
@@ -200,7 +265,7 @@ namespace Muhanok.Domain
         public bool Slip(bool banana=false)
         {
             if(Flow.State!=GameFlowState.Running||Paused||Runner.Riding)return false;
-            Runner.Slip();
+            DodgeStreak=0;Runner.Slip();
             if(banana)
             {
                 BananaHits++;
@@ -209,6 +274,6 @@ namespace Muhanok.Domain
             }
             return true;
         }
-        public void Reset() { Runner.Reset(); Chase.Reset(); Score.Reset(); Workout.Reset(); Paused=false; clock = 0f; lastHit = -100f;BananaHits=0;bananaCatchLeft=0;Reason=CaptureReason.Collision; }
+        public void Reset() { Runner.Reset(); Chase.Reset(); Score.Reset(); Workout.Reset(); Items.Reset(); Paused=false; clock = 0f; lastHit = -100f;BananaHits=0;ShieldSaves=0;DodgeStreak=BestDodgeStreak=0;bananaCatchLeft=0;Reason=CaptureReason.Collision; smoothSpeed = TargetSpeed; }
     }
 }

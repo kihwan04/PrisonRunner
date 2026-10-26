@@ -16,7 +16,7 @@ namespace Muhanok.Editor
         {
             EditorApplication.delayCall += RepairMissingMotions;
         }
-        [MenuItem("Muhanok/Repair Missing Public Source Motions")]
+        [MenuItem("Mongscape/Repair Missing Public Source Motions")]
         public static void RepairMissingMotions()
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
@@ -79,7 +79,7 @@ namespace Muhanok.Editor
             string motion=MotionFor(state); if(motion==null) return null;
             return AssetDatabase.LoadAllAssetsAtPath(Folder+"/"+motion+".fbx").OfType<AnimationClip>().FirstOrDefault(c=>!c.name.StartsWith("__")&&c.isHumanMotion);
         }
-        [MenuItem("Muhanok/Import Downloaded Mixamo Motions")]
+        [MenuItem("Mongscape/Import Downloaded Mixamo Motions")]
         public static void ImportDownloaded()
         {
             Directory.CreateDirectory(Folder); AssetDatabase.Refresh(); int count=0;

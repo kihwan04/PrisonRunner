@@ -28,7 +28,7 @@ namespace Muhanok.Editor
                 { SessionState.SetBool(Key,false); Debug.Log("MUHANOK_ART_REVIEW_PASS: title/idea/takeover/first-person/ordered route maps and boundaries"); if(UnityEngine.Application.isBatchMode) EditorApplication.Exit(0); }
             };
         }
-        [MenuItem("Muhanok/Capture All Maps and Boundaries")]
+        [MenuItem("Mongscape/Capture All Maps and Boundaries")]
         public static void Run()
         {
             MuhanokArtMaintenance.CleanRouteMeshes();

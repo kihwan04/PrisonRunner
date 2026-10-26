@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-26",
+  "layout": "distance, best and exercise goal in upper right; coins in upper left",
+  "windows_build": "PASS",
+  "ui_screens": 16,
+  "ui_capture_shutdown": "Native callback failure after all screenshots; unresolved",
+  "runtime_smoke": "PASS",
+  "full_test_suite_repeated": false,
+  "performance_repeated": false,
+  "source_hashes": {
+    "Assets/Game/Presentation/UI/RunHud.cs": "aa2178f6d8ccaac721093a6fbef6f65df073f19c05f3133b59eb3144e6a2a97a",
+    "Assets/Game/Presentation/UI/Overlay/ProgressHud.cs": "5abb5d1595d98d109d029801c5b2dd94f89dc5a72c7be92ab6a6e051b984209b"
+  }
+}

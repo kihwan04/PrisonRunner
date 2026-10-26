@@ -17,7 +17,7 @@ namespace Muhanok.Tests
             Assert.AreEqual(1672,game.LoadingImage.width,"Loading import must retain source aspect instead of power-of-two resizing");
             Assert.AreEqual(941,game.LoadingImage.height);
             game.OpenStartSetup();Assert.IsTrue(game.StartSetupOpen);
-            game.BeginRun("70");Assert.IsTrue(game.IsLoading);Assert.AreEqual(70,game.Session.Workout.WeightKg);
+            game.Session.Config.ExtendedRoutes=false;game.BeginRun("70");Assert.IsTrue(game.IsLoading);Assert.AreEqual(70,game.Session.Workout.WeightKg);
             yield return new WaitForSecondsRealtime(1.1f);Assert.IsFalse(game.IsLoading);Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
             Assert.IsTrue(game.IsRevealing,"Loading image must dissolve into the preposed live world");
             Assert.AreEqual(0,game.Intro.Elapsed,.001f,"The loading screen replaces the separate 8 second intro");

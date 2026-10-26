@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-26",
+  "tests": {
+    "EditMode": 113,
+    "PlayMode": 37
+  },
+  "ui_screens": 16,
+  "synthetic_camera_screens": true,
+  "real_camera_inference_measured": false,
+  "runtime_smoke": "PASS",
+  "source_files_verified": 124,
+  "source_digest_sha256": "d208fc95904e50f2f9b56ffc390ad327bba6bd4b3470bce85b9e30356038dbcc",
+  "git_index_head_mergehead_preserved": true,
+  "comparison": [
+    {
+      "preset": "Balanced",
+      "before_fps": 59.82,
+      "after_fps": 59.76,
+      "before_max_area_p95_ms": 17.05,
+      "after_max_area_p95_ms": 17.04
+    },
+    {
+      "preset": "High",
+      "before_fps": 59.78,
+      "after_fps": 59.83,
+      "before_max_area_p95_ms": 17.07,
+      "after_max_area_p95_ms": 17.04
+    },
+    {
+      "preset": "Low",
+      "before_fps": 29.94,
+      "after_fps": 29.95,
+      "before_max_area_p95_ms": 33.73,
+      "after_max_area_p95_ms": 33.73
+    }
+  ]
+}

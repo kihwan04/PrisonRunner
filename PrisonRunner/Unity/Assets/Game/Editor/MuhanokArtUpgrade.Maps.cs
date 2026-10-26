@@ -337,7 +337,7 @@ namespace Muhanok.Editor
             game.Settings.Run.SlipSeconds=2.4f;game.Settings.Run.SlipSpeedMultiplier=.5f;game.Settings.Run.CartSpeed=10.5f;EditorUtility.SetDirty(game.Settings);
             game.HandsPrefab=AssetDatabase.LoadAssetAtPath<GameObject>(Art+"/Prefabs/FP_Hands.prefab");
             game.CartRidePrefab=CreateRideCart();game.Settings.Run.BananaCatchSeconds=1.2f;
-            game.TitleLogo=AssetDatabase.LoadAssetAtPath<Texture2D>(Art+"/Textures/MuhanokLogo.png");
+            game.TitleLogo=ConfigureTitleLogoTexture();
             game.LoadingImage=ConfigureLoadingTexture();
             var stage=GameObject.Find("Mine Title Stage"); Clear(stage.transform); rng=new System.Random(71); Mine(stage.transform,-24,0,1);
             Shape("StageFloor",stage.transform,new Vector3(0,-.19f,-12),new Vector3(9.8f,.38f,24),rock);

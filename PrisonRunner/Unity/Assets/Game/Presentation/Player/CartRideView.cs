@@ -23,13 +23,15 @@ namespace Muhanok.Presentation
             if(session==null||body==null)return;
             bool visible=session.Runner.Riding&&(session.Flow.State==GameFlowState.Running||session.Flow.State==GameFlowState.Caught);
             body.gameObject.SetActive(visible);
-            if(session.Flow.State==GameFlowState.Running||session.Flow.State==GameFlowState.Caught)hero.SetVisible(visible);
+            if(session.Flow.State==GameFlowState.Running)hero.SetVisible(visible);
+            else if(session.Flow.State==GameFlowState.Caught)hero.SetVisible(visible||session.Reason!=CaptureReason.BrokenRail);
             if(!visible){fall=0;return;}
             RouteSurface.Sample(session.Runner.Z,out float x,out float y);
             RouteSurface.Sample(session.Runner.Z+.3f,out float nx,out float ny);
             bool fallen=session.Flow.State==GameFlowState.Caught&&session.Reason==CaptureReason.BrokenRail;
             if(fallen)fall+=Time.deltaTime;
-            body.position=new Vector3(x,y-fall*fall*7,session.Runner.Z);
+            float choiceOffset=RouteSurface.ActivePlan?.ChoiceLaneOffset(session.Runner.Z,session.Runner.X)??0;
+            body.position=new Vector3(x+choiceOffset,y-fall*fall*7,session.Runner.Z);
             body.rotation=Quaternion.LookRotation(new Vector3(nx-x,ny-y,.3f))*Quaternion.Euler(0,0,-session.Runner.CartLean*12+(fallen?fall*100:0));
             if(fallen)hero.transform.position=new Vector3(x+session.Runner.WorldLaneOffset,y+.25f-fall*fall*7,session.Runner.Z);
             if(sound!=null)

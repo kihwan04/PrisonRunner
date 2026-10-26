@@ -11,7 +11,7 @@ namespace Muhanok.Editor
     {
         private const string Prefabs = "Assets/Game/Content/Prefabs/";
 
-        [MenuItem("Muhanok/Apply Map Exercises and Progressive Speed")]
+        [MenuItem("Mongscape/Apply Map Exercises and Progressive Speed")]
         public static void Apply()
         {
             for(int type=0;type<MuhanokContentBuilder.ChunkIds.Length;type++)

@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="76" result="Passed" total="76" passed="76" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.1506876">
+  <test-suite type="TestSuite" id="1000" name="Mongscape" fullname="Mongscape" runstate="Runnable" testcasecount="76" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.150688" total="76" passed="76" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1089" name="Muhanok.EditModeTests.dll" fullname="C:/Users/USER/Documents/ChatGPT/Break/PrisonRunner/Unity/Library/ScriptAssemblies/Muhanok.EditModeTests.dll" runstate="Runnable" testcasecount="76" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.136610" total="76" passed="76" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="2128" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1090" name="Muhanok" fullname="Muhanok" runstate="Runnable" testcasecount="76" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.135808" total="76" passed="76" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1091" name="Tests" fullname="Muhanok.Tests" runstate="Runnable" testcasecount="76" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.135367" total="76" passed="76" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="BodyTrackingAndExhibitionTests" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.086469" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1014" name="BufferedJumpRunsOnLandingOnlyWhenEnabled" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.BufferedJumpRunsOnLandingOnlyWhenEnabled" methodname="BufferedJumpRunsOnLandingOnlyWhenEnabled" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="885446280" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.016285" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1019" name="DailyRankingSortsAndPersistsPerDay" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.DailyRankingSortsAndPersistsPerDay" methodname="DailyRankingSortsAndPersistsPerDay" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1873804096" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.028275" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1003" name="DipBeforeJumpIsNotASlideAndRepeatedJumpsAllCount" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.DipBeforeJumpIsNotASlideAndRepeatedJumpsAllCount" methodname="DipBeforeJumpIsNotASlideAndRepeatedJumpsAllCount" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="957412627" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.005684" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1002" name="FullBodyStepsSelectLanesAndReturnToCentre" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.FullBodyStepsSelectLanesAndReturnToCentre" methodname="FullBodyStepsSelectLanesAndReturnToCentre" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="326538423" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000729" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1004" name="HeldCrouchAndAlternatingKneesAreHeldActions" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.HeldCrouchAndAlternatingKneesAreHeldActions" methodname="HeldCrouchAndAlternatingKneesAreHeldActions" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1163613301" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000832" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1015" name="IntervalRouteKeepsAuthoredFirstLapThenAlternatesRestAndSprint" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.IntervalRouteKeepsAuthoredFirstLapThenAlternatesRestAndSprint" methodname="IntervalRouteKeepsAuthoredFirstLapThenAlternatesRestAndSprint" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="2037363367" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.003714" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1016" name="IntervalSpeedRestsInTheCartAndRisesEachSprint" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.IntervalSpeedRestsInTheCartAndRisesEachSprint" methodname="IntervalSpeedRestsInTheCartAndRisesEachSprint" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1674459103" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001091" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1017" name="ItemsDoubleScoreShieldOneHitAndExpire" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.ItemsDoubleScoreShieldOneHitAndExpire" methodname="ItemsDoubleScoreShieldOneHitAndExpire" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="633315678" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001609" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1012" name="LostPoseRecalibratesAfterTimeout" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.LostPoseRecalibratesAfterTimeout" methodname="LostPoseRecalibratesAfterTimeout" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="962534316" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000399" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1009" name="NoisyDucksDoNotLeakIntoLaneOrJump" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.NoisyDucksDoNotLeakIntoLaneOrJump" methodname="NoisyDucksDoNotLeakIntoLaneOrJump" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1791004701" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001241" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1010" name="OneFrameSwayDoesNotChangeLane" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.OneFrameSwayDoesNotChangeLane" methodname="OneFrameSwayDoesNotChangeLane" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1347326635" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000649" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1013" name="PoseCommandsStepTowardTheZoneAndUseAbsoluteLeanInTheCart" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.PoseCommandsStepTowardTheZoneAndUseAbsoluteLeanInTheCart" methodname="PoseCommandsStepTowardTheZoneAndUseAbsoluteLeanInTheCart" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1229235696" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001413" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1011" name="SettingsPresetsChangeGraphicsOnlyAndClampKeepsValuesSafe" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.SettingsPresetsChangeGraphicsOnlyAndClampKeepsValuesSafe" methodname="SettingsPresetsChangeGraphicsOnlyAndClampKeepsValuesSafe" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="447641444" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.002357" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1018" name="SharedCoinPoolUnlocksItemsAndUnlockAllOpensEverything" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.SharedCoinPoolUnlocksItemsAndUnlockAllOpensEverything" methodname="SharedCoinPoolUnlocksItemsAndUnlockAllOpensEverything" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="398414794" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001742" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1007" name="ShortDropoutKeepsTrackingAndVanishingWhileDuckingCountsAsDuck" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.ShortDropoutKeepsTrackingAndVanishingWhileDuckingCountsAsDuck" methodname="ShortDropoutKeepsTrackingAndVanishingWhileDuckingCountsAsDuck" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1740071406" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000447" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1008" name="SmootherSuppressesJitterButFollowsRealMoves" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.SmootherSuppressesJitterButFollowsRealMoves" methodname="SmootherSuppressesJitterButFollowsRealMoves" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="1914279209" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001959" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1005" name="StandingStillAndJoggingInPlaceTriggerNothing" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.StandingStillAndJoggingInPlaceTriggerNothing" methodname="StandingStillAndJoggingInPlaceTriggerNothing" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="853856159" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000727" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1006" name="UpperBodyUsesLeanHandsDuckAndArmPumps" fullname="Muhanok.Tests.BodyTrackingAndExhibitionTests.UpperBodyUsesLeanHandsDuckAndArmPumps" methodname="UpperBodyUsesLeanHandsDuckAndArmPumps" classname="Muhanok.Tests.BodyTrackingAndExhibitionTests" runstate="Runnable" seed="136583438" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001198" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1020" name="ExpansionRulesTests" fullname="Muhanok.Tests.ExpansionRulesTests" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.018546" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1034" name="ActivitiesSumToTotalAndDoNotCountIdleKeyboardOrPause" fullname="Muhanok.Tests.ExpansionRulesTests.ActivitiesSumToTotalAndDoNotCountIdleKeyboardOrPause" methodname="ActivitiesSumToTotalAndDoNotCountIdleKeyboardOrPause" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="22028145" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.002238" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1030" name="DestinationsAreShuffledAndEveryDirectionCanDrawEveryMap" fullname="Muhanok.Tests.ExpansionRulesTests.DestinationsAreShuffledAndEveryDirectionCanDrawEveryMap" methodname="DestinationsAreShuffledAndEveryDirectionCanDrawEveryMap" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1361274392" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.007341" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1032" name="DwellCancelsOnTrackingLossAndFiresOnlyOncePerHover" fullname="Muhanok.Tests.ExpansionRulesTests.DwellCancelsOnTrackingLossAndFiresOnlyOncePerHover" methodname="DwellCancelsOnTrackingLossAndFiresOnlyOncePerHover" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1586819080" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000606" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1033" name="FiveSuccessfulMovesEarnComboAndRetryClearsIt" fullname="Muhanok.Tests.ExpansionRulesTests.FiveSuccessfulMovesEarnComboAndRetryClearsIt" methodname="FiveSuccessfulMovesEarnComboAndRetryClearsIt" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1539450029" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000529" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1028" name="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight" fullname="Muhanok.Tests.ExpansionRulesTests.HiddenChoiceChangesUpcomingMapWithoutBreakingHeight" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.002505" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1025" name="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight(-1)" fullname="Muhanok.Tests.ExpansionRulesTests.HiddenChoiceChangesUpcomingMapWithoutBreakingHeight(-1)" methodname="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1195552181" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000942" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1026" name="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight(0)" fullname="Muhanok.Tests.ExpansionRulesTests.HiddenChoiceChangesUpcomingMapWithoutBreakingHeight(0)" methodname="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1753842149" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000313" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight(1)" fullname="Muhanok.Tests.ExpansionRulesTests.HiddenChoiceChangesUpcomingMapWithoutBreakingHeight(1)" methodname="HiddenChoiceChangesUpcomingMapWithoutBreakingHeight" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1000370735" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000290" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1031" name="ManualCalorieGoalValidatesAndNeverCapsExercise" fullname="Muhanok.Tests.ExpansionRulesTests.ManualCalorieGoalValidatesAndNeverCapsExercise" methodname="ManualCalorieGoalValidatesAndNeverCapsExercise" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1567117804" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000496" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1024" name="PhysicalForkStaysOnSelectedPathAcrossTheNextLap" fullname="Muhanok.Tests.ExpansionRulesTests.PhysicalForkStaysOnSelectedPathAcrossTheNextLap" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.002760" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1021" name="PhysicalForkStaysOnSelectedPathAcrossTheNextLap(-1)" fullname="Muhanok.Tests.ExpansionRulesTests.PhysicalForkStaysOnSelectedPathAcrossTheNextLap(-1)" methodname="PhysicalForkStaysOnSelectedPathAcrossTheNextLap" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="2037250529" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001517" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1022" name="PhysicalForkStaysOnSelectedPathAcrossTheNextLap(0)" fullname="Muhanok.Tests.ExpansionRulesTests.PhysicalForkStaysOnSelectedPathAcrossTheNextLap(0)" methodname="PhysicalForkStaysOnSelectedPathAcrossTheNextLap" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="332058547" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000249" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1023" name="PhysicalForkStaysOnSelectedPathAcrossTheNextLap(1)" fullname="Muhanok.Tests.ExpansionRulesTests.PhysicalForkStaysOnSelectedPathAcrossTheNextLap(1)" methodname="PhysicalForkStaysOnSelectedPathAcrossTheNextLap" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1706294537" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000239" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1029" name="SecondLapCanChooseIndependently" fullname="Muhanok.Tests.ExpansionRulesTests.SecondLapCanChooseIndependently" methodname="SecondLapCanChooseIndependently" classname="Muhanok.Tests.ExpansionRulesTests" runstate="Runnable" seed="1336339068" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000183" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1035" name="RouteViewportTests" fullname="Muhanok.Tests.RouteViewportTests" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.007075" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1042" name="AllRouteBoundariesCloseInHeightPositionAndTangent" fullname="Muhanok.Tests.RouteViewportTests.AllRouteBoundariesCloseInHeightPositionAndTangent" methodname="AllRouteBoundariesCloseInHeightPositionAndTangent" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" seed="918407671" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001548" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1041" name="SafeAreaIncludesAsymmetricInsets" fullname="Muhanok.Tests.RouteViewportTests.SafeAreaIncludesAsymmetricInsets" methodname="SafeAreaIncludesAsymmetricInsets" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" seed="1020805393" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000747" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1040" name="ViewportFitsWithoutStretchOrCrop" fullname="Muhanok.Tests.RouteViewportTests.ViewportFitsWithoutStretchOrCrop" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.003685" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1036" name="ViewportFitsWithoutStretchOrCrop(1920,1080)" fullname="Muhanok.Tests.RouteViewportTests.ViewportFitsWithoutStretchOrCrop(1920,1080)" methodname="ViewportFitsWithoutStretchOrCrop" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" seed="485823386" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001295" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1037" name="ViewportFitsWithoutStretchOrCrop(1702,726)" fullname="Muhanok.Tests.RouteViewportTests.ViewportFitsWithoutStretchOrCrop(1702,726)" methodname="ViewportFitsWithoutStretchOrCrop" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" seed="1419300497" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000428" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1038" name="ViewportFitsWithoutStretchOrCrop(1024,768)" fullname="Muhanok.Tests.RouteViewportTests.ViewportFitsWithoutStretchOrCrop(1024,768)" methodname="ViewportFitsWithoutStretchOrCrop" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" seed="278477974" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000287" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1039" name="ViewportFitsWithoutStretchOrCrop(720,1280)" fullname="Muhanok.Tests.RouteViewportTests.ViewportFitsWithoutStretchOrCrop(720,1280)" methodname="ViewportFitsWithoutStretchOrCrop" classname="Muhanok.Tests.RouteViewportTests" runstate="Runnable" seed="1117416719" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000162" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1043" name="RunRulesTests" fullname="Muhanok.Tests.RunRulesTests" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.017210" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1061" name="CartAllowsSteeringAndDuckButBlocksJumpAndReturnsToRunning" fullname="Muhanok.Tests.RunRulesTests.CartAllowsSteeringAndDuckButBlocksJumpAndReturnsToRunning" methodname="CartAllowsSteeringAndDuckButBlocksJumpAndReturnsToRunning" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1637351705" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000693" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1065" name="CartLeanSwitchesAcrossCenterWithoutLeavingSingleTrack" fullname="Muhanok.Tests.RunRulesTests.CartLeanSwitchesAcrossCenterWithoutLeavingSingleTrack" methodname="CartLeanSwitchesAcrossCenterWithoutLeavingSingleTrack" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1120846111" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000339" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1056" name="ChaseIsClampedAndCaughtIsSticky" fullname="Muhanok.Tests.RunRulesTests.ChaseIsClampedAndCaughtIsSticky" methodname="ChaseIsClampedAndCaughtIsSticky" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="80523308" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000208" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1073" name="CollectedCoinsCountAndResetIndependentlyOfDistance" fullname="Muhanok.Tests.RunRulesTests.CollectedCoinsCountAndResetIndependentlyOfDistance" methodname="CollectedCoinsCountAndResetIndependentlyOfDistance" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1477566717" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000261" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1074" name="EachActionMatchesItsHazard" fullname="Muhanok.Tests.RunRulesTests.EachActionMatchesItsHazard" methodname="EachActionMatchesItsHazard" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1665161493" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000184" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1060" name="FloorSlipSlowsWithoutKillingAndRecoversWhilePauseFreezesTimer" fullname="Muhanok.Tests.RunRulesTests.FloorSlipSlowsWithoutKillingAndRecoversWhilePauseFreezesTimer" methodname="FloorSlipSlowsWithoutKillingAndRecoversWhilePauseFreezesTimer" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1965915859" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000626" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1044" name="FlowRejectsSkippedStates" fullname="Muhanok.Tests.RunRulesTests.FlowRejectsSkippedStates" methodname="FlowRejectsSkippedStates" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1942908902" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000130" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1066" name="FullExerciseRowsRequireDistinctActions" fullname="Muhanok.Tests.RunRulesTests.FullExerciseRowsRequireDistinctActions" methodname="FullExerciseRowsRequireDistinctActions" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="84355010" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000255" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1055" name="GroundedJumpCancelsSlideButDoesNotAllowDoubleJump" fullname="Muhanok.Tests.RunRulesTests.GroundedJumpCancelsSlideButDoesNotAllowDoubleJump" methodname="GroundedJumpCancelsSlideButDoesNotAllowDoubleJump" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="2105907957" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000251" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1047" name="JumpAndActionsExpire" fullname="Muhanok.Tests.RunRulesTests.JumpAndActionsExpire" methodname="JumpAndActionsExpire" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1830209674" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000228" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1045" name="LaneIsBoundedAndArrivesAtAnchor" fullname="Muhanok.Tests.RunRulesTests.LaneIsBoundedAndArrivesAtAnchor" methodname="LaneIsBoundedAndArrivesAtAnchor" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1078032170" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001778" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1062" name="LoadingIntroTransitionsStraightIntoGameplay" fullname="Muhanok.Tests.RunRulesTests.LoadingIntroTransitionsStraightIntoGameplay" methodname="LoadingIntroTransitionsStraightIntoGameplay" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="360066010" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000134" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1046" name="MidLaneRetargetIsContinuous" fullname="Muhanok.Tests.RunRulesTests.MidLaneRetargetIsContinuous" methodname="MidLaneRetargetIsContinuous" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="419826284" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000163" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1059" name="OneSolidCollisionEndsTheRunAndFreezesDistance" fullname="Muhanok.Tests.RunRulesTests.OneSolidCollisionEndsTheRunAndFreezesDistance" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001096" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1057" name="OneSolidCollisionEndsTheRunAndFreezesDistance(False)" fullname="Muhanok.Tests.RunRulesTests.OneSolidCollisionEndsTheRunAndFreezesDistance(False)" methodname="OneSolidCollisionEndsTheRunAndFreezesDistance" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1156136673" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000312" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1058" name="OneSolidCollisionEndsTheRunAndFreezesDistance(True)" fullname="Muhanok.Tests.RunRulesTests.OneSolidCollisionEndsTheRunAndFreezesDistance(True)" methodname="OneSolidCollisionEndsTheRunAndFreezesDistance" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="758022922" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000076" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1072" name="PatternLeavesAnEmptyLane" fullname="Muhanok.Tests.RunRulesTests.PatternLeavesAnEmptyLane" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001869" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1068" name="PatternLeavesAnEmptyLane(7,False)" fullname="Muhanok.Tests.RunRulesTests.PatternLeavesAnEmptyLane(7,False)" methodname="PatternLeavesAnEmptyLane" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1281892340" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000765" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1069" name="PatternLeavesAnEmptyLane(3,True)" fullname="Muhanok.Tests.RunRulesTests.PatternLeavesAnEmptyLane(3,True)" methodname="PatternLeavesAnEmptyLane" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1731695089" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000097" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1070" name="PatternLeavesAnEmptyLane(0,True)" fullname="Muhanok.Tests.RunRulesTests.PatternLeavesAnEmptyLane(0,True)" methodname="PatternLeavesAnEmptyLane" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="44696374" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000062" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1071" name="PatternLeavesAnEmptyLane(5,True)" fullname="Muhanok.Tests.RunRulesTests.PatternLeavesAnEmptyLane(5,True)" methodname="PatternLeavesAnEmptyLane" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="425001888" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000092" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1054" name="PauseSlipAndRetryPreserveOrResetSpeedCorrectly" fullname="Muhanok.Tests.RunRulesTests.PauseSlipAndRetryPreserveOrResetSpeedCorrectly" methodname="PauseSlipAndRetryPreserveOrResetSpeedCorrectly" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1501569441" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000353" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1064" name="RepeatedPuddlesDoNotCountAsBananas" fullname="Muhanok.Tests.RunRulesTests.RepeatedPuddlesDoNotCountAsBananas" methodname="RepeatedPuddlesDoNotCountAsBananas" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1008016754" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000206" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1076" name="RetryClearsAllRunRules" fullname="Muhanok.Tests.RunRulesTests.RetryClearsAllRunRules" methodname="RetryClearsAllRunRules" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="902319712" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000349" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1075" name="RouterClearsTitleCommands" fullname="Muhanok.Tests.RunRulesTests.RouterClearsTitleCommands" methodname="RouterClearsTitleCommands" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1961848978" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000710" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1067" name="ScoreAccumulatesActualDistanceAndBonus" fullname="Muhanok.Tests.RunRulesTests.ScoreAccumulatesActualDistanceAndBonus" methodname="ScoreAccumulatesActualDistanceAndBonus" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1936306403" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000283" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1063" name="SecondBananaStartsDelayedPursuitAndPauseAndRetryResetIt" fullname="Muhanok.Tests.RunRulesTests.SecondBananaStartsDelayedPursuitAndPauseAndRetryResetIt" methodname="SecondBananaStartsDelayedPursuitAndPauseAndRetryResetIt" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1754207185" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000678" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1053" name="SpeedRampsWithDistanceAndStaysCapped" fullname="Muhanok.Tests.RunRulesTests.SpeedRampsWithDistanceAndStaysCapped" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001632" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1048" name="SpeedRampsWithDistanceAndStaysCapped(0.0f,9.0f)" fullname="Muhanok.Tests.RunRulesTests.SpeedRampsWithDistanceAndStaysCapped(0.0f,9.0f)" methodname="SpeedRampsWithDistanceAndStaysCapped" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="451016687" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000319" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1049" name="SpeedRampsWithDistanceAndStaysCapped(120.0f,10.0f)" fullname="Muhanok.Tests.RunRulesTests.SpeedRampsWithDistanceAndStaysCapped(120.0f,10.0f)" methodname="SpeedRampsWithDistanceAndStaysCapped" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1516481510" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000090" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1050" name="SpeedRampsWithDistanceAndStaysCapped(480.0f,13.0f)" fullname="Muhanok.Tests.RunRulesTests.SpeedRampsWithDistanceAndStaysCapped(480.0f,13.0f)" methodname="SpeedRampsWithDistanceAndStaysCapped" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1129371549" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000059" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1051" name="SpeedRampsWithDistanceAndStaysCapped(960.0f,17.0f)" fullname="Muhanok.Tests.RunRulesTests.SpeedRampsWithDistanceAndStaysCapped(960.0f,17.0f)" methodname="SpeedRampsWithDistanceAndStaysCapped" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1535657051" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000056" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1052" name="SpeedRampsWithDistanceAndStaysCapped(5000.0f,17.0f)" fullname="Muhanok.Tests.RunRulesTests.SpeedRampsWithDistanceAndStaysCapped(5000.0f,17.0f)" methodname="SpeedRampsWithDistanceAndStaysCapped" classname="Muhanok.Tests.RunRulesTests" runstate="Runnable" seed="1646071200" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000058" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1077" name="WorkoutEstimateTests" fullname="Muhanok.Tests.WorkoutEstimateTests" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.004035" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1084" name="InvalidWeightCannotEnableTracking" fullname="Muhanok.Tests.WorkoutEstimateTests.InvalidWeightCannotEnableTracking" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.001611" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1079" name="InvalidWeightCannotEnableTracking(&quot;NaN&quot;)" fullname="Muhanok.Tests.WorkoutEstimateTests.InvalidWeightCannotEnableTracking(&quot;NaN&quot;)" methodname="InvalidWeightCannotEnableTracking" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="1991571058" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000499" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1080" name="InvalidWeightCannotEnableTracking(&quot;Infinity&quot;)" fullname="Muhanok.Tests.WorkoutEstimateTests.InvalidWeightCannotEnableTracking(&quot;Infinity&quot;)" methodname="InvalidWeightCannotEnableTracking" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="945442769" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000075" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1081" name="InvalidWeightCannotEnableTracking(&quot;0&quot;)" fullname="Muhanok.Tests.WorkoutEstimateTests.InvalidWeightCannotEnableTracking(&quot;0&quot;)" methodname="InvalidWeightCannotEnableTracking" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="287508828" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000055" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1082" name="InvalidWeightCannotEnableTracking(&quot;500&quot;)" fullname="Muhanok.Tests.WorkoutEstimateTests.InvalidWeightCannotEnableTracking(&quot;500&quot;)" methodname="InvalidWeightCannotEnableTracking" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="1445633454" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000065" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1083" name="InvalidWeightCannotEnableTracking(&quot;70kg&quot;)" fullname="Muhanok.Tests.WorkoutEstimateTests.InvalidWeightCannotEnableTracking(&quot;70kg&quot;)" methodname="InvalidWeightCannotEnableTracking" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="598891634" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000120" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1086" name="LostPoseIdleKeyboardAndPauseAreExcluded" fullname="Muhanok.Tests.WorkoutEstimateTests.LostPoseIdleKeyboardAndPauseAreExcluded" methodname="LostPoseIdleKeyboardAndPauseAreExcluded" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="1582107642" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000298" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1078" name="OptionalWeightDoesNotInventCalories" fullname="Muhanok.Tests.WorkoutEstimateTests.OptionalWeightDoesNotInventCalories" methodname="OptionalWeightDoesNotInventCalories" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="1330675375" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000178" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1088" name="RequestedFourAreasRunInOrderAcrossCycles" fullname="Muhanok.Tests.WorkoutEstimateTests.RequestedFourAreasRunInOrderAcrossCycles" methodname="RequestedFourAreasRunInOrderAcrossCycles" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="1015280164" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000204" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1087" name="RetryClearsEstimateButKeepsOptionalWeight" fullname="Muhanok.Tests.WorkoutEstimateTests.RetryClearsEstimateButKeepsOptionalWeight" methodname="RetryClearsEstimateButKeepsOptionalWeight" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="1090045583" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000252" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1085" name="WeightAndActualRecognizedTimeScaleEstimate" fullname="Muhanok.Tests.WorkoutEstimateTests.WeightAndActualRecognizedTimeScaleEstimate" methodname="WeightAndActualRecognizedTimeScaleEstimate" classname="Muhanok.Tests.WorkoutEstimateTests" runstate="Runnable" seed="340828527" result="Passed" start-time="2026-10-25 12:30:50Z" end-time="2026-10-25 12:30:50Z" duration="0.000144" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/USER/AppData/LocalLow/PrisonRunner/Mongscape\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

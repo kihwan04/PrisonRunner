@@ -8,7 +8,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 ROOT=Path(__file__).resolve().parents[2]
 IMAGES=ROOT/'docs/previews/ArtV10'
-OUTPUT=ROOT/'docs/무한옥_화면별_게임기획서_V10.docx'
+OUTPUT=ROOT/'docs/archive/planning/무한옥_화면별_게임기획서_V10.docx'
 screens=[
 ('타이틀과 게임 시작','Title',
  '무한옥은 광산, 수레 철로, 계단, 감옥, 사육장을 달리는 운동 게임이다. 실제 화면을 기준으로 공간 구성과 조작, 애니메이션, 화면 전환을 정의한다.',

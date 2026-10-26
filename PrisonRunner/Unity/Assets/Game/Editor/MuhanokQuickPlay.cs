@@ -9,6 +9,10 @@ namespace Muhanok.Editor
     {
         private const string ScenePath = "Assets/Game/Scenes/GameScene.unity";
         private static double nextRequestCheck;
+        private const string CaptureTitleKey = "Mongscape.CaptureTitle";
+        private static double captureAfter;
+        private static DateTime captureStarted;
+        private static bool captureRequested;
 
         [InitializeOnLoadMethod]
         private static void WatchLaunchRequest()
@@ -16,6 +20,8 @@ namespace Muhanok.Editor
             if (UnityEngine.Application.isBatchMode) return;
             EditorApplication.update -= CheckLaunchRequest;
             EditorApplication.update += CheckLaunchRequest;
+            EditorApplication.update -= CaptureTitleWhenReady;
+            EditorApplication.update += CaptureTitleWhenReady;
             EditorApplication.playModeStateChanged -= FocusGame;
             EditorApplication.playModeStateChanged += FocusGame;
         }
@@ -35,7 +41,7 @@ namespace Muhanok.Editor
             PlayGameScene();
         }
 
-        [MenuItem("Muhanok/Play GameScene", false, 0)]
+        [MenuItem("Mongscape/Play GameScene", false, 0)]
         public static void PlayGameScene()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -46,8 +52,40 @@ namespace Muhanok.Editor
             EditorApplication.isPlaying = true;
         }
 
-        [MenuItem("Muhanok/Play GameScene", true)]
+        [MenuItem("Mongscape/Play GameScene", true)]
         private static bool CanPlay() => !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling;
+
+        [MenuItem("Mongscape/Capture Title Preview")]
+        public static void PlayAndCaptureTitle()
+        {
+            SessionState.SetBool(CaptureTitleKey, true);
+            captureRequested = false;
+            PlayGameScene();
+        }
+
+        private static void CaptureTitleWhenReady()
+        {
+            if (!SessionState.GetBool(CaptureTitleKey, false)) return;
+            if (!EditorApplication.isPlaying || EditorApplication.isCompiling || EditorApplication.isUpdating
+                || UnityEditor.ShaderUtil.anythingCompiling || UnityEngine.Time.frameCount < 10)
+            {
+                captureAfter = EditorApplication.timeSinceStartup + 2;
+                return;
+            }
+            if (EditorApplication.timeSinceStartup < captureAfter) return;
+            string path = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../docs/previews/Mongscape/Title_LatestEditor.png"));
+            if (!captureRequested)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                captureStarted = DateTime.UtcNow;
+                UnityEngine.ScreenCapture.CaptureScreenshot(path);
+                captureRequested = true;
+                return;
+            }
+            if (!File.Exists(path) || File.GetLastWriteTimeUtc(path) < captureStarted) return;
+            SessionState.SetBool(CaptureTitleKey, false);
+            UnityEngine.Debug.Log("MONGSCAPE_TITLE_PREVIEW_PASS: " + path);
+        }
 
         private static void FocusGame(PlayModeStateChange state)
         {

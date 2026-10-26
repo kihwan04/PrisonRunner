@@ -19,7 +19,17 @@ namespace Muhanok.Presentation
             Color ambient=Color.Lerp(Ambient(type),Ambient(next),blend);
             float outdoorWeight=Mathf.Lerp(outdoor?1:0,next>=11?1:0,blend);
             float cartWeight=Mathf.Lerp(type==1||type==2?1:0,next==1||next==2?1:0,blend);
+            if(type==3&&(RouteSurface.ActivePlan?.Extended??false))
+            {
+                int previous=RouteSurface.TypeAt(Mathf.Max(0,sequence-1));
+                float mix=Mathf.SmoothStep(0,1,Mathf.InverseLerp(6,18,transform.position.z-sequence*24));
+                if(next>=11){outdoorWeight=mix;fog=Color.Lerp(Fog(0),Fog(next),mix);ambient=Color.Lerp(Ambient(0),Ambient(next),mix);}
+                else if(previous>=11){outdoorWeight=1-mix;fog=Color.Lerp(Fog(previous),Fog(0),mix);ambient=Color.Lerp(Ambient(previous),Ambient(0),mix);}
+            }
             float t = 1-Mathf.Exp(-Time.deltaTime*1.6f);
+            bool extended=RouteSurface.ActivePlan!=null&&RouteSurface.ActivePlan.Extended;
+            RenderSettings.fogMode=extended?FogMode.Linear:FogMode.Exponential;
+            if(extended){RenderSettings.fogStartDistance=36;RenderSettings.fogEndDistance=68;}
             RenderSettings.fogColor = Color.Lerp(RenderSettings.fogColor,fog,t);
             RenderSettings.fogDensity = Mathf.Lerp(RenderSettings.fogDensity,Mathf.Lerp(Mathf.Lerp(.035f,.023f,cartWeight),.014f,outdoorWeight),t);
             RenderSettings.ambientLight = Color.Lerp(RenderSettings.ambientLight,ambient,t);

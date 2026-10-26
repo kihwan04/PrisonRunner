@@ -14,7 +14,7 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator StairEntryDoorAllowsSlideThenClosesBehindBeforePrison()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;game.Map.Tick(103);
             MuhanokMapChunk stair=null,prison=null;
             foreach(var active in game.Map.Active){if(active.Type==7)stair=active.Chunk;if(active.Type==4)prison=active.Chunk;}
@@ -39,7 +39,7 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator MovingBetweenLanesCannotBypassFullWidthExerciseRow()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             var mine=game.Map.Active[0].Chunk;game.Session.Runner.Command(MotionCommand.Right);game.Session.Runner.Tick(.10f,0);
             Assert.AreEqual(1.1f,game.Session.Runner.X,.001f);
@@ -50,7 +50,7 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator DedicatedCartTrackHasOnlyRailHazardsAndCorrectLeanPassesBothSides()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             CartRailGap last=null;
             foreach(var active in game.Map.Active)
@@ -77,7 +77,7 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator ActualExerciseRowsMatchJumpDuckAndHighKneeWithoutAnEmptyLane()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;game.Map.Tick(90);
             foreach(var active in game.Map.Active)
             {
@@ -100,7 +100,7 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator EveryWalkingMapHasJumpAndSlideAndRecycledActionsRemainPassableAtMaxSpeed()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             foreach(var prefab in game.ChunkPrefabs)
             {
@@ -157,12 +157,13 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator RealFloorItemUsesSweptContactJumpAvoidanceAndPoolReset()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);
             game.enabled=false;game.Map.Tick(218);MuhanokMapChunk zoo=null;
             foreach(var active in game.Map.Active)if(active.Type==12)zoo=active.Chunk;
             Assert.IsNotNull(zoo);Assert.AreEqual(2,zoo.FloorItems.Length);
-            var item=zoo.FloorItems[0];float target=item.transform.position.z;
+            // Animal jump chunks reserve their floor. Enable this authored item only for its isolated contact regression.
+            var item=zoo.FloorItems[0];item.gameObject.SetActive(true);float target=item.transform.position.z;
             game.Session.Runner.Command(MotionCommand.Left);game.Session.Runner.Tick(.25f,0);
             game.Session.Runner.SetStartZ(target);item.Evaluate(game.Session,target-.4f);
             Assert.IsTrue(item.Passed);Assert.IsTrue(game.Session.Runner.Slowing);Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
@@ -174,7 +175,7 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator ActualCartVisualBanksAndSolidObstacleEndsRunOnFirstContact()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();game.BeginRun("");
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             game.Session.Runner.SetStartZ(35);game.Session.Runner.Command(MotionCommand.Right);game.Session.Tick(.25f);game.Hero.Apply(game.Session.Runner);
             var hands=Object.FindFirstObjectByType<FirstPersonHands>();yield return null;

@@ -16,6 +16,39 @@ namespace Muhanok.Presentation.Map
         public FloorItemController[] FloorItems;
         public CartRailGap[] RailGaps;
         public ClosingSlideGate[] SlideGates;
+        public int Sequence { get; private set; }
+        public void PlaceOnRoute(int sequence)
+        {
+            Sequence = sequence;
+            var plan = RouteSurface.ActivePlan;
+            var entry = Entry.localPosition; var exit = Exit.localPosition;
+            entry.x = exit.x = 0;
+            if (plan != null && plan.IsForkTrackChunk(sequence))
+            {
+                float origin = plan.CycleOffset(sequence);
+                entry.x = plan.SelectedForkOffset(sequence * Length) - origin;
+                exit.x = plan.SelectedForkOffset((sequence + 1) * Length - .001f) - origin;
+            }
+            Entry.localPosition = entry; Exit.localPosition = exit;
+            RouteSurface.Sample(sequence * Length, out float x, out _);
+            transform.position += new Vector3(x, RouteSurface.EntryHeight(RouteType), sequence * Length) - Entry.position;
+        }
+        public void UpdateCartRoute()
+        {
+            if(Coins==null || (RouteType!=1 && RouteType!=2))return;
+            foreach(var coin in Coins)
+            {
+                var p=coin.transform.localPosition;
+                RouteSurface.Sample(Entry.position.z+p.z, out float x, out _);
+                p.x=x-transform.position.x;
+                coin.transform.localPosition=p;
+            }
+        }
+        // Runtime additions placed by the decorator; not part of the authored prefab.
+        public readonly System.Collections.Generic.List<ObstacleController> DynamicObstacles = new System.Collections.Generic.List<ObstacleController>();
+        public readonly System.Collections.Generic.List<FloorItemController> DynamicFloorItems = new System.Collections.Generic.List<FloorItemController>();
+        public readonly System.Collections.Generic.List<ItemPickup> Pickups = new System.Collections.Generic.List<ItemPickup>();
+        public readonly System.Collections.Generic.List<IRunnerAnimated> Animated = new System.Collections.Generic.List<IRunnerAnimated>();
         public void Prepare(int sequence, float chance, System.Random random)
         {
             if(Gates!=null) foreach(var gate in Gates) gate.ResetGate();
@@ -34,7 +67,7 @@ namespace Muhanok.Presentation.Map
             }
             if(cart)
             {
-                if(Coins!=null)foreach(var coin in Coins){var p=coin.transform.localPosition;p.x=RouteSurface.LocalX(RouteType,p.z);coin.transform.localPosition=p;}
+                UpdateCartRoute();
                 return;
             }
             for (int row = 0; row < 2; row++)
@@ -76,6 +109,7 @@ namespace Muhanok.Presentation.Map
         {
             if(Gates!=null) foreach(var gate in Gates) if(gate.gameObject.activeInHierarchy) gate.Preview(runnerZ);
             if(SlideGates!=null)foreach(var gate in SlideGates)if(gate.gameObject.activeInHierarchy)gate.Preview(runnerZ);
+            foreach(var item in Animated)item.Preview(runnerZ);
         }
     }
 }

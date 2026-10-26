@@ -12,6 +12,8 @@ namespace Muhanok.Presentation
         private Transform toolSocket;
         public Vector3 Head => transform.position + Vector3.up * 1.65f;
         public bool Humanoid => animator != null && animator.isHuman;
+        public Transform Visual=>visualRoot.transform;
+        public Animator RigAnimator=>animator;
         public Transform ToolAnchor
         {
             get

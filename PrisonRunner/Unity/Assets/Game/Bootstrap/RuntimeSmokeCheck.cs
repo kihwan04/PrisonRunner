@@ -53,7 +53,7 @@ namespace Muhanok.Bootstrap
                     UnityEngine.Application.Quit(0); enabled = false;
                 }
             }
-            catch (Exception error) { Debug.LogError("MUHANOK_RUNTIME_SMOKE_FAIL: " + error.Message); UnityEngine.Application.Quit(1); enabled = false; }
+            catch (Exception error) { Debug.LogError("MUHANOK_RUNTIME_SMOKE_FAIL: " + error); UnityEngine.Application.Quit(1); enabled = false; }
         }
         private static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
     }

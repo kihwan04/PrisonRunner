@@ -18,7 +18,7 @@ namespace Muhanok.Editor
             "LeftShoulder","LeftUpperArm","LeftLowerArm","LeftHand","RightShoulder","RightUpperArm","RightLowerArm","RightHand",
             "LeftUpperLeg","LeftLowerLeg","LeftFoot","LeftToes","RightUpperLeg","RightLowerLeg","RightFoot","RightToes"};
 
-        [MenuItem("Muhanok/Apply Blender Characters and ProBuilder Maps")]
+        [MenuItem("Mongscape/Apply Blender Characters and ProBuilder Maps")]
         public static void UpgradeTools()
         {
             AssetDatabase.Refresh();
@@ -178,7 +178,7 @@ namespace Muhanok.Editor
             }
             return true;
         }
-        [MenuItem("Muhanok/Bake Edited ProBuilder Routes Into Game")]
+        [MenuItem("Mongscape/Bake Edited ProBuilder Routes Into Game")]
         public static void BakeEditedRoutes()
         {
             Prepare(); BuildEditableRoutes();
@@ -190,7 +190,7 @@ namespace Muhanok.Editor
             AssetDatabase.SaveAssets(); ValidateTools();
             Debug.Log("PROBUILDER_RUNTIME_BAKE_PASS: 13 saved editable route structures baked into actual game prefabs");
         }
-        [MenuItem("Muhanok/Validate Blender and ProBuilder Assets")]
+        [MenuItem("Mongscape/Validate Blender and ProBuilder Assets")]
         public static void ValidateTools()
         {
             foreach(string name in new[]{"Monkey","Police"})

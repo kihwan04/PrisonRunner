@@ -1,25 +1,30 @@
-# 무한옥 (PrisonRunner)
+# Mongscape 개발 프로젝트
 
-키보드 또는 웹캠 몸동작으로 플레이하는 Windows 64비트 Unity 러너 게임입니다.
+Unity 6000.3.10f1 / C# 기반 Windows 운동 러너입니다. 현재 소스는 `leewono/muhanok`의 `6e50060`을 바탕으로 Mongscape 브랜딩, 게임 확장과 Docker 중앙 얼굴 서버 연결을 적용했습니다. 원본 외부 저장소는 수정하지 않습니다.
 
-**처음 실행:** [Windows 실행용 ZIP](https://github.com/kihwan04/PrisonRunner/releases/latest/download/Muhanok-Windows-x64.zip) 전체를 압축 해제하고 `StartGame.cmd`를 더블클릭 → **게임 시작 → 입력 없이 시작**.
+## 실행과 개발
 
-- [실행 방법과 폴더별 역할](START_HERE.md)
-- [최신 화면별 게임기획서 V13](docs/무한옥_화면별_게임기획서_V13.docx)
-- [문서 목록과 이전 버전 구분](docs/README.md)
-- [최신 게임 아트 V10](docs/ART_V10.md), [실제 게임 캡처](docs/previews/ArtV10/index.html)
-- [맵 운동·가속 기능과 검증](docs/MAP_EXERCISES_SPEED.md)
-- [웹캠 입력 최초 설치](PoseServer/README.md)
-- [리소스 출처와 공개 소스 애니메이션](THIRD_PARTY_NOTICES.md)
+- 플레이: [START_HERE.md](START_HERE.md). 작업 폴더의 `StartGame.cmd`는 최신 완료 빌드를 실행합니다.
+- 개발: Unity Hub에서 `Unity/`를 **6000.3.10f1**로 열고 **Mongscape → Play GameScene**을 실행합니다. `PlayInUnity.cmd`도 같은 씬을 엽니다.
+- 빌드: **Mongscape → Build Windows Demo**. 출력은 `Builds/Mongscape/Windows/Mongscape.exe`입니다.
+- 검증: `Tools/QA/verify_unity_merge.ps1`, `Tools/QA/verify_short_fork.ps1`. 실행 환경은 [기술 스택](docs/TECH_STACK.md)을 확인하세요.
 
-로컬에서는 `StartGame.cmd` 또는 `Builds/Windows/Muhanok.exe`를 실행합니다. 게임 빌드는 Git 소스 대신 GitHub Releases에서 배포합니다. 키보드 플레이에는 Unity나 Python이 필요 없습니다.
+키보드와 몸동작 플레이는 얼굴 서버 없이 사용할 수 있습니다. 몸동작은 Unity 내부 BlazePose 추론으로 처리하고, 얼굴 로그인·개인 기록은 선택한 로컬/중앙 서버에 저장합니다.
 
-개발 실행은 Unity Hub에서 `Unity/`를 **6000.3.10f1**로 열고, 임포트·컴파일 완료 후 **Muhanok → Play GameScene**을 누릅니다. `PlayInUnity.cmd`도 같은 씬을 실행합니다. 설정은 `Unity/Assets/Game/Content/Data/GameSettings.asset`에 있습니다.
+## 폴더
 
-현재 게임은 V10 아트에 2026-10-05 운동·가속 기능을 적용한 버전입니다. 최신 기획서 V13은 거리와 속도 수치를 미정으로 둔 문서 수정본이며 게임 구현값과 구분합니다. 이전 기획서·캡처·시연 씬은 보존합니다. [이전 README 기록](docs/legacy/README_BEFORE_PUBLIC_RELEASE.md)은 과거 상태 설명이며 현재 실행 안내는 위 링크를 기준으로 합니다.
+| 위치 | 역할 |
+| --- | --- |
+| `Unity/` | 씬, 게임 코드, 리소스, 프로젝트 설정 |
+| `Services/Identity/` | 얼굴 로그인 API, 모델 준비, Docker·HTTPS 배포 |
+| `Tools/` | 에셋 제작, 문서 생성, 테스트와 패키징 |
+| `References/` | 제작 원본, 참고 자료, 리소스 출처 |
+| `docs/` | 현재 안내, 최신 기획서와 검증 기록 |
+| `docs/archive/` | 이전 계획·아트·릴리스·기획서 기록 |
+| `Builds/` | 로컬 빌드와 검증 산출물. Git 제외 |
 
-기본 경로는 광산 → 전용 수레 → 계단 → 감옥 복도 → 사육장입니다. A/D·←/→는 이동, Space는 점프, S·↓는 숙이기, W·↑는 하이니입니다. 수레에서는 좌우로 기울여 철로 붕괴를 피합니다. 몸동작 입력은 localhost UDP 5055를 사용합니다.
+[문서 목록](docs/README.md), [아키텍처](docs/ARCHITECTURE.md), [개발 규칙](AGENTS.md), [외부 리소스·공개 조건](THIRD_PARTY_NOTICES.md)을 기준으로 작업합니다. Mixamo 원본 FBX는 공개 소스에서 제외하며 자체 Blender 동작으로 대체 연결합니다.
 
-공개 소스에서는 재배포 제한이 있는 Mixamo 원본 FBX를 제외하고 자체 Blender 동작으로 자동 연결합니다. 실행용 ZIP은 기존 동작을 유지합니다. 실제 웹캠 인식 정확도와 최고 속도의 체감 난이도는 현장 검수가 남아 있습니다.
+공개 저장소는 `kihwan04/PrisonRunner`이며 [최신 Windows 게임·서버·기획서 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)에서 다운로드합니다. 로컬 전달물은 작업 폴더의 `../Deliverables/2026-10-26/ForkShort/`에도 보관합니다.
 
-개발 규칙: [AGENTS.md](AGENTS.md), [설계](docs/ARCHITECTURE.md), [Git 작업 흐름](docs/GIT_WORKFLOW.md).
+통합 UI는 [게임 화면 안내](docs/GAME_FLOW_UI.md)를 확인하세요. `lilohdong/muhanok-test` main `b2215ef`의 메뉴·상점·거리 랭킹·개발자 모드를 기존 게임/얼굴 서버와 함께 사용합니다.

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:24Z" duration="23.8634181">
+  <test-suite type="TestSuite" id="1043" name="Mongscape" fullname="Mongscape" runstate="Runnable" testcasecount="28" result="Passed" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:24Z" duration="23.863418" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1037" name="Muhanok.PlayModeTests.dll" fullname="C:/Users/USER/Documents/ChatGPT/Break/PrisonRunner/Unity/Library/ScriptAssemblies/Muhanok.PlayModeTests.dll" runstate="Runnable" testcasecount="28" result="Passed" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:24Z" duration="23.838471" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="18800" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1038" name="Muhanok" fullname="Muhanok" runstate="Runnable" testcasecount="28" result="Passed" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:24Z" duration="23.836186" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1039" name="Tests" fullname="Muhanok.Tests" runstate="Runnable" testcasecount="28" result="Passed" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:24Z" duration="23.833986" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1017" name="ExpansionPlayModeTests" fullname="Muhanok.Tests.ExpansionPlayModeTests" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:24Z" duration="23.829700" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1021" name="CaptureHasAnApproachThreeBonksAndThenResultWithoutAdvancingDistance" fullname="Muhanok.Tests.ExpansionPlayModeTests.CaptureHasAnApproachThreeBonksAndThenResultWithoutAdvancingDistance" methodname="CaptureHasAnApproachThreeBonksAndThenResultWithoutAdvancingDistance" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" seed="1686342663" result="Passed" start-time="2026-10-25 12:11:00Z" end-time="2026-10-25 12:11:10Z" duration="10.509847" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Muhanok pose: no webcam devices.
+]]></output>
+            </test-case>
+            <test-case id="1018" name="CartAndPhysicalSurfaceAgreeOnAllThreeBranches" fullname="Muhanok.Tests.ExpansionPlayModeTests.CartAndPhysicalSurfaceAgreeOnAllThreeBranches" methodname="CartAndPhysicalSurfaceAgreeOnAllThreeBranches" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" seed="579614266" result="Passed" start-time="2026-10-25 12:11:10Z" end-time="2026-10-25 12:11:13Z" duration="2.666279" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Muhanok pose: no webcam devices.
+Muhanok pose: no webcam devices.
+]]></output>
+            </test-case>
+            <test-case id="1023" name="FaceBadgeAttachesAndHidesWithTheCharacter" fullname="Muhanok.Tests.ExpansionPlayModeTests.FaceBadgeAttachesAndHidesWithTheCharacter" methodname="FaceBadgeAttachesAndHidesWithTheCharacter" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" seed="1648920647" result="Passed" start-time="2026-10-25 12:11:13Z" end-time="2026-10-25 12:11:16Z" duration="2.658623" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Muhanok pose: no webcam devices.
+]]></output>
+            </test-case>
+            <test-case id="1022" name="ForkRecyclingRestoresAuthoredCartAndDoesNotGrowThePool" fullname="Muhanok.Tests.ExpansionPlayModeTests.ForkRecyclingRestoresAuthoredCartAndDoesNotGrowThePool" methodname="ForkRecyclingRestoresAuthoredCartAndDoesNotGrowThePool" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" seed="1216253073" result="Passed" start-time="2026-10-25 12:11:16Z" end-time="2026-10-25 12:11:19Z" duration="2.734107" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Muhanok pose: no webcam devices.
+]]></output>
+            </test-case>
+            <test-case id="1020" name="RandomBlockersAndBananasAlwaysLeaveAClearLaneAndResetInPools" fullname="Muhanok.Tests.ExpansionPlayModeTests.RandomBlockersAndBananasAlwaysLeaveAClearLaneAndResetInPools" methodname="RandomBlockersAndBananasAlwaysLeaveAClearLaneAndResetInPools" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" seed="2102255151" result="Passed" start-time="2026-10-25 12:11:19Z" end-time="2026-10-25 12:11:21Z" duration="2.634471" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Muhanok pose: no webcam devices.
+]]></output>
+            </test-case>
+            <test-case id="1019" name="ZooAnimalRowsRequireAndAcceptARealJump" fullname="Muhanok.Tests.ExpansionPlayModeTests.ZooAnimalRowsRequireAndAcceptARealJump" methodname="ZooAnimalRowsRequireAndAcceptARealJump" classname="Muhanok.Tests.ExpansionPlayModeTests" runstate="Runnable" seed="857553234" result="Passed" start-time="2026-10-25 12:11:21Z" end-time="2026-10-25 12:11:24Z" duration="2.607781" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Muhanok pose: no webcam devices.
+Saving results to: C:/Users/USER/AppData/LocalLow/PrisonRunner/Mongscape\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

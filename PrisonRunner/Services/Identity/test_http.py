@@ -1,0 +1,88 @@
+"""HTTP boundary and persistent multi-client records, without a webcam or private DB."""
+import http.client
+import json
+import queue
+import tempfile
+import threading
+import unittest
+import uuid
+from pathlib import Path
+from server import Store, create_server
+
+
+class HttpTests(unittest.TestCase):
+    def make_store(self):return Store(self.database)
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory()
+        self.database=Path(self.temp.name)/'profiles.sqlite3'
+        self.start_server()
+
+    def start_server(self):
+        ready=queue.Queue()
+        def run():
+            store=self.make_store()
+            with store.db:
+                store.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING',
+                                 ('visitor','Test visitor',b'test-avatar',1,'test'))
+            token=store.issue('visitor')
+            # No face extraction is used here; real model coverage lives in test_identity.py.
+            server=create_server('127.0.0.1',0,store,None,'faces.test,127.0.0.1:8765')
+            ready.put((server,token))
+            try: server.serve_forever(poll_interval=.02)
+            finally: server.server_close(); store.db.close()
+        self.thread=threading.Thread(target=run,daemon=True)
+        self.thread.start()
+        self.server,self.token=ready.get(timeout=10)
+
+    def stop_server(self):
+        self.server.shutdown(); self.thread.join(timeout=5)
+        self.assertFalse(self.thread.is_alive())
+
+    def tearDown(self):
+        self.stop_server(); self.temp.cleanup()
+
+    def request(self,path,body=None,host='faces.test',headers=None,token=None):
+        connection=http.client.HTTPConnection('127.0.0.1',self.server.server_port,timeout=5)
+        fields={'Host':host,'Content-Type':'application/json'}
+        if token: fields['Authorization']='Bearer '+token
+        fields.update(headers or {})
+        connection.request('GET' if body is None else 'POST',path,body=body,headers=fields)
+        response=connection.getresponse()
+        result=(response.status,dict(response.getheaders()),json.loads(response.read()))
+        connection.close()
+        return result
+
+    def test_health_and_unrecognized_routes(self):
+        status,headers,data=self.request('/health')
+        self.assertEqual(status,200);self.assertTrue(data['ok'])
+        self.assertEqual(headers['Cache-Control'],'no-store')
+        self.assertNotIn('database',data)
+        self.assertEqual(self.request('/missing')[0],404)
+
+    def test_explicit_proxy_host_allowed_unknown_host_and_browser_rejected(self):
+        self.assertEqual(self.request('/history','{}',token=self.token)[0],200)
+        self.assertEqual(self.request('/history','{}',host='attacker.test',token=self.token)[0],403)
+        self.assertEqual(self.request('/history','{}',headers={'Origin':'https://faces.test'},token=self.token)[0],403)
+
+    def test_payload_limits_types_and_authentication(self):
+        self.assertEqual(self.request('/history','{}')[0],401)
+        self.assertEqual(self.request('/history','{}',headers={'Content-Type':'text/plain'})[0],415)
+        self.assertEqual(self.request('/history','[]')[0],400)
+        self.assertEqual(self.request('/history','{')[0],400)
+        self.assertEqual(self.request('/history','{}',headers={'Content-Length':str(5*1024*1024)})[0],413)
+
+    def test_two_clients_share_records_after_server_restart(self):
+        record=dict(id=str(uuid.uuid4()),distance=100,score=25,kcal=2,goal=50,activities=[1,1,0,0,0])
+        self.assertEqual(self.request('/runs',json.dumps(record),token=self.token)[0],200)
+        original_token=self.token
+        self.stop_server();self.start_server()
+        status,_,data=self.request('/history','{}',token=original_token)
+        self.assertEqual(status,200);self.assertEqual(data['runs'][0]['score'],25)
+        self.assertEqual(self.request('/delete','{}',token=self.token)[0],200)
+        self.assertEqual(self.request('/history','{}',token=original_token)[0],401)
+
+    def test_wildcard_hosts_rejected(self):
+        with self.assertRaises(ValueError):create_server('127.0.0.1',0,None,None,'*')
+
+
+if __name__=='__main__':unittest.main(verbosity=2)

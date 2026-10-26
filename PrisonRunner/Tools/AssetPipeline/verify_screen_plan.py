@@ -6,12 +6,13 @@ import zipfile
 from lxml import etree
 from docx import Document
 from pypdf import PdfReader
+from screen_plan_paths import screen_plan_path
 
 root = Path(__file__).resolve().parents[2]
 parser=argparse.ArgumentParser()
-parser.add_argument('--version',default='V10',choices=['V10','V11','V12','V13'])
+parser.add_argument('--version',default='V13',choices=['V10','V11','V12','V13'])
 args=parser.parse_args()
-document = Document(root / f'docs/무한옥_화면별_게임기획서_{args.version}.docx')
+document = Document(screen_plan_path(args.version))
 assert len(document.inline_shapes) == (30 if args.version in ('V12','V13') else 20)
 assert len(document.tables) == (4 if args.version in ('V11','V12','V13') else 1)
 assert len(document.tables[0].rows) == 9
@@ -38,7 +39,7 @@ if args.version in ('V11','V12'):
         assert phrase in body, phrase
 if args.version in ('V12','V13'):
     ns={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-    with zipfile.ZipFile(root / f'docs/무한옥_화면별_게임기획서_{args.version}.docx') as package:
+    with zipfile.ZipFile(screen_plan_path(args.version)) as package:
         body_xml=etree.fromstring(package.read('word/document.xml'))
         assert not body_xml.xpath('//w:footerReference',namespaces=ns)
         for name in package.namelist():
@@ -46,7 +47,7 @@ if args.version in ('V12','V13'):
                 xml=etree.fromstring(package.read(name))
                 assert not xml.xpath('//w:t|//w:fldSimple|//w:instrText|//w:drawing|//w:tbl',namespaces=ns),name
         source_version='V12' if args.version=='V13' else 'V11'
-        with zipfile.ZipFile(root / f'docs/무한옥_화면별_게임기획서_{source_version}.docx') as source:
+        with zipfile.ZipFile(screen_plan_path(source_version)) as source:
             for name in source.namelist():
                 if name.startswith('word/media/'):
                     assert package.read(name)==source.read(name),name

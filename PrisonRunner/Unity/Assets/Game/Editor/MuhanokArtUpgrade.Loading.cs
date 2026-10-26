@@ -7,6 +7,20 @@ namespace Muhanok.Editor
 {
     public static partial class MuhanokArtUpgrade
     {
+        private static Texture2D ConfigureTitleLogoTexture()
+        {
+            const string path = "Assets/Game/Content/ArtV2/Textures/MuhanokLogo.png";
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) throw new System.InvalidOperationException("Title logo is missing.");
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.mipmapEnabled = false;
+            importer.alphaIsTransparency = true;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
         private static Texture2D ConfigureLoadingTexture()
         {
             const string path="Assets/External/Staging/ReferenceUI/LoadingReference.png";
@@ -24,7 +38,7 @@ namespace Muhanok.Editor
             return image;
         }
 
-        [MenuItem("Muhanok/Refresh Loading Reference")]
+        [MenuItem("Mongscape/Refresh Loading Reference")]
         public static void RefreshLoadingReference()
         {
             var scene=EditorSceneManager.OpenScene("Assets/Game/Scenes/GameScene.unity");

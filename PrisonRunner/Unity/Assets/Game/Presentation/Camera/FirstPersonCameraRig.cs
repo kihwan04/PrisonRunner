@@ -17,6 +17,7 @@ namespace Muhanok.Presentation
             if (brain == null) brain = camera.gameObject.AddComponent<CinemachineBrain>();
             brain.UpdateMethod = CinemachineBrain.UpdateMethods.LateUpdate;
             brain.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, .25f);
+            foreach(var cameraRig in new[]{Menu,IntroA,Chase,FirstPerson})cameraRig.Lens.FarClipPlane=100;
             Select(Menu);
         }
         public void Select(CinemachineCamera next)
@@ -71,6 +72,7 @@ namespace Muhanok.Presentation
             Select(Chase);
             RouteSurface.Sample(head.z,out float x,out float y);
             RouteSurface.Sample(head.z+7,out float nx,out float ny);
+            if(RouteSurface.ActivePlan?.ForkWindow(head.z)??false){float lane=head.x-x;x+=lane;nx+=lane;}
             var forward=new Vector3(nx-x,ny-y,7).normalized;
             var position=new Vector3(x,y,head.z)-forward*4.4f+Vector3.up*3.0f;
             var target=new Vector3(nx,ny+.75f,head.z+7);
@@ -80,6 +82,16 @@ namespace Muhanok.Presentation
             Chase.Lens.FieldOfView=62;
         }
         public void ResetCamera() { Select(Menu); }
+        public void FollowCapture(Vector3 player,float dt,float prone=0)
+        {
+            Select(Chase);
+            RouteSurface.Sample(player.z,out float center,out _);
+            var position=player+new Vector3(player.x>center? -2.7f:2.7f,Mathf.Lerp(2.5f,1.85f,prone),Mathf.Lerp(-.2f,1.8f,prone));
+            float blend=1-Mathf.Exp(-9*dt);
+            Chase.transform.position=Vector3.Lerp(Chase.transform.position,position,blend);
+            Chase.transform.rotation=Quaternion.Slerp(Chase.transform.rotation,Quaternion.LookRotation(player+new Vector3(0,Mathf.Lerp(1.1f,.55f,prone),-.25f)-position),blend);
+            Chase.Lens.FieldOfView=57;
+        }
         private static void Set(CinemachineCamera cam, Vector3 pos, Vector3 target) { cam.transform.position = pos; cam.transform.rotation = Quaternion.LookRotation(target - pos); }
     }
 }

@@ -17,7 +17,7 @@ namespace Muhanok.Presentation
         private void LateUpdate()
         {
             if (session == null) return;
-            bool visible = !session.Runner.Riding&&(session.Flow.State == GameFlowState.Running || session.Flow.State == GameFlowState.Caught);
+            bool visible = !session.Runner.Riding&&session.Flow.State == GameFlowState.Running;
             Visual.gameObject.SetActive(visible); if (!visible) {if(CartSound!=null)CartSound.Stop();phase = 0; return; }
             phase += Time.deltaTime*10;
             float z=session.Runner.Z;

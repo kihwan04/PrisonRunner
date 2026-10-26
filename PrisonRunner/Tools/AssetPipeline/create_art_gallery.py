@@ -77,7 +77,7 @@ if options.version=='ArtV10':
     html=html.replace('무료 아트 개선 버전 / 2026-10-03.', 'V10 · 철창 독방과 캐릭터 접지 / 2026-10-05.')
     html=html.replace('맵별 캡처는 카메라 렌더만 포함하며 오른쪽은 다음 24m 청크 연결 경계입니다.', '모든 Player 이미지는 실제 실행 파일의 화면입니다. CellCloseup과 CharacterContact는 제작 검수용 카메라입니다. 맵 오른쪽 이미지는 다음 청크 연결부입니다.')
     html=html.replace('Blender 제작 암벽·손·기린·코끼리, Kenney CC0 나무·설비를 실제 적용했습니다.', '독방은 바닥·뒷벽·칸막이·잠긴 철창 문으로 구성했습니다. 침대는 방 안에 있고, 각 복도 청크에는 실제 스킨 원숭이 2명이 대기 동작을 재생합니다. 캐릭터에 수감 번호, 손목 밴드와 손발톱을 추가했고 발 높이·경사·짧은 접지 고정 보정을 적용했습니다. 실제 Mixamo 4개 동작과 Blender 자체 동작을 구분해 사용합니다.')
-    html=html.replace('Asset Store 로그인을 확인했으며 Mine은 약관 승인 대기 중으로 미임포트 상태입니다.', '현재 경찰은 자체 모델입니다. 무료 BitGem 경찰은 다운로드 인증 문제로 미임포트 상태입니다. 상용 게임과 동등한 최종 품질로 판정한 결과는 아닙니다. 화면별 Word 기획서는 docs/무한옥_화면별_게임기획서_V10.docx입니다.')
+    html=html.replace('Asset Store 로그인을 확인했으며 Mine은 약관 승인 대기 중으로 미임포트 상태입니다.', '현재 경찰은 자체 모델입니다. 무료 BitGem 경찰은 다운로드 인증 문제로 미임포트 상태입니다. 상용 게임과 동등한 최종 품질로 판정한 결과는 아닙니다. 화면별 Word 기획서는 docs/archive/planning/무한옥_화면별_게임기획서_V10.docx입니다.')
     html=html.replace('</main>', '<h2>Blender 원본 모델</h2>'+figure('BlenderCharacters')+'</main>')
     (output/'index.html').write_text(html,encoding='utf-8')
 

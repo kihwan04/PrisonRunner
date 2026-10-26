@@ -6,6 +6,7 @@ namespace Muhanok.Presentation.Map
     public sealed class ObstacleController : MonoBehaviour
     {
         public ObstacleKind Kind;
+        public float CollisionHalfWidth = .95f;
         public bool FullExerciseRow {get;set;}
         public bool Passed { get; private set; }
         public void ResetPass() { Passed = false; }
@@ -16,9 +17,9 @@ namespace Muhanok.Presentation.Map
             if (previousZ > z || runner.Z < z) return;
             Passed = true;
             RouteSurface.Sample(runner.Z,out float offsetX,out _);
-            bool sameLane = Mathf.Abs(runner.X+offsetX-transform.position.x) < (FullExerciseRow?1.101f:.95f);
+            bool sameLane = Mathf.Abs(runner.X+offsetX-transform.position.x) < (FullExerciseRow?1.101f:CollisionHalfWidth);
             bool clean = !sameLane || SafePatternValidator.Avoided(Kind, runner.Y, runner.Crouching, runner.HighKnee);
-            if (clean) session.Score.CleanPass(session.Config.CleanBonus);
+            if (clean) { session.Score.CleanPass(session.Config.CleanBonus); if(sameLane)session.RecordDodge(); }
             else session.Hit(Kind == ObstacleKind.Barrier || Kind == ObstacleKind.Laser || Kind == ObstacleKind.Cart);
         }
     }

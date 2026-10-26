@@ -7,6 +7,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Muhanok.Editor
 {
@@ -16,21 +17,29 @@ namespace Muhanok.Editor
         private const string PreviewKey = "Muhanok.Preview";
         private const string StepKey = "Muhanok.PreviewStep";
         static MuhanokBuildTools() { EditorApplication.update += PreviewTick; EditorApplication.playModeStateChanged += Changed; }
-        [MenuItem("Muhanok/Build Windows Demo")]
+        [MenuItem("Mongscape/Build Windows Demo")]
         public static void BuildWindows()
         {
             ValidateContent();
-            PlayerSettings.productName = "무한옥";
+            // Graphics options enable this at runtime. Advertise it at build time so Unity retains its compute resources.
+            var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/PC_RPAsset.asset");
+            if(pipeline==null)throw new Exception("PC render pipeline missing");
+            pipeline.gpuResidentDrawerMode=GPUResidentDrawerMode.InstancedDrawing;
+            EditorUtility.SetDirty(pipeline);AssetDatabase.SaveAssetIfDirty(pipeline);
+            PlayerSettings.productName = "Mongscape";
             PlayerSettings.defaultScreenWidth = 1280; PlayerSettings.defaultScreenHeight = 720;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
-            string destination = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../Builds/Windows/Muhanok.exe"));
+            string destination = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../Builds/Mongscape/Windows/Mongscape.exe"));
             Directory.CreateDirectory(Path.GetDirectoryName(destination));
+            string complete=Path.Combine(Path.GetDirectoryName(destination),"Mongscape.complete");
+            if(File.Exists(complete))File.Delete(complete);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = new[] { "Assets/Game/Scenes/GameScene.unity" }, locationPathName = destination,
                 target = BuildTarget.StandaloneWindows64, options = BuildOptions.Development
             });
             if (report.summary.result != BuildResult.Succeeded) throw new Exception("MUHANOK_BUILD_FAIL: " + report.summary.result);
+            File.WriteAllText(complete,DateTime.UtcNow.ToString("O"));
             Debug.Log("MUHANOK_BUILD_PASS: " + destination + " / " + report.summary.totalSize + " bytes");
         }
         public static void ValidateContent()
@@ -56,7 +65,7 @@ namespace Muhanok.Editor
                 if (!(clip.asset is ScriptableObject clipAsset) || MonoScript.FromScriptableObject(clipAsset) == null) throw new Exception("Missing Timeline clip script");
             Debug.Log("MUHANOK_REFERENCES_PASS: " + checkedCount + " prefabs / GameScene / Timeline");
         }
-        [MenuItem("Muhanok/Capture Scene Previews")]
+        [MenuItem("Mongscape/Capture Scene Previews")]
         public static void Preview()
         {
             SessionState.SetBool(PreviewKey, true); SessionState.SetInt(StepKey, 0);

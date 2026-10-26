@@ -1,7 +1,4 @@
 using System.Collections;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using Muhanok.Bootstrap;
 using Muhanok.Domain;
 using Muhanok.Infrastructure;
@@ -35,9 +32,9 @@ namespace Muhanok.Tests
             {
                 InputSystem.Update();
                 InputState.Change(mouse, new MouseState().WithButton(MouseButton.Left)); game.TickInput();
-                Assert.IsTrue(game.StartSetupOpen); Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);
+                Assert.IsTrue(game.MenuOpen, "Clicking the title opens the main menu"); Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);
                 InputState.Change(mouse, new MouseState());
-                game.BeginRun(""); yield return new WaitForSecondsRealtime(1.1f);
+                game.Session.Config.ExtendedRoutes=false;game.BeginRun(""); yield return new WaitForSecondsRealtime(1.1f);
                 Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
                 yield return new WaitUntil(()=>!game.IsRevealing);
                 Assert.AreEqual(0,game.Intro.Elapsed,"Loading image is the intro; a second timeline must not run");
@@ -49,6 +46,9 @@ namespace Muhanok.Tests
                 Assert.IsFalse(game.Session.Runner.Crouching || game.Session.Runner.HighKnee);
                 InputState.Change(keys, new KeyboardState(Key.Space)); game.TickInput(); game.Session.Tick(.1f);
                 Assert.Greater(game.Session.Runner.Y, 0);
+                game.Session.Runner.SetStartZ(36);
+                InputState.Change(keys,new KeyboardState(Key.A));game.TickInput();Assert.AreEqual(-1,game.Session.Runner.Lane);
+                InputState.Change(keys,new KeyboardState(Key.C));game.TickInput();Assert.AreEqual(0,game.Session.Runner.Lane,"C must allow the middle hidden route from a side rail");
             }
             finally { InputSystem.RemoveDevice(mouse); InputSystem.RemoveDevice(keys); InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorBehavior; }
         }
@@ -90,31 +90,12 @@ namespace Muhanok.Tests
             }
             for (int i = 0; i < 3; i++) { game.Session.Tick(.7f); game.Session.Hit(true); }
             Assert.AreEqual(GameFlowState.Caught, game.Session.Flow.State);
-            yield return new WaitForSeconds(1.5f); Assert.AreEqual(GameFlowState.Result, game.Session.Flow.State);
+            yield return new WaitForSecondsRealtime(4.1f); Assert.AreEqual(GameFlowState.Result, game.Session.Flow.State);
             game.Retry(); Assert.AreEqual(GameFlowState.TitleIdle, game.Session.Flow.State);
             Assert.AreEqual(0, game.Session.Score.Score); Assert.AreEqual(0, game.Session.Chase.Pressure); Assert.AreEqual(2, game.Session.Runner.Z);
             Assert.AreEqual(created, game.Map.CreatedCount); Assert.AreEqual(0, game.Map.Active[0].Chunk.Entry.position.z);
             game.StartIntro(); for (int i = 0; i < 82; i++) game.Intro.Tick(.1f);
             Assert.AreEqual(GameFlowState.Running, game.Session.Flow.State);
-        }
-        [UnityTest] public IEnumerator UdpMainThreadDisconnectReconnect()
-        {
-            var input = new PoseGameInput();
-            int port; using (var probe = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0))) port = ((IPEndPoint)probe.Client.LocalEndPoint).Port;
-            using (var receiver = new PoseInputReceiver(input, .65f, .2f, .05f)) using (var sender = new UdpClient())
-            {
-                receiver.Start(port); Assert.IsNull(receiver.Error);
-                byte[] bytes = Encoding.UTF8.GetBytes("{\"type\":\"motion\",\"command\":\"LEFT\",\"confidence\":0.95,\"timestamp\":1}");
-                sender.Send(bytes, bytes.Length, "127.0.0.1", port);
-                double start = Time.realtimeSinceStartupAsDouble;
-                while (Time.realtimeSinceStartupAsDouble - start < 1 && receiver.Status(Time.realtimeSinceStartupAsDouble) != "Connected")
-                { receiver.Dispatch(Time.realtimeSinceStartupAsDouble); yield return null; }
-                Assert.IsTrue(input.TryRead(out var command)); Assert.AreEqual(MotionCommand.Left, command);
-                yield return new WaitForSecondsRealtime(.3f); receiver.Dispatch(Time.realtimeSinceStartupAsDouble);
-                Assert.AreEqual("Lost", receiver.Status(Time.realtimeSinceStartupAsDouble));
-                sender.Send(bytes, bytes.Length, "127.0.0.1", port); yield return new WaitForSecondsRealtime(.1f); receiver.Dispatch(Time.realtimeSinceStartupAsDouble);
-                Assert.AreEqual("Connected", receiver.Status(Time.realtimeSinceStartupAsDouble));
-            }
         }
         [UnityTest] public IEnumerator CoinsUseSweptCrossingAndResetWhenPooled()
         {

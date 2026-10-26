@@ -22,7 +22,7 @@ namespace Muhanok.Editor
         private static readonly Dictionary<Material,Material> kitMaterials = new Dictionary<Material,Material>();
         private static System.Random rng;
 
-        [MenuItem("Muhanok/Upgrade Art and All Maps")]
+        [MenuItem("Mongscape/Upgrade Art and All Maps")]
         public static void Upgrade()
         {
             if (!UnityEngine.Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;

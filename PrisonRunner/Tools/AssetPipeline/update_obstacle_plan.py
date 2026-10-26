@@ -13,8 +13,8 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / 'docs/무한옥_화면별_게임기획서_V11.docx'
-OUTPUT = ROOT / 'docs/무한옥_화면별_게임기획서_V12.docx'
+SOURCE = ROOT / 'docs/archive/planning/무한옥_화면별_게임기획서_V11.docx'
+OUTPUT = ROOT / 'docs/archive/planning/무한옥_화면별_게임기획서_V12.docx'
 ART = ROOT / 'docs/document-qa/V12/obstacle-diagrams'
 ART.mkdir(parents=True, exist_ok=True)
 source_hash = hashlib.sha256(SOURCE.read_bytes()).hexdigest()

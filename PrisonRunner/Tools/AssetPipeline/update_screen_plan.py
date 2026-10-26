@@ -14,8 +14,8 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / 'docs/무한옥_화면별_게임기획서_V10.docx'
-OUTPUT = ROOT / 'docs/무한옥_화면별_게임기획서_V11.docx'
+SOURCE = ROOT / 'docs/archive/planning/무한옥_화면별_게임기획서_V10.docx'
+OUTPUT = ROOT / 'docs/archive/planning/무한옥_화면별_게임기획서_V11.docx'
 source_hash = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
 doc = Document(SOURCE)
 

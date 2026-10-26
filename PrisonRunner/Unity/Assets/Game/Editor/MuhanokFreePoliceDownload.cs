@@ -23,7 +23,7 @@ namespace Muhanok.Editor
             UnityEditor.PackageManager.UI.Window.Open("107256");
         }
 
-        [MenuItem("Muhanok/Download Acquired Free Police")]
+        [MenuItem("Mongscape/Download Acquired Free Police")]
         public static void Download()
         {
             try

@@ -9,7 +9,7 @@ import zipfile
 from docx import Document
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / 'docs/무한옥_화면별_게임기획서_V12.docx'
+SOURCE = ROOT / 'docs/archive/planning/무한옥_화면별_게임기획서_V12.docx'
 OUTPUT = ROOT / 'docs/무한옥_화면별_게임기획서_V13.docx'
 source_hash = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
 doc = Document(SOURCE)

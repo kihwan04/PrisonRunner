@@ -1,0 +1,112 @@
+{
+    "device": "MS-7A15 (MSI)",
+    "gpu": "NVIDIA GeForce GTX 1060 3GB",
+    "cameraStatus": "Deferred by user",
+    "started": "2026-10-25T18:57:48.8937660+09:00",
+    "width": 1280,
+    "height": 720,
+    "cameraFrames": 0,
+    "passed": true,
+    "error": "",
+    "samples": [
+        {
+            "preset": "Balanced",
+            "area": "Fork",
+            "frames": 419,
+            "fps": 59.751747131347659,
+            "meanMs": 16.735912322998048,
+            "p95Ms": 17.074199676513673,
+            "worstMs": 17.513498306274415,
+            "renderScale": 0.8500000238418579,
+            "cap": 60
+        },
+        {
+            "preset": "Balanced",
+            "area": "Prison",
+            "frames": 417,
+            "fps": 59.521636962890628,
+            "meanMs": 16.800613403320314,
+            "p95Ms": 17.085098266601564,
+            "worstMs": 41.44839859008789,
+            "renderScale": 0.8500000238418579,
+            "cap": 60
+        },
+        {
+            "preset": "Balanced",
+            "area": "Zoo",
+            "frames": 418,
+            "fps": 59.6975212097168,
+            "meanMs": 16.751113891601564,
+            "p95Ms": 17.033695220947267,
+            "worstMs": 27.85160255432129,
+            "renderScale": 0.8500000238418579,
+            "cap": 60
+        },
+        {
+            "preset": "Low",
+            "area": "Fork",
+            "frames": 210,
+            "fps": 29.945064544677736,
+            "meanMs": 33.39448547363281,
+            "p95Ms": 33.68220138549805,
+            "worstMs": 33.88560104370117,
+            "renderScale": 0.699999988079071,
+            "cap": 30
+        },
+        {
+            "preset": "Low",
+            "area": "Prison",
+            "frames": 210,
+            "fps": 29.954757690429689,
+            "meanMs": 33.3836784362793,
+            "p95Ms": 33.650596618652347,
+            "worstMs": 33.82679748535156,
+            "renderScale": 0.699999988079071,
+            "cap": 30
+        },
+        {
+            "preset": "Low",
+            "area": "Zoo",
+            "frames": 210,
+            "fps": 29.95477867126465,
+            "meanMs": 33.3836555480957,
+            "p95Ms": 33.70940399169922,
+            "worstMs": 33.875,
+            "renderScale": 0.699999988079071,
+            "cap": 30
+        },
+        {
+            "preset": "High",
+            "area": "Fork",
+            "frames": 419,
+            "fps": 59.777225494384769,
+            "meanMs": 16.728778839111329,
+            "p95Ms": 17.04829978942871,
+            "worstMs": 17.25979995727539,
+            "renderScale": 1.0,
+            "cap": 60
+        },
+        {
+            "preset": "High",
+            "area": "Prison",
+            "frames": 419,
+            "fps": 59.784767150878909,
+            "meanMs": 16.726669311523439,
+            "p95Ms": 17.045400619506837,
+            "worstMs": 17.46480369567871,
+            "renderScale": 1.0,
+            "cap": 60
+        },
+        {
+            "preset": "High",
+            "area": "Zoo",
+            "frames": 419,
+            "fps": 59.77217102050781,
+            "meanMs": 16.730194091796876,
+            "p95Ms": 17.064498901367189,
+            "worstMs": 17.199703216552736,
+            "renderScale": 1.0,
+            "cap": 60
+        }
+    ]
+}
