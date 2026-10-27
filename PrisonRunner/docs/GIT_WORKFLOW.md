@@ -18,6 +18,6 @@
 
 Unity 소스와 대응 `.meta`를 함께 관리합니다. Library/Temp/Logs, 로컬 빌드·전달 ZIP, Python 런타임·환경, 개인 얼굴 DB/사진/토큰, `.env`, 설치별 `identity-server.json`, 재배포 제한이 있는 Mixamo 원본은 Git에서 제외합니다. 출처·라이선스·고정 모델 manifest는 보존합니다.
 
-문서를 이동하면 상대 링크와 생성/패키징 도구의 파일 경로를 함께 수정합니다. 현재 안내는 `docs/`에, 이전 버전은 `docs/archive/`에 보관합니다. 이전 검증 결과와 이번 변경에서 실제 수행한 검증을 구분합니다.
+문서를 이동하면 상대 링크와 생성/패키징 도구의 파일 경로를 함께 수정합니다. 현재 안내만 `docs/`에 두고, 대체된 이전 버전은 보관하지 않고 삭제합니다(Git 기록에 남음). 이전 검증 결과와 이번 변경에서 실제 수행한 검증을 구분합니다.
 
-초기 브랜치별 작업 기록은 [이전 Git 안내](archive/history/BEFORE_2026_10_26_GIT_WORKFLOW.md)에 있습니다. 공개 배포 조건은 [외부 리소스 안내](../THIRD_PARTY_NOTICES.md), 현재 남은 일은 [진행 상태](PROGRESS.md)를 확인하세요.
+공개 배포 조건은 [외부 리소스 안내](../THIRD_PARTY_NOTICES.md), 현재 남은 일은 [진행 상태](PROGRESS.md)를 확인하세요.
