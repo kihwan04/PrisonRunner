@@ -383,11 +383,7 @@ namespace Muhanok.Bootstrap
             lastNewBest=lastEntry.Score>previousBest; lastBestScore=Mathf.Max(previousBest,lastEntry.Score);
             lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
             lastTodayRank=Store.Board.RankOf(lastEntry,true);
-            if(Account.IsMember)
-            {
-                float end=caughtAt>runStartedAt?caughtAt:Time.realtimeSinceStartup;
-                runs.Save(AccountRun.Create(Session,player.Style,developer?0:Session.Score.Coins,Mathf.Max(0,end-runStartedAt)));
-            }
+            if(Account.IsMember) runs.Save(AccountRun.Create(Session,player.Style,developer?0:Session.Score.Coins));
         }
         public void Retry()
         {

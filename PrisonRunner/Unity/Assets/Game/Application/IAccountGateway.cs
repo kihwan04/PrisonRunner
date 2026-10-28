@@ -87,14 +87,16 @@ namespace Muhanok.Application
         public double[] activities = new double[5];
         public int mode, coins; public double play_seconds; public int score_version = 1;
 
-        public static AccountRun Create(RunSession run, PlayStyle mode, int coins, double playSeconds, int scoreVersion = 1)
+        // Score uses the current formula (RunScore.Version); play seconds are the run clock without pauses.
+        public static AccountRun Create(RunSession run, PlayStyle mode, int coins)
         {
+            double playSeconds = run.Elapsed;
             var record = new AccountRun
             {
                 id = Guid.NewGuid().ToString(), distance = Math.Max(0f, run.Score.Distance), score = Math.Max(0, run.Score.Score),
                 kcal = Math.Max(0, run.Workout.EstimatedKcal), goal = run.Workout.GoalKcal, mode = (int)mode,
-                coins = Math.Max(0, Math.Min(MaxCoins, coins)), score_version = scoreVersion,
-                play_seconds = double.IsNaN(playSeconds) ? 0 : Math.Max(0, Math.Min(86400, playSeconds)),
+                coins = Math.Max(0, Math.Min(MaxCoins, coins)), score_version = RunScore.Version,
+                play_seconds = double.IsNaN(playSeconds) || double.IsInfinity(playSeconds) ? 0 : Math.Max(0, Math.Min(86400, playSeconds)),
             };
             for (int i = 0; i < 5; i++) record.activities[i] = Math.Max(0, run.Workout.KcalFor(i));
             return record;

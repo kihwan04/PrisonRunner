@@ -70,7 +70,8 @@ namespace Muhanok.Tests
             Assert.AreEqual(1,fake.SavedRuns.Count);
             var run=fake.SavedRuns[0];
             Assert.AreEqual((int)PlayStyle.Keyboard,run.mode);Assert.AreEqual(game.Session.Score.Coins,run.coins);
-            Assert.AreEqual(1,run.score_version);Assert.Greater(run.play_seconds,0);Assert.AreEqual(5,run.activities.Length);
+            Assert.AreEqual(RunScore.Version,run.score_version);Assert.AreEqual(game.Session.Elapsed,run.play_seconds,.001);Assert.Greater(run.play_seconds,0);
+            Assert.AreEqual(game.Session.Score.Score,run.score,"The score uses the distance and exercise formula");Assert.AreEqual(5,run.activities.Length);
             Assert.AreEqual("token-1",fake.RunTokens[0]);
             Assert.AreEqual(100+run.coins,game.Account.Coins,"The balance from the reply reaches the session");
             Assert.AreEqual("member-1",game.Store.Board.All[0].AccountId);Assert.AreEqual("회원QA",game.Store.Board.All[0].Name);
