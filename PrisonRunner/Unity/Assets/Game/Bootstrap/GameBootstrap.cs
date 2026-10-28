@@ -352,7 +352,7 @@ namespace Muhanok.Bootstrap
                     string name=identity.Profile!=null?identity.Profile.name:!userSettings.DeveloperMode?Store.Profile.DisplayName
                         :player.HasName?player.Name.Trim():"플레이어 "+(Store.Board.Day(Leaderboard.DayKey(now)).Count+1);
                     lastEntry=new RankingEntry{Name=name,Score=Session.Score.Score,Distance=Session.Score.Distance,Coins=Session.Score.Coins,
-                        Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks};
+                        Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks,ScoreVersion=RunScore.Version};
                     lastNewBest=Session.Score.Distance>Store.Stats.BestDistance;
                     lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
                     lastTodayRank=Store.Board.RankOf(lastEntry,true);
