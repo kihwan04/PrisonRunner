@@ -20,12 +20,14 @@ namespace Muhanok.Presentation
         List<RankingEntry> list = new List<RankingEntry>();
         string summary = "";
 
-        public LeaderboardScreen(OverlaySkin overlaySkin) { skin = overlaySkin; }
+        readonly GuestNameRow guestName;
+        public LeaderboardScreen(OverlaySkin overlaySkin) { skin = overlaySkin; guestName = new GuestNameRow(overlaySkin); }
+        public bool AsksGuestName => resultMode && guestName.Open;
 
         // From the menu: developer (exhibition) mode starts on today's tab.
         public void OpenBoard(IHudData data)
         {
-            resultMode = false; mine = null;
+            resultMode = false; mine = null; guestName.Skip();
             todayOnly = data != null && data.DeveloperMode;
             Reload(data);
         }
@@ -40,6 +42,7 @@ namespace Muhanok.Presentation
             parts.Add("코인 +" + session.Score.Coins);
             if (PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard) && session.Workout.WeightKg.HasValue) parts.Add(session.Workout.EstimatedKcal.ToString("F1", Num) + " kcal");
             summary = string.Join("  ·  ", parts);
+            guestName.Show(data);
             Reload(data);
         }
 
@@ -72,6 +75,7 @@ namespace Muhanok.Presentation
             DrawRows(x, w);
             DrawMine(data, x, w);
             if(resultMode)DrawWorkout(session, data);
+            if(resultMode)guestName.Draw(data, new Rect(x + 110, 290, w - 220, 180));
 
             if (secondary == null)
             {

@@ -46,6 +46,12 @@ namespace Muhanok.Infrastructure
             return rank;
         }
         public void ClearToday() { Board.ClearDay(Leaderboard.DayKey(DateTime.Now)); SaveRecords(); }
+        // A guest names the run that was recorded as "게스트"; false when the entry is no longer on the board.
+        public bool Rename(RankingEntry entry, string name)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(name) || Board.RankOf(entry, false) == 0) return false;
+            entry.Name = name.Trim(); SaveRecords(); return true;
+        }
         public void RemoveAccount(string id) { Board.RemoveAccount(id); SaveRecords(); }
         public void DepositCoins(int coins) { Wallet.Deposit(coins); SaveWallet(); }
         public bool Unlock(ItemKind kind) { bool done = Wallet.TryUnlock(kind); if (done) SaveWallet(); return done; }

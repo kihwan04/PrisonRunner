@@ -479,6 +479,9 @@ namespace Muhanok.Bootstrap
         Leaderboard IHudData.Board => Store.Board;
         PlayerStats IHudData.Stats => Store.Stats;
         RankingEntry IHudData.LastEntry => lastEntry;
+        // A guest's run (not in developer mode) was recorded as "게스트" and can still be named on the result screen.
+        bool IHudData.CanNameLastRun => lastEntry != null && !Account.IsMember && string.IsNullOrEmpty(lastEntry.AccountId) && userSettings != null && !userSettings.DeveloperMode;
+        bool IHudData.NameLastRun(string name) => ((IHudData)this).CanNameLastRun && AccountSession.NicknameProblem(name) == null && Store.Rename(lastEntry, name);
         int IHudData.LastRank => lastRank;
         int IHudData.LastTodayRank => lastTodayRank;
         bool IHudData.LastNewBest => lastNewBest;

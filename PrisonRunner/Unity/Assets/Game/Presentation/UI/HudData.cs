@@ -26,6 +26,9 @@ namespace Muhanok.Presentation
         PlayerStats Stats { get; }
         // The run that just finished: its entry, rank among all runs and today, and whether it beat the best distance.
         RankingEntry LastEntry { get; }
+        // A guest's last run (outside developer mode) can still be renamed from "게스트" on this PC's ranking.
+        bool CanNameLastRun { get; }
+        bool NameLastRun(string name);
         int LastRank { get; }
         int LastTodayRank { get; }
         bool LastNewBest { get; }

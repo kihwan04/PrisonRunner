@@ -114,6 +114,8 @@ namespace Muhanok.Presentation
         public void Logout() { if (Account != null && Account.SignedIn) Account.FaceLogout(false); OpenLogin(); }
         // 내 정보 "회원 탈퇴": two questions, then the account is deleted and the login gate opens.
         public void DeleteAccount() => Profile.RequestDelete(() => { if (Page == MenuPage.Profile) OpenLogin(); });
+        // Result screen: a guest is asked for a name for the run just recorded as "게스트" on this PC's ranking.
+        public bool AsksGuestName => board.AsksGuestName;
         public void CloseSetup() { ShowPage(MenuPage.None); Loading = false; revealRemaining = 0; }
         public void BeginLoading() { ShowPage(MenuPage.None); Loading = true; }
         public void EndLoading() { Loading = false; revealRemaining = .85f; }
@@ -141,7 +143,7 @@ namespace Muhanok.Presentation
             }
             else if (state == GameFlowState.Result)
             {
-                if (!resultOpen) { resultOpen = true; board.OpenResult(Data, session); }
+                if (!resultOpen) { resultOpen = true; board.OpenResult(Data, session); if (board.AsksGuestName) TextInput?.Invoke(true); }
                 bool perRun = Data != null && Data.DeveloperMode;
                 board.Draw(Data, session, retry, "다시 하기", perRun ? NextPlayer : ToMenu, perRun ? "다음 플레이어" : "메인으로");
             }
