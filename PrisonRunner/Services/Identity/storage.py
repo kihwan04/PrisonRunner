@@ -1,18 +1,17 @@
-"""Identity storage: PostgreSQL for central Docker, SQLite for existing local installs."""
+"""Identity storage: PostgreSQL only (the central Docker DB, or a throwaway local cluster for tests)."""
 from __future__ import annotations
 import base64
 import hashlib
-import json
 import os
 from pathlib import Path
 import secrets
-import sqlite3
 import time
 import unicodedata
 
 BASE=Path(__file__).resolve().parent
 SCHEMA_VERSION=2
 NAME_MAX=10
+POSTGRES_REQUIRED='PostgreSQL settings are required: set IDENTITY_DATABASE_URL, or PGHOST/PGPORT/PGDATABASE/PGUSER with PGPASSWORD_FILE.'
 
 
 def clean_name(value):
@@ -27,8 +26,17 @@ def name_key(name):
     return ''.join(name.split()).casefold()
 
 
+def postgres_configured(database_url=None):
+    """A URL or libpq PG* settings naming the server; without them psycopg would silently try a default local socket."""
+    return bool(database_url or os.getenv('PGHOST') or os.getenv('PGSERVICE'))
+
+
 class ApiError(Exception):
     def __init__(self,message,status=400):self.message,self.status=message,status
+
+
+class ConfigError(Exception):
+    """No PostgreSQL connection settings were given."""
 
 
 class SchemaError(Exception):
@@ -83,17 +91,10 @@ class PostgresConnection:
 
 
 class Store:
-    def __init__(self,path=None,*,database_url=None,backend=None,initialize=True):
-        self.backend=backend or ('postgres' if database_url else 'sqlite')
-        if self.backend=='postgres':
-            self.path=None
-            self.db=PostgresConnection(database_url)
-        elif self.backend=='sqlite':
-            self.path=Path(path or BASE/'data'/'profiles.sqlite3')
-            self.path.parent.mkdir(parents=True,exist_ok=True)
-            self.db=sqlite3.connect(self.path)
-            self.db.execute('PRAGMA foreign_keys=ON');self.db.execute('PRAGMA journal_mode=WAL')
-        else:raise ValueError('Identity backend must be postgres or sqlite')
+    backend='postgres' # reported by /health
+    def __init__(self,*,database_url=None,initialize=True):
+        if not postgres_configured(database_url):raise ConfigError(POSTGRES_REQUIRED)
+        self.db=PostgresConnection(database_url)
         if not initialize:return
         try:
             # CREATE TABLE IF NOT EXISTS would keep an old table as is; refuse it instead of failing later.
@@ -102,18 +103,14 @@ class Store:
                 raise SchemaError(f'Old identity schema (v{version}). Back up the DB, run migrate_account.py, then restart.')
             if version is not None and version>SCHEMA_VERSION:
                 raise SchemaError(f'Identity schema v{version} is newer than this server (v{SCHEMA_VERSION}).')
-            if self.backend=='sqlite':self.db.executescript((BASE/'schema.sql').read_text(encoding='utf-8-sig'))
-            else:
-                with self.db:self.db.execute((BASE/'schema.postgres.sql').read_text(encoding='utf-8'))
+            with self.db:self.db.execute((BASE/'schema.postgres.sql').read_text(encoding='utf-8'))
         except Exception:self.db.close();raise
 
     def columns(self,table):
-        if self.backend=='sqlite':return {row[1] for row in self.db.execute(f'PRAGMA table_info({table})')}
         return {row[0] for row in self.db.execute(
             'SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=?',(table,))}
 
     def indexes(self):
-        if self.backend=='sqlite':return {row[0] for row in self.db.execute("SELECT name FROM sqlite_master WHERE type='index'")}
         return {row[0] for row in self.db.execute('SELECT indexname FROM pg_indexes WHERE schemaname=current_schema()')}
 
     def version(self):
@@ -140,12 +137,11 @@ class Store:
         return row[0]
 
     def account(self,profile_id):
-        """Profile object of the API (section 4.2); JSONB arrives parsed from PostgreSQL, TEXT from SQLite."""
+        """Profile object of the API (section 4.2); the JSONB unlocked array arrives already parsed."""
         row=self.db.execute('SELECT id,name,weight,style,goal,coins,unlocked,tutorial_done FROM profiles WHERE id=?',(profile_id,)).fetchone()
         if not row:raise ApiError('프로필 없음',404)
-        unlocked=json.loads(row[6]) if isinstance(row[6],str) else row[6]
         return dict(id=row[0],name=row[1],weight=float(row[2]),style=row[3],goal=float(row[4]),coins=row[5],
-                    unlocked=sorted(unlocked),tutorial_done=bool(row[7]))
+                    unlocked=sorted(row[6]),tutorial_done=row[7])
 
     def profile(self,profile_id,token,avatar):
         # avatar is this request's aligned face JPG; it is returned once and never stored.
@@ -155,5 +151,3 @@ class Store:
 
     def delete(self,profile_id):
         with self.db:self.db.execute('DELETE FROM profiles WHERE id=?',(profile_id,))
-        if self.backend=='sqlite':
-            self.db.execute('PRAGMA wal_checkpoint(TRUNCATE)');self.db.execute('VACUUM')

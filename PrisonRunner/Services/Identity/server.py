@@ -1,4 +1,4 @@
-"""Mongscape exhibition profiles. YuNet + SFace, PostgreSQL/SQLite, Docker/HTTPS host.
+"""Mongscape exhibition profiles. YuNet + SFace, PostgreSQL, Docker/HTTPS host.
 This demo has no certified presentation-attack/liveness detection. Do not use for sensitive accounts.
 """
 from __future__ import annotations
@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 BASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE / '.runtime'))
 MAX_BODY = 4 * 1024 * 1024
-from storage import NAME_MAX,ApiError,SchemaError,Store,clean_name,name_key
+from storage import NAME_MAX,ApiError,ConfigError,SchemaError,Store,clean_name,name_key
 LIMIT_WINDOW=60; FACE_LIMIT=15; NAME_CHECK_LIMIT=60 # attempts per window, shared by every PC
 ITEM_PRICES={0:30,1:60,2:100} # ItemKind: magnet, coin x2, shield; same as client ItemCatalog
 MODES=range(3) # PlayStyle: 0 full body, 1 upper body, 2 keyboard
@@ -217,17 +217,15 @@ def create_server(host,port,store,faces,allowed_hosts=None):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument('--database',type=Path,default=Path(os.getenv('IDENTITY_DATABASE',str(BASE/'data'/'profiles.sqlite3'))))
-    parser.add_argument('--database-url',default=os.getenv('IDENTITY_DATABASE_URL'))
-    parser.add_argument('--database-backend',choices=('postgres','sqlite'),default=os.getenv('IDENTITY_DATABASE_BACKEND'))
+    parser.add_argument('--database-url',default=os.getenv('IDENTITY_DATABASE_URL'),help='PostgreSQL URL; PG* environment variables are used when omitted')
     parser.add_argument('--models',type=Path,default=BASE/'models')
     parser.add_argument('--host',default=os.getenv('IDENTITY_HOST','127.0.0.1'))
     parser.add_argument('--port',type=int,default=int(os.getenv('IDENTITY_PORT','8765')))
     parser.add_argument('--allowed-hosts',default=os.getenv('IDENTITY_ALLOWED_HOSTS'))
     parser.add_argument('--init-db',action='store_true')
     args=parser.parse_args()
-    try:store=Store(args.database,database_url=args.database_url,backend=args.database_backend)
-    except SchemaError as error:raise SystemExit(str(error))
+    try:store=Store(database_url=args.database_url)
+    except (ConfigError,SchemaError) as error:raise SystemExit(str(error))
     except Exception as error:raise SystemExit('Identity database connection/setup failed: '+type(error).__name__)
     try:
         if args.init_db: print('Identity database initialized:',store.backend); return
