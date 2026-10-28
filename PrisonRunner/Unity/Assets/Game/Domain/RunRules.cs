@@ -269,7 +269,10 @@ namespace Muhanok.Domain
         public bool Slip(bool banana=false)
         {
             if(Flow.State!=GameFlowState.Running||Paused||Runner.Riding)return false;
-            DodgeStreak=0;Runner.Slip();
+            DodgeStreak=0;
+            // The shield also absorbs one slip: no slowdown, no banana count, so no pursuit starts.
+            if(Items.ConsumeShield()){ShieldSaves++;lastHit=clock;return false;}
+            Runner.Slip();
             if(banana)
             {
                 BananaHits++;
