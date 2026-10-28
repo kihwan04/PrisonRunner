@@ -15,6 +15,7 @@
 
 | 날짜 | 확인한 범위 | 결과·근거 |
 | --- | --- | --- |
+| 2026-10-28 | 얼굴 서버 PostgreSQL 전용 전환(SQLite 제거) | 얼굴 모델·계정 API·v1→v2 이전·저장·HTTP 27/27 통과. `run_tests.ps1`의 임시 PostgreSQL 17.6·비관리자 계정, 종료 후 삭제 |
 | 2026-10-26 | 공개 소스 추가 검증 | Mixamo 원본 제외, 자체 Humanoid 연결 18개 유효·PlayMode 37/37. [근거](previews/PublicRelease20261026/review.json) |
 | 2026-10-26 | 세 갈래 철로 단축 | EditMode 115/115, PlayMode 37/37. 새 Windows 빌드·3방향 진입·스모크 종료 코드 0. [보고서](reports/FORK_SHORT_2026_10_26.md) |
 | 2026-10-26 | HUD 정리 후 Unity 검증 | EditMode 113/113, PlayMode 37/37. 고정값 HUD 모델 3,600회 관리 메모리 할당 0바이트 |
@@ -48,6 +49,6 @@
 
 다음 작업은 [개발 계획](DEVELOPMENT_PLAN.md) 순서로 진행합니다.
 
-최신 DB 검증과 SQLite 이전 범위는 [PostgreSQL 보고서](reports/POSTGRES_IDENTITY_2026_10_26.md)를 확인하세요.
+얼굴 서버는 2026-10-28부터 PostgreSQL만 사용합니다(로컬 SQLite 실행과 SQLite 가져오기 도구 삭제). 서버 테스트는 [서버 안내](../Services/Identity/README_DOCKER.md)의 `run_tests.ps1`로 실행합니다. PostgreSQL 도입 당시 검증은 [PostgreSQL 보고서](reports/POSTGRES_IDENTITY_2026_10_26.md)에 있습니다.
 
 `lilohdong/muhanok-test`의 main b2215ef를 로컬 소스에 통합했습니다. Unity EditMode 99/99, PlayMode 36/36 통과. 새 Windows 빌드와 화면 확인은 [통합 보고서](reports/MUHANOK_TEST_MERGE_2026_10_26.md)를 확인하세요.

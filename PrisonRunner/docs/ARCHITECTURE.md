@@ -43,13 +43,13 @@
 
 ## 얼굴 서버와 저장 경계
 
-`Services/Identity/server.py`는 단일 API 프로세스이고 `storage.py`가 PostgreSQL/SQLite 연결을 담당합니다. 중앙 배포는 Caddy HTTPS → Docker API/Psycopg → PostgreSQL 17 → postgres-data volume 순서입니다. 기존 로컬 Python은 PostgreSQL 설정이 없으면 SQLite를 사용합니다. 실제 배포 명령과 백업은 [서버 안내](../Services/Identity/README_DOCKER.md)에 있습니다.
+`Services/Identity/server.py`는 단일 API 프로세스이고 `storage.py`가 PostgreSQL 연결을 담당합니다(PostgreSQL 전용). 중앙 배포는 Caddy HTTPS → Docker API/Psycopg → PostgreSQL 17 → postgres-data volume 순서입니다. Docker 없이 로컬 Python으로 실행할 때도 PostgreSQL 연결 설정이 필요합니다. 실제 배포 명령과 백업은 [서버 안내](../Services/Identity/README_DOCKER.md)에 있습니다.
 
 서버 주소는 `MONGSCAPE_IDENTITY_URL` → EXE 옆 `identity-server.json` → `http://127.0.0.1:8765` 순서로 정합니다. 원격 주소는 HTTPS를 사용하고 잘못된 설정은 오류로 처리합니다.
 
 | 데이터 | 저장 위치 |
 | --- | --- |
-| 얼굴·프로필·로그인 세션·개인 운동 기록 | 중앙 서버 PostgreSQL의 `postgres-data` volume. 기존 로컬 실행은 SQLite |
+| 얼굴·프로필·로그인 세션·개인 운동 기록 | 중앙 서버 PostgreSQL의 `postgres-data` volume |
 | 거리 랭킹·지갑·상점 해금·PC 프로필 | 게임 PC의 `Player` 로컬 JSON. 기존 Exhibition 파일은 처음 한 번 읽어 이전 |
 | 누적 최고 기록 | `Player/records.json`. 기존 PlayerPrefs 최고 기록도 읽어 보존 |
 | 화면/입력 설정 | 게임 PC의 PlayerPrefs |

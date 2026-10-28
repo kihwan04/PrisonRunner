@@ -29,7 +29,7 @@
 | --- | --- |
 | 얼굴 없이 플레이 | 키보드 또는 몸동작 방식을 선택해 바로 시작 |
 | 여러 PC에서 기록 공유 | PostgreSQL/Docker 서버를 먼저 배포하고 각 게임의 EXE 옆 `identity-server.json`에 같은 HTTPS 주소 지정 |
-| 기존 로컬 얼굴 서버 | 개발 폴더에서 `SetupIdentity.cmd`로 준비한 뒤 `StartIdentity.cmd` 실행 |
+| 이 PC에서 얼굴 서버 실행 | 같은 PC에서 Docker 서버를 실행하거나, PostgreSQL 연결 설정(`IDENTITY_DATABASE_URL` 등) 후 개발 폴더의 `SetupIdentity.cmd` → `StartIdentity.cmd` 실행 |
 
 중앙 서버 설정 예시입니다. **실제 서버 주소로 바꾼 뒤** 사용합니다.
 
