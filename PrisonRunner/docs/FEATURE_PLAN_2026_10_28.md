@@ -65,6 +65,7 @@
 | 몸무게 | 입력하지 않으면 **65kg**으로 계산한다. 몸무게 미입력으로 칼로리 계산을 빼는 경우는 없앤다 |
 | 점수 | **점수 = 거리(m) + 소모 칼로리 × 100**. 코인·장애물 통과는 점수에 넣지 않는다. 모든 랭킹은 점수로 정렬한다(키보드는 칼로리가 0이라 점수 = 거리)(T13) |
 | 결과 화면 | 점수, 플레이 시간(표시만), 거리, **내 최고 기록**(회원, 모드별)과 신기록 여부를 보여 준다 |
+| 장애물 배치 | 판마다 씨드로 **모든 구간의 장애물을 랜덤 배치**한다(광산 철로의 끊어진 레일 포함). 첫 구간은 점프 줄과 숙이기 줄 중 하나를 랜덤으로 고른다. 구간 순서(경로)는 지금처럼 고정한다(T14) |
 
 **하지 않기로 한 것**
 - 아이템 처음부터 생성, 상점을 지속시간 강화로 개편
@@ -82,6 +83,7 @@
 | T2 | `feature/fullbody-crouch-tuning` | 전신 숙이기 오인식 수정 | - | - |
 | T3 | `feature/powerup-effects` | 자석·코인 2배·방패 효과 | T1 | `RunHud.cs`(T1), `RunRules.cs`(T13) |
 | T13 | `feature/run-score` | 점수 공식·몸무게 기본값·플레이 시간 | T3 | `RunRules.cs`, `WorkoutEstimate.cs`, `RunHud.cs` |
+| T14 | `feature/random-obstacles` | 장애물 랜덤 배치(첫 구간·광산 철로 포함) | T3 | `MuhanokMapChunk.cs`, `RuntimeContent.cs`(T3), 광산 구간 프리팹 |
 | T4 | `feature/identity-transient-avatar` | 얼굴 사진 서버 저장 제거 | - | `server.py`, `storage.py`(T5) |
 | T5 | `feature/account-server-api` | 계정 스키마·API·마이그레이션 | T4 | - |
 | T6 | `feature/identity-face-guide` | 로그인 캠 골격 제거 + 얼굴 가이드 틀 | - | `HudData.cs`(T1) |
@@ -93,7 +95,7 @@
 | T12 | `feature/tutorial` | 튜토리얼 | T2, T8 | - |
 
 - 작업 번호는 만든 순서이고, 진행 순서는 이 표의 위에서 아래다(T13은 T3 다음).
-- T1→T3→T13, T4→T5, T6은 서로 독립이라 동시에 진행할 수 있다. 겹치는 파일이 있는 작업은 표의 순서대로 머지한 뒤 rebase한다.
+- T1→T3→T13, T3→T14, T4→T5, T6은 서로 독립이라 동시에 진행할 수 있다(T13과 T14는 서로 겹치는 파일이 없다). 겹치는 파일이 있는 작업은 표의 순서대로 머지한 뒤 rebase한다.
 - 서버 PR(T4, T5)이 머지되어도 중앙 서버 적용은 T7~T10이 준비된 뒤 한 번에, **별도 확인을 받고** 진행한다. 그 전까지 클라이언트는 로컬 Docker 서버(`compose.yaml`) 또는 `StartIdentity.cmd` 로컬 서버로 개발한다.
 
 ---
@@ -237,6 +239,65 @@
   - `Elapsed`가 일시정지 중에 늘지 않는다.
 - 기존 점수 관련 테스트(`BodyTrackingAndExhibitionTests.cs:190-197` 등)를 새 공식에 맞게 고친다.
 - `docs/GAME_FLOW_UI.md`에 점수 공식과 몸무게 기본값을 적는다.
+
+---
+
+### T14. 장애물 랜덤 배치 (첫 구간 · 광산 철로 포함)
+
+**현재 코드**
+- **씨드**: 판마다 새 씨드를 뽑는다(`GameSettings.asset` `RandomizeLayout: 1`, `GameBootstrap.cs:197`). 씨드는 `RoutePlan`, `ChunkSpawner`의 `System.Random`으로 전달된다(`ChunkSpawner.cs:79-88`).
+- **구간 순서는 고정**: 확장 경로(`ExtendedRoutes: 1`)의 첫 바퀴는 `0, 1, 2, 1, 2, 1, 3, 7, …`이다(`Domain/RoutePlan.cs:95`). 이 작업에서도 순서는 바꾸지 않는다.
+- **구간 프리팹**(`Content/Prefabs/CH_*.prefab`)에는 장애물이 미리 놓여 있다.
+  - `ExerciseObstacles`: 레인 3개를 다 막는 운동 줄. Crate(점프)·Pipe(숙이기) 등이고, 구간마다 2줄(6개)이다. 계단 구간은 3개다.
+  - `Obstacles`: 레인 하나를 막는 장애물 6개(2줄 × 3레인)
+  - 감옥 복도의 `Gates`, 계단의 `SlideGates`, `FloorItems`
+  - 광산 직선 구간(`CH_Mine_Straight_A/B`, 타입 1·2)의 `RailGaps` 2개(z 8, 18)
+- **배치 규칙**(`Presentation/Map/MuhanokMapChunk.cs:52-100` `Prepare`)
+  - 운동 줄은 광차 구간이 아니면 **항상 켜진다**. 첫 구간(순번 0)에서만 Crate 줄을 끈다(`:64-66`). 그래서 **매 판 첫 장애물은 레인 전체를 막는 숙이기 줄**이다. 주석("clear warm-up")과 실제 동작이 다르다.
+  - 레인 장애물: 타입 4~6의 첫 줄만 랜덤 레인(`:82-83`), 그 밖은 확률 줄(`:95-98`)
+- **추가 배치**(`Presentation/Map/RuntimeContent.cs` `Decorate`)
+  - 걷는 구간(0, 4, 5, 12)은 72%(동물원 52%) 확률로 미리 놓인 장애물을 끄고 레인 막이로 바꾼다. 바나나와 동물원 동물도 여기서 놓는다.
+  - 첫 구간과 광차 구간에서는 일찍 반환한다.
+- **광산 철로**: 끊어진 레일 위치·방향이 고정이다.
+  - `CartRailGap`(`Presentation/Map/CartRailGap.cs`)은 판정만 한다. 레일이 끊긴 모양은 **에디터 도구가 다리 메시를 만들 때 레일을 빼고 구워 넣은 것**이다(`Editor/MuhanokArtUpgrade.Cart.cs:61-72`, 끊긴 쪽은 `RouteSurface.CartMissingSide`, `Domain/RouteSurface.cs:37-41`).
+  - 그래서 게임 중에 `RailGap`을 끄기만 하면 레일은 끊겨 보이는데 통과되는 불일치가 생긴다. 갈림길 구간은 이미 이렇게 끄고 있다(`ChunkSpawner.cs:119`).
+
+**변경**
+1. **배치 결정을 Domain으로 뺀다**: `Domain/ObstacleLayout.cs`(UnityEngine 미참조)
+   - 입력: 씨드에서 나온 `System.Random`, 구간 타입, 순번, 구간이 가진 장애물 슬롯 목록(종류·줄·레인)
+   - 출력: 켤 슬롯 목록과 광산 레일 상태
+   - `MuhanokMapChunk.Prepare`와 `RuntimeContent.Decorate`는 이 결과대로 켜고 끈다. 같은 씨드면 항상 같은 배치다.
+2. **첫 구간**: 순번 0의 `CH_Mine_Start`에서 점프 줄(Crate)과 숙이기 줄(Pipe) 중 **하나를 랜덤으로** 남긴다. `:64-66`의 워밍업 규칙을 대체한다.
+3. **걷는 구간 운동 줄**
+   - 구간의 운동 줄마다 켤지 말지를 랜덤으로 정한다. 구간당 최소 1줄은 켠다.
+   - 계단(타입 7)의 하이니 계단은 지형의 일부이므로 항상 켠다.
+   - 같은 위치의 종류 바꾸기(Crate↔Pipe)는 모델이 달라 이번 범위에서 하지 않는다. 대신 켜지는 줄의 조합이 판마다 달라진다.
+4. **레인 장애물**: 모든 걷는 구간에서 줄마다 확률(`Difficulty.ObstacleChance`)로 랜덤 레인 하나를 막는다. `SafePatternValidator`로 줄마다 최소 1레인을 비워 둔다. 감옥 복도 `Gates`도 같은 방식으로 랜덤 레인에 켠다.
+5. **광산 철로**
+   - 레일 끊김 2곳(z 8, 18)마다 판마다 랜덤으로 정한다: 없음 / 왼쪽 끊김 / 오른쪽 끊김. 구간당 최소 1곳은 끊는다. 갈림길 구간은 지금처럼 끊김 없음.
+   - **레일 모양을 실행 중에 바꿀 수 있게 한다**
+     - 에디터 도구(`MuhanokArtUpgrade.Cart.cs`)가 z 8, 18 부근(±1.5m)의 레일을 **양쪽 다 빼고** 굽게 바꾼다.
+     - 실행 중에는 풀링한 레일 조각(`SingleRail`·`RailFastener`와 같은 크기와 재질)을 끊기지 않을 쪽에 채운다.
+     - `CartRailGap.RequiredLean`은 고른 방향에 맞게 설정한다.
+   - 프리팹 재생성은 Unity 배치 모드에서 해당 에디터 메서드로 실행한다. 바뀐 `.prefab`과 `.meta`를 함께 커밋한다.
+   - `RouteSurface.CartMissingSide`는 고정값 대신 이 판의 배치를 돌려주도록 바꾸거나, 에디터 전용으로 남긴다.
+6. **안전 규칙**(EditMode 테스트로 검증)
+   - 어떤 줄도 레인 3개를 모두 막지 않는다(운동 줄은 동작으로 통과).
+   - 구간 이음새 앞뒤 4m 안에는 장애물을 두지 않는다(지금 바나나 규칙과 같음).
+   - 서로 다른 동작이 필요한 장애물 사이 간격을 최소 6m 둔다.
+7. **문서**: `docs/GAME_FLOW_UI.md`에 배치 규칙을 적는다.
+
+**완료 조건과 테스트**
+- EditMode(`ObstacleLayout`)
+  - 같은 씨드면 같은 배치, 다른 씨드 100개에서 배치가 여러 가지로 나온다.
+  - 씨드 500개에서 첫 구간이 점프와 숙이기를 모두 포함한다(각각 30% 이상).
+  - 씨드 500개 × 모든 구간 타입에서 안전 규칙 위반이 없다.
+  - 광산 구간에 끊김이 최소 1곳 있고, 방향이 왼쪽·오른쪽 모두 나온다.
+- PlayMode
+  - 광산 구간에서 끊김 없음으로 정해진 곳은 레일이 이어져 보이고(레일 조각 활성) 통과해도 잡히지 않는다.
+  - 끊김으로 정해진 곳은 반대로 기울이지 않으면 잡힌다.
+  - 풀 반환 후 다시 쓰일 때 레일 조각이 새 배치대로 바뀐다.
+- 기존 테스트(`CollisionAndCartTests`, `StartAndGateTests` 등)에서 고정 배치를 가정한 것은 씨드를 고정해 고친다.
 
 ---
 
