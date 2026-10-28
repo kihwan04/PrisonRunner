@@ -179,6 +179,36 @@ namespace Muhanok.Tests
             Assert.AreEqual(spot.y,coin.transform.localPosition.y,.0001f); Assert.AreEqual(spot.z,coin.transform.localPosition.z,.0001f);
             Assert.IsFalse(coin.Pulled); Assert.IsTrue(coin.gameObject.activeSelf);
         }
+        [UnityTest] public IEnumerator OnlyUnlockedItemsSpawnAwayFromBananaRows()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>(); var wallet=game.Store.Wallet;
+            int coins=wallet.Coins; bool all=wallet.UnlockAll; var unlocked=new System.Collections.Generic.List<ItemKind>(wallet.Unlocked);
+            try
+            {
+                game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
+                game.enabled=false;
+                foreach(var allowed in new[]{new ItemKind[0],new[]{ItemKind.Shield}})
+                {
+                    // In memory only: the saved wallet file is never written by this test.
+                    wallet.UnlockAll=false; wallet.Restore(coins,allowed);
+                    game.Map.Reset(); int found=0;
+                    for(int n=0;n<80;n++)
+                    {
+                        game.Map.Tick(n*24f+2);
+                        foreach(var active in game.Map.Active) foreach(var pickup in active.Chunk.Pickups)
+                        {
+                            found++; CollectionAssert.Contains(allowed,pickup.Kind);
+                            float z=pickup.transform.position.z;
+                            foreach(var peel in active.Chunk.DynamicFloorItems) Assert.GreaterOrEqual(Mathf.Abs(peel.transform.position.z-z),2.99f,"Items stay clear of banana rows");
+                        }
+                    }
+                    if(allowed.Length==0) Assert.AreEqual(0,found,"Nothing unlocked: no items appear");
+                    else Assert.Greater(found,0,"Unlocked items appear on the map");
+                }
+            }
+            finally { wallet.UnlockAll=all; wallet.Restore(coins,unlocked); }
+        }
         [UnityTest] public IEnumerator AuthoredCoinsAndRunnerFollowCurvesAndStairElevation()
         {
             yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;

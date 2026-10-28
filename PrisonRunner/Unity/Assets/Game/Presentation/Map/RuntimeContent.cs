@@ -149,7 +149,7 @@ namespace Muhanok.Presentation.Map
                 float z = FreeZ(chunk, start, random, 3f);
                 if (!float.IsNaN(z))
                 {
-                    var pickup = Item(kinds[random.Next(kinds.Count)], z, random.Next(3) - 1);
+                    var pickup = Item(kinds[random.Next(kinds.Count)], z, ItemLane(chunk, random.Next(3) - 1));
                     pickup.transform.SetParent(chunk.transform, true);
                     chunk.Pickups.Add(pickup); list.Add(pickup);
                 }
@@ -182,9 +182,30 @@ namespace Muhanok.Presentation.Map
             {
                 float z = start + 4f + (float)random.NextDouble() * 16f;
                 if (Clear(chunk.Obstacles, z, clearance) && Clear(chunk.ExerciseObstacles, z, clearance) && Clear(chunk.DynamicObstacles, z, clearance)
-                    && ClearItems(chunk.FloorItems, z, clearance) && ClearGates(chunk, z, clearance)) return z;
+                    && ClearItems(chunk.FloorItems, z, clearance) && ClearItems(chunk.DynamicFloorItems, z, clearance) && ClearGates(chunk, z, clearance)) return z;
             }
             return float.NaN;
+        }
+        // Starting from the random lane, the first lane with no single-lane hazard anywhere in the chunk.
+        private static int ItemLane(MuhanokMapChunk chunk, int preferred)
+        {
+            for (int step = 0; step < 3; step++)
+            {
+                int lane = (preferred + 1 + step) % 3 - 1;
+                if (LaneClear(chunk.Obstacles, lane) && LaneClear(chunk.DynamicObstacles, lane)) return lane;
+            }
+            return preferred;
+        }
+        private static bool LaneClear(IEnumerable<ObstacleController> hazards, int lane)
+        {
+            if (hazards == null) return true;
+            foreach (var hazard in hazards)
+            {
+                if (hazard == null || !hazard.gameObject.activeSelf || hazard.FullExerciseRow) continue;
+                var p = hazard.transform.position; RouteSurface.Sample(p.z, out float x, out _);
+                if (Mathf.RoundToInt((p.x - x) / 2.2f) == lane) return false;
+            }
+            return true;
         }
         private static bool Clear(IEnumerable<ObstacleController> hazards, float z, float clearance)
         {
@@ -192,7 +213,7 @@ namespace Muhanok.Presentation.Map
             foreach (var hazard in hazards) if (hazard != null && hazard.gameObject.activeSelf && Mathf.Abs(hazard.transform.position.z - z) < clearance) return false;
             return true;
         }
-        private static bool ClearItems(FloorItemController[] items, float z, float clearance)
+        private static bool ClearItems(IEnumerable<FloorItemController> items, float z, float clearance)
         {
             if (items == null) return true;
             foreach (var item in items) if (item != null && item.gameObject.activeSelf && Mathf.Abs(item.transform.position.z - z) < clearance) return false;
