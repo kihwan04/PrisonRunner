@@ -39,7 +39,7 @@ namespace Muhanok.Presentation
             skin.Text(new Rect(r.x + 24, r.y + 48, r.width - 48, 24), "최대 " + AccountSession.MaxNickname + "자. 건너뛰면 \"" + AccountSession.GuestName + "\"로 남습니다.", 15, Palette.Sand, TextAnchor.MiddleLeft, false, true);
             var field = new Rect(r.x + 24, r.y + 84, r.width - 300, 52);
             GUI.SetNextControlName("MongscapeGuestName");
-            text = skin.Input(field, text, AccountSession.MaxNickname);
+            text = skin.Input(field, text, AccountSession.MaxNicknameInput);
             if (focus && e.type == EventType.Repaint) { GUI.FocusControl("MongscapeGuestName"); focus = false; }
             if (skin.Button(new Rect(field.xMax + 12, field.y, 110, 52), "저장", Palette.Gold, Color.clear, Palette.Outline, 20) || enter) Save(data, text);
             if (skin.Button(new Rect(field.xMax + 134, field.y, 130, 52), "건너뛰기", Palette.A(Palette.Ground, 0.9f), Palette.Wood, Palette.Cream, 20) || escape) Skip();

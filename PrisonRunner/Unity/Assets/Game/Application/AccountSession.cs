@@ -88,15 +88,28 @@ namespace Muhanok.Application
             foreach (var item in ItemCatalog.All) if (wallet.IsUnlocked(item.Kind)) list.Add(item.Kind);
             return list;
         }
-        // Server nickname rule (1-10 characters after trimming, no control characters); null when the name is acceptable.
+        // Server nickname rule (storage.clean_name): 1-10 code points after trimming (Python len()), and no character of
+        // a Unicode "C" category (control, format such as U+200B, private use, unassigned, lone surrogate); null when acceptable.
         public static string NicknameProblem(string name)
         {
             string text = name?.Trim() ?? "";
             if (text.Length == 0) return "닉네임을 입력해 주세요.";
-            if (text.Length > MaxNickname) return "닉네임은 " + MaxNickname + "자 이하로 입력해 주세요.";
-            foreach (char c in text) if (char.IsControl(c)) return "닉네임에 쓸 수 없는 문자가 있습니다.";
+            if (CodePoints(text) > MaxNickname) return "닉네임은 " + MaxNickname + "자 이하로 입력해 주세요.";
+            for (int i = 0; i < text.Length; i += char.IsSurrogatePair(text, i) ? 2 : 1)
+                if (Forbidden(CharUnicodeInfo.GetUnicodeCategory(text, i))) return "닉네임에 쓸 수 없는 문자가 있습니다.";
             return null;
         }
+        // Text fields count UTF-16 units; room for 10 code points of two units each, the rule above decides.
+        public const int MaxNicknameInput = MaxNickname * 2;
+        // A surrogate pair (an emoji) is one character, as on the server.
+        public static int CodePoints(string text)
+        {
+            int count = 0;
+            for (int i = 0; i < (text?.Length ?? 0); i += char.IsSurrogatePair(text, i) ? 2 : 1) count++;
+            return count;
+        }
+        static bool Forbidden(UnicodeCategory c) => c == UnicodeCategory.Control || c == UnicodeCategory.Format || c == UnicodeCategory.PrivateUse
+            || c == UnicodeCategory.OtherNotAssigned || c == UnicodeCategory.Surrogate;
         // Profile screen values; an empty weight means the 65 kg default.
         public static AccountSettings SettingsOf(PlayerProfile value)
         {

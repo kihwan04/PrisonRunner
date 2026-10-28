@@ -100,7 +100,7 @@ namespace Muhanok.Presentation
             bool wasEnabled = GUI.enabled; GUI.enabled = wasEnabled && !form.Busy && !asking;
             skin.Text(new Rect(x, 130, 300, 28), "닉네임 (1~10자)", 18, Palette.Sand, TextAnchor.MiddleLeft, false, true);
             GUI.SetNextControlName("MongscapeProfileName");
-            form.Nickname = skin.Input(new Rect(x, 162, 400, 52), form.Nickname, AccountSession.MaxNickname);
+            form.Nickname = skin.Input(new Rect(x, 162, 400, 52), form.Nickname, AccountSession.MaxNicknameInput);
             if (focusName && e.type == EventType.Repaint) { GUI.FocusControl("MongscapeProfileName"); focusName = false; }
             skin.Text(new Rect(x, 232, 200, 28), "몸무게", 18, Palette.Sand, TextAnchor.MiddleLeft, false, true);
             GUI.SetNextControlName("MongscapeProfileWeight");

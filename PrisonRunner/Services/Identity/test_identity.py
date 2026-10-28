@@ -101,9 +101,10 @@ class IdentityTests(PostgresCase):
   check=lambda name:self.app.handle('/name-check',dict(name=name))
   self.assertEqual(check('민수'),dict(ok=True,available=True,message='사용할 수 있는 닉네임입니다.'))
   self.assertTrue(check(' 1234567890 ')['available'])
-  for name in ('minsu','MIN SU',' Min  Su ','',' ','12345678901','a\nb','a​b',None,7):
+  self.assertTrue(check('\U0001F600'*10)['available']) # code points, as the game's AccountSession.NicknameProblem
+  for name in ('minsu','MIN SU',' Min  Su ','',' ','12345678901','\U0001F600'*11,'a\nb','a​b','ab',None,7):
    result=check(name);self.assertTrue(result['ok']);self.assertFalse(result['available'],name);self.assertTrue(result['message'])
-  for _ in range(60-12):check('free')
+  for _ in range(60-15):check('free')
   self.assertEqual(self.status('/name-check',dict(name='free')),429)
   self.assertNotIn('face',self.app.attempts) # separate budget from face enroll/login
  def test_profile_and_update(self):

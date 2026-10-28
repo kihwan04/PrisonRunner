@@ -86,6 +86,16 @@ namespace Muhanok.Tests
             Assert.IsNull(AccountSession.NicknameProblem("민수")); Assert.IsNull(AccountSession.NicknameProblem(" 1234567890 "));
             Assert.IsNotNull(AccountSession.NicknameProblem("")); Assert.IsNotNull(AccountSession.NicknameProblem("   ")); Assert.IsNotNull(AccountSession.NicknameProblem(null));
             Assert.IsNotNull(AccountSession.NicknameProblem("12345678901")); Assert.IsNotNull(AccountSession.NicknameProblem("a\tb"));
+            // Python len() counts code points: an emoji is one character even though it is two UTF-16 units.
+            string emoji = "\U0001F600";
+            Assert.AreEqual(2, emoji.Length); Assert.AreEqual(1, AccountSession.CodePoints(emoji));
+            Assert.IsNull(AccountSession.NicknameProblem(string.Concat(System.Linq.Enumerable.Repeat(emoji, 10))), "10 emoji = 10 characters");
+            Assert.IsNotNull(AccountSession.NicknameProblem(string.Concat(System.Linq.Enumerable.Repeat(emoji, 11))));
+            Assert.IsNull(AccountSession.NicknameProblem("민수" + emoji));
+            // Every Unicode "C" category is refused, not only controls: U+200B (Cf), private use (Co), a lone surrogate (Cs).
+            Assert.IsNotNull(AccountSession.NicknameProblem("a​b")); Assert.IsNotNull(AccountSession.NicknameProblem("ab"));
+            Assert.IsNotNull(AccountSession.NicknameProblem("a\uD83D")); Assert.IsNotNull(AccountSession.NicknameProblem("\uDE00b"));
+            Assert.GreaterOrEqual(AccountSession.MaxNicknameInput, 2 * AccountSession.MaxNickname, "The text field never cuts 10 emoji");
         }
     }
 }

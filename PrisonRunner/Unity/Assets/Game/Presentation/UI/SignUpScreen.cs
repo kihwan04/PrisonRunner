@@ -126,7 +126,7 @@ namespace Muhanok.Presentation
             skin.Panel(new Rect(r.x, r.y + 50, 420, 56), 1f);
             GUI.SetNextControlName("MongscapeSignUpName");
             bool wasEnabled = GUI.enabled; GUI.enabled = wasEnabled && !flow.Checking;
-            nameText = GUI.TextField(new Rect(r.x, r.y + 50, 420, 56), nameText, AccountSession.MaxNickname, skin.Input);
+            nameText = GUI.TextField(new Rect(r.x, r.y + 50, 420, 56), nameText, AccountSession.MaxNicknameInput, skin.Input);
             GUI.enabled = wasEnabled;
             if (focusName && Event.current.type == EventType.Repaint) { GUI.FocusControl("MongscapeSignUpName"); focusName = false; }
             GUI.color = flow.Checking ? Color.white : new Color(1, .55f, .35f);
