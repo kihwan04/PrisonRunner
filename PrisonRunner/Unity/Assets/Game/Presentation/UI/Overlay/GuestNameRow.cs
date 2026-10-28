@@ -10,8 +10,10 @@ namespace Muhanok.Presentation
         readonly OverlaySkin skin;
         string text = "", message = "";
         bool focus;
+        // Called after a rename so the result's 이 PC board shows the new name at once.
+        readonly System.Action renamed;
         public bool Open { get; private set; }
-        public GuestNameRow(OverlaySkin overlaySkin) { skin = overlaySkin; }
+        public GuestNameRow(OverlaySkin overlaySkin, System.Action onRenamed = null) { skin = overlaySkin; renamed = onRenamed; }
 
         public void Show(IHudData data) { Open = data != null && data.CanNameLastRun; text = message = ""; focus = Open; }
         public void Skip() { Open = false; }
@@ -22,7 +24,7 @@ namespace Muhanok.Presentation
             string problem = AccountSession.NicknameProblem(name);
             if (problem != null) { message = problem; return false; }
             if (!data.NameLastRun(name)) { message = "기록 이름을 바꾸지 못했습니다."; return false; }
-            Open = false; return true;
+            Open = false; renamed?.Invoke(); return true;
         }
 
         public void Draw(IHudData data, Rect r)

@@ -78,6 +78,15 @@ namespace Muhanok.Tests
             Assert.IsFalse(Board.MemberTab,"이 PC");Assert.AreEqual(Data.Player.Style,Board.Mode);Assert.IsTrue(Board.TodayOnly);
             CollectionAssert.DoesNotContain(fake.Calls,"leaderboard");
             Assert.AreEqual(1,Board.Rows.Count);Assert.IsFalse(Board.Rows[0].Member);Assert.IsNotNull(Board.Mine);Assert.AreEqual(1,Board.Mine.Rank);
+            // Naming the run on the result screen shows the new name on the 이 PC board at once.
+            game.StartIntro();for(int i=0;i<82;i++)game.Intro.Tick(.1f);
+            game.Session.Flow.Transition(GameFlowState.Caught);game.Session.Flow.Transition(GameFlowState.Result);
+            game.RecordFinishedRun();hud.OpenResult();
+            Assert.IsTrue(hud.AsksGuestName);Assert.AreEqual(AccountSession.GuestName,Board.Mine.Name);
+            Assert.IsTrue(hud.SaveGuestName(" 민지 "));Assert.IsFalse(hud.AsksGuestName);
+            Assert.IsNotNull(Board.Mine);Assert.AreEqual("민지",Board.Mine.Name);Assert.AreEqual(2,Board.Rows.Count);
+            Assert.IsTrue(Board.Rows.Exists(row=>row.Name=="민지"));
+            game.Retry();
             yield return null;
         }
 

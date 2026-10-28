@@ -133,6 +133,13 @@ namespace Muhanok.Presentation
         public void DeleteAccount() => Profile.RequestDelete(() => { if (Page == MenuPage.Profile) OpenLogin(); });
         // Result screen: a guest is asked for a name for the run just recorded as "게스트" on this PC's ranking.
         public bool AsksGuestName => board.AsksGuestName;
+        public bool SaveGuestName(string name) => board.SaveGuestName(Data, name);
+        // Opens the result screen once per result (drawn by OnGUI; tests call it directly).
+        public void OpenResult()
+        {
+            if (resultOpen || session == null || session.Flow.State != GameFlowState.Result) return;
+            resultOpen = true; board.OpenResult(Data, Account, session); if (board.AsksGuestName) TextInput?.Invoke(true);
+        }
         // Result screen 웹캠 보정: only after a camera run; the panel blocks the result buttons and hand pointing while open.
         public bool CalibrationAvailable => session != null && session.Flow.State == GameFlowState.Result && Data?.Player != null && PlayStyleInfo.UsesCamera(Data.Player.Style);
         public bool CalibrationOpen => calibration != null && calibration.Open;
@@ -166,7 +173,7 @@ namespace Muhanok.Presentation
             }
             else if (state == GameFlowState.Result)
             {
-                if (!resultOpen) { resultOpen = true; board.OpenResult(Data, Account, session); if (board.AsksGuestName) TextInput?.Invoke(true); }
+                OpenResult();
                 bool perRun = Data != null && Data.DeveloperMode, calibrating = calibration.Open;
                 // The open calibration panel takes the keys first and leaves the result screen underneath inert.
                 calibration.Keys();

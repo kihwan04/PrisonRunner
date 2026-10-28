@@ -62,6 +62,8 @@ namespace Muhanok.Presentation
         }
 
         bool SignedIn => identity != null && identity.SignedIn;
+        // Rows hold copied names: after this PC's records change (a guest named the run) the 이 PC tab is rebuilt.
+        public void RefreshLocal() { if (!MemberTab) Reload(); }
 
         void Reload()
         {

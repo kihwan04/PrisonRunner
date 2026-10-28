@@ -21,8 +21,9 @@ namespace Muhanok.Presentation
         string summary = "";
 
         readonly GuestNameRow guestName;
-        public LeaderboardScreen(OverlaySkin overlaySkin, RankingBoard ranking) { skin = overlaySkin; board = ranking; guestName = new GuestNameRow(overlaySkin); }
+        public LeaderboardScreen(OverlaySkin overlaySkin, RankingBoard ranking) { skin = overlaySkin; board = ranking; guestName = new GuestNameRow(overlaySkin, ranking.RefreshLocal); }
         public bool AsksGuestName => board.ResultMode && guestName.Open;
+        public bool SaveGuestName(IHudData data, string name) => board.ResultMode && guestName.Save(data, name);
 
         public void OpenBoard(IHudData data, IIdentityData account)
         {
