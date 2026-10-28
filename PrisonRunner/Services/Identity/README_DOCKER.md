@@ -101,7 +101,7 @@ SELECT id, score, distance, kcal, created_at FROM runs ORDER BY created_at DESC 
 \q
 ```
 
-`profiles`는 이름·가입 시각·동의 버전, `face_samples`는 얼굴 특징 벡터, `sessions`는 토큰 해시·만료, `runs`는 운동 기록입니다. **얼굴 사진은 저장하지 않습니다.** 로그인·가입 응답의 `avatar`는 그 요청에서 받은 첫 장의 정렬 얼굴을 잘라 돌려준 값이며 DB와 로그에 남지 않습니다. 특징 벡터는 BYTEA, 동작별 기록은 JSONB, 시간은 Unix 초(BIGINT)입니다. 관련 프로필을 삭제하면 FK CASCADE로 특징·기록·세션도 삭제됩니다. 전시용 순위·화면 설정은 각 게임 PC의 로컬 저장입니다.
+`schema_version`은 DB 구조 버전(현재 2), `profiles`는 닉네임(`name`, 중복 검사용 `name_key`)·몸무게·기본 플레이 방식·목표·코인·해금 아이템(`unlocked`)·튜토리얼 완료 여부·가입 시각·동의 버전, `face_samples`는 얼굴 특징 벡터, `sessions`는 토큰 해시·만료, `runs`는 운동 기록(모드·획득 코인·점수 버전·플레이 시간 포함)입니다. **얼굴 사진은 저장하지 않습니다.** 로그인·가입 응답의 `avatar`는 그 요청에서 받은 첫 장의 정렬 얼굴을 잘라 돌려준 값이며 DB와 로그에 남지 않습니다. 특징 벡터는 BYTEA, 동작별 기록은 JSONB, 시간은 Unix 초(BIGINT)입니다. 관련 프로필을 삭제하면 FK CASCADE로 특징·기록·세션도 삭제됩니다. 회원 기록·코인·해금 아이템과 회원 랭킹은 이 DB에 있고, 게스트 순위와 화면 설정은 각 게임 PC의 로컬 저장입니다.
 
 ## 6. 기존 SQLite 데이터를 옮기려면
 
@@ -113,10 +113,13 @@ SELECT id, score, distance, kcal, created_at FROM runs ORDER BY created_at DESC 
 python -c "import sqlite3; s=sqlite3.connect('file:profiles.sqlite3?mode=ro',uri=True); d=sqlite3.connect('profiles-copy.sqlite3'); s.backup(d); d.close(); s.close()"
 ```
 
+가져오기 도구는 스키마 v2 복사본만 받습니다. 이전 버전 DB의 복사본이면 아래 명령의 두 번째 줄(`migrate_account.py`)이 복사본을 v2로 바꿉니다(8장). 이미 v2면 아무것도 바꾸지 않습니다.
+
 복사본을 배포 서버로 직접 전달한 뒤, Linux 서버에서 다음을 실행합니다. API가 아직 사용자 등록을 받기 전에 진행합니다.
 
 ```sh
 docker compose exec -T identity python -c "import sys; from pathlib import Path; Path('/tmp/legacy.sqlite3').write_bytes(sys.stdin.buffer.read())" < ./profiles-copy.sqlite3
+docker compose exec -T identity python migrate_account.py --database-backend sqlite --database /tmp/legacy.sqlite3
 docker compose exec -T identity python migrate_sqlite.py /tmp/legacy.sqlite3
 docker compose exec -T identity python -c "from pathlib import Path; Path('/tmp/legacy.sqlite3').unlink()"
 ```
@@ -138,11 +141,20 @@ docker compose cp postgres:/tmp/mongscape.dump ./mongscape-backup.dump
 
 ## 8. 기존 DB 갱신 (`migrate_account.py`)
 
-서버는 얼굴 사진을 저장하지 않습니다. 이전 버전으로 만든 DB에는 `profiles.avatar` 열과 사진이 남아 있으므로, 새 서버는 이 열을 발견하면 **시작하지 않고** `migrate_account.py` 실행을 안내한 뒤 종료합니다. 새 DB는 처음부터 새 스키마로 만들어지므로 이 절차가 필요 없습니다.
+현재 DB 구조는 **스키마 v2**(회원 계정)입니다. 서버는 시작할 때 `schema_version`을 확인합니다. 새 DB는 처음부터 v2로 만들고, 이전 버전 DB(v1: `schema_version` 표가 없음, 얼굴 사진 `profiles.avatar`가 남아 있을 수 있음)를 발견하면 **시작하지 않고** `Old identity schema (v1). Back up the DB, run migrate_account.py, then restart.`를 출력한 뒤 종료합니다.
 
-`migrate_account.py`는 기존 DB를 현재 스키마로 바꿉니다. 모든 단계를 한 트랜잭션으로 실행해 오류가 나면 전부 되돌리고, 이미 적용된 단계는 건너뛰므로 다시 실행해도 안전합니다. 결과로 적용한 단계 이름만 출력합니다. 연결 설정은 `server.py`와 같습니다(`--database`, `--database-url`, `--database-backend` 또는 같은 환경 변수). 현재 단계는 `profiles.avatar` 삭제입니다. SQLite 3.35 미만에서는 열 삭제 대신 `profiles` 테이블을 다시 만듭니다.
+`migrate_account.py`는 기존 DB를 v1에서 v2로 바꿉니다. 단계는 다음 순서입니다.
 
-**저장된 얼굴 사진 삭제는 되돌릴 수 없습니다.** 반드시 백업 → 스크립트 → 재시작 순서로 진행합니다.
+1. `profiles.avatar`(저장된 얼굴 사진) 삭제. SQLite 3.35 미만에서는 열 삭제 대신 `profiles` 테이블을 다시 만듭니다.
+2. `profiles`에 `name_key`, `weight`(65), `style`(0), `goal`(50), `coins`(0), `unlocked`(`[]`), `tutorial_done`(거짓) 추가
+3. 닉네임 정리: 규칙(앞뒤 공백 제거 후 1~10자, 제어 문자 없음)에 맞게 자르고, 비어 있으면 `탐험가`로 둡니다. 정규화 값(공백 제거·소문자)이 겹치면 먼저 가입한 회원(가입 시각, 같으면 ID 순)이 이름을 유지하고 뒤 회원에게 `2`, `3`…을 붙입니다. 기존에 겹치지 않던 이름은 바뀌지 않습니다.
+4. `name_key` UNIQUE 인덱스
+5. `runs`에 `mode`(기존 기록은 NULL), `coins`(0), `score_version`(1), `play_seconds`(0)와 `runs_mode_score` 인덱스 추가. 기존 기록은 점수 버전 1이라 랭킹·최고 기록에 들어가지 않고, 칼로리 합계에는 들어갑니다.
+6. `schema_version=2`
+
+모든 단계를 한 트랜잭션으로 실행해 오류가 나면 전부 되돌리고, 이미 적용된 단계는 건너뛰므로 다시 실행해도 안전합니다(v2 DB에서는 아무것도 하지 않습니다). 결과로 적용한 단계 이름만 출력합니다. 연결 설정은 `server.py`와 같습니다(`--database`, `--database-url`, `--database-backend` 또는 같은 환경 변수).
+
+**저장된 얼굴 사진 삭제와 닉네임 변경은 되돌릴 수 없습니다.** 반드시 백업 → 스크립트 → 재시작 순서로 진행합니다.
 
 Docker(PostgreSQL) 서버:
 
@@ -169,10 +181,38 @@ HTTPS 구성이면 `up`에 3장과 같은 `--env-file .env -f compose.yaml -f co
 
 백업에는 이전 얼굴 사진이 그대로 남습니다. 서버 동작을 확인한 뒤 백업을 안전하게 삭제하거나 비공개로 보관하고 Git/ZIP에 넣지 않습니다.
 
+## 9. 계정 API (스키마 v2)
+
+모든 요청은 `Content-Type: application/json` POST입니다(`GET /health` 제외). 인증이 필요한 경로는 `Authorization: Bearer <token>`을 보냅니다. 오류는 `{ok:false, message}`와 상태 코드 400(값 오류·코인 부족)·401(인증 없음/만료)·404·409(닉네임 중복·이미 등록된 얼굴·이미 해금)·429(시도 제한)입니다.
+
+| 경로 | 인증 | 요청 → 응답 |
+| --- | --- | --- |
+| `/name-check` | - | `{name}` → `{ok, available, message}`. 규칙 위반·중복도 200 + `available:false` |
+| `/enroll` | - | `{name, consent:true, images:[3], weight?, style?, goal?}` → `{ok, token, avatar, profile}` |
+| `/login` | - | `{images:[3]}` → `{ok, token, avatar, profile}` |
+| `/profile` | 필요 | `{}` → `{ok, profile}` |
+| `/profile/update` | 필요 | `{name?, weight?, style?, goal?, tutorial_done?}`(보낸 필드만 변경) → `{ok, profile}` |
+| `/runs` | 필요 | `{id, distance, score, kcal, goal, activities:[5], mode, coins, play_seconds, score_version}` → `{ok, coins}`(적립 후 잔액) |
+| `/shop/buy` | 필요 | `{item}` → `{ok, profile}` |
+| `/leaderboard` | 선택 | `{mode, today}` → `{ok, entries:[{rank, name, score, distance, created_at}], me?:{rank, score, distance}}` |
+| `/stats` | 필요 | `{}` → `{ok, today_kcal, total_kcal, best_score:[전신, 상체, 키보드]}` |
+| `/logout`, `/delete`, `/history` | 필요 | 기존과 같음. `/delete`는 프로필·특징값·세션·기록 삭제 |
+
+- `profile`: `{id, name, weight, style, goal, coins, unlocked, tutorial_done}`. `/enroll`·`/login` 응답은 이전 클라이언트를 위해 `id`, `name`도 최상위에 둡니다.
+- 닉네임: 앞뒤 공백 제거 후 1~10자, 제어 문자 금지. 공백을 지우고 소문자로 바꾼 값이 같으면 같은 닉네임입니다(`Min Su` = `minsu`).
+- 값 범위: `weight` 1~500(null이면 65), `style`·`mode` 0 전신/1 상체/2 키보드, `goal` 1~5000, `coins` 0~5000 정수, `score_version` 1 또는 2, `play_seconds` 0~86400.
+- 아이템 가격: 0 자석 30, 1 코인 2배 60, 2 방패 100코인.
+- `/runs`: 같은 기록 ID를 다시 보내면 저장·적립 없이 현재 잔액을 돌려줍니다. 기록 삽입과 코인 적립은 한 트랜잭션입니다. `mode`를 보내지 않은 이전 클라이언트의 기록도 저장하지만(모드 NULL) 랭킹에는 들어가지 않습니다.
+- `/leaderboard`: 해당 모드의 `score_version=2` 기록 중 회원마다 최고 점수 1개로 상위 50명을 만듭니다. 동점이면 먼저 세운 기록이 앞섭니다. `today:true`는 한국 시간(KST) 0시 이후 기록만 봅니다. `name`은 현재 닉네임입니다. `me`는 유효한 토큰이 있고 해당 모드 기록이 있을 때만 들어가며, 만료된 토큰은 오류 없이 무시합니다.
+- `/stats`: `today_kcal`은 KST 0시 이후, `total_kcal`은 전체 기록의 칼로리 합계입니다. `best_score`는 `score_version=2` 기록만 보며 없으면 0입니다.
+- 시도 제한(서버 전체): `/enroll`·`/login` 합산 1분 15회, `/name-check` 1분 60회.
+
+**코인 신뢰 한계**: 한 판에 얻은 코인 수(`coins`)는 게임 클라이언트가 보내며, 서버는 범위(0~5000)와 기록 ID 중복만 검사합니다. 조작된 클라이언트는 코인을 부풀릴 수 있습니다. 전시용으로 허용한 범위이며 실제 재화·보상에는 쓰지 않습니다. 점수·거리·칼로리도 같은 한계가 있습니다.
+
 ## 로컬 SQLite와 확인 범위
 
 기존 Python 로컬 실행은 PostgreSQL 설정이 없으면 SQLite를 사용합니다. PostgreSQL을 로컬 Python에서 직접 연결하려면 Psycopg를 설치하고 `IDENTITY_DATABASE_BACKEND=postgres`와 PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD_FILE 또는 `IDENTITY_DATABASE_URL`을 지정합니다. Windows용 선택 설치 도구는 `setup_postgres_runtime.py`입니다.
 
-API는 현재 단일 프로세스에서 요청을 순서대로 처리하며 얼굴 등록/로그인은 서버 전체 분당 15회 제한입니다. PostgreSQL을 도입했다고 얼굴 추론 병렬 처리까지 구현한 것은 아닙니다. 실제 검증 결과와 남은 확인은 프로젝트의 `docs/reports/POSTGRES_IDENTITY_2026_10_26.md`를 확인하세요. 얼굴 로그인은 전시 프로필용이고 검증된 사진 위조 방지 기능은 없습니다.
+API는 현재 단일 프로세스에서 요청을 순서대로 처리하며 얼굴 등록/로그인은 서버 전체 분당 15회, 닉네임 확인은 분당 60회 제한입니다. PostgreSQL을 도입했다고 얼굴 추론 병렬 처리까지 구현한 것은 아닙니다. 실제 검증 결과와 남은 확인은 프로젝트의 `docs/reports/POSTGRES_IDENTITY_2026_10_26.md`를 확인하세요. 얼굴 로그인은 전시 프로필용이고 검증된 사진 위조 방지 기능은 없습니다.
 
 공식 문서: [PostgreSQL Docker 이미지](https://hub.docker.com/_/postgres), [Psycopg 트랜잭션](https://www.psycopg.org/psycopg3/docs/basic/transactions.html), [Docker Compose](https://docs.docker.com/compose/gettingstarted/), [Caddy HTTPS](https://caddyserver.com/docs/automatic-https).
