@@ -58,6 +58,18 @@ namespace Muhanok.Tests
         }
 
         [UnityTest]
+        public IEnumerator IdentityScreenDrawsFaceGuideWithoutErrors()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();var hud=game.GetComponent<HUDPresenter>();
+            ((ISettingsHost)game).Settings.DeveloperMode=false;game.ApplySettings(false);
+            game.OpenMainMenu();hud.ShowIdentity();Assert.IsTrue(hud.IdentityOpen);
+            // Let OnGUI lay out and repaint the camera view and face guide a few times.
+            for(int i=0;i<3;i++)yield return null;
+            Assert.IsTrue(hud.IdentityOpen);LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
         public IEnumerator ServerIdentityNameAndLocalProfileStaySeparate()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
