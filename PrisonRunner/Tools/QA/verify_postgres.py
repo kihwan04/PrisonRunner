@@ -59,7 +59,7 @@ def main():
              '-v','ON_ERROR_STOP=1','-v','app_password='+app_password],input=sql,timeout=15)
         env['MONGSCAPE_TEST_POSTGRES_URL']=psycopg.conninfo.make_conninfo(host='127.0.0.1',port=port,user='mongscape',password=app_password,dbname='mongscape')
         env['PYTHONPATH']=str(SERVICE/'.runtime')+os.pathsep+str(SERVICE)
-        result=subprocess.run([sys.executable,'-m','unittest','-v','test_postgres'],cwd=SERVICE,
+        result=subprocess.run([sys.executable,'-m','unittest','-v','test_identity','test_http'],cwd=SERVICE,
                               env=env,creationflags=flags,capture_output=True,text=True,timeout=180)
         output=result.stdout+result.stderr
         (root/'test-results.log').write_text(output,encoding='utf-8')

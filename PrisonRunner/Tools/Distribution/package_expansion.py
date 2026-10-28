@@ -1,12 +1,10 @@
 from pathlib import Path
-import hashlib,json,sqlite3,zipfile
+import hashlib,json,zipfile
 BASE=Path(__file__).resolve().parents[3]
 DEST=BASE/'Deliverables/2026-10-25';DEST.mkdir(parents=True,exist_ok=True)
 PROJECT=BASE/'PrisonRunner'
 report=PROJECT/'docs/reports/LOCAL_COMPLETION_2026_10_25.md'
 (DEST/'구현_검증_안내.md').write_bytes(report.read_bytes())
-empty=DEST/'Mongscape-EmptyProfiles.sqlite3'
-db=sqlite3.connect(empty);db.executescript((PROJECT/'Services/Identity/schema.sql').read_text(encoding='utf-8-sig'));db.close()
 notes='''Mongscape verified local source, 2026-10-25.
 Revised hidden three-way junction, lane blockers, random bananas and cartoon police capture.
 Windows build and Unity tests: see the included final verification report. Real webcam testing is deferred by the user.
@@ -35,7 +33,7 @@ with zipfile.ZipFile(service,'w',zipfile.ZIP_DEFLATED,compresslevel=5) as z:
  z.writestr('READ_ME_FIRST.txt','''Local face identity service for Windows x64.
 Run Services/Identity/StartIdentity.ps1, or run server.py with Python.
 Models, CPython and local Python packages are included. No separate Python installation is needed.
-Data stays in Services/Identity/data and is created on first start.
+A PostgreSQL database is required: set IDENTITY_DATABASE_URL or PGHOST/PGDATABASE/PGUSER before starting.
 This is exhibition-profile recognition without verified liveness detection.
 Read the Korean implementation report for details.
 ''')

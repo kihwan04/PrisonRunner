@@ -23,7 +23,7 @@ namespace Muhanok.Presentation
             skin.Card(new Rect(0,0,1280,720),new Color(.025f,.035f,.06f,.99f));
             GUI.Label(new Rect(80,45,950,56),"나의 얼굴로 탈출 준비",skin.Style(38,FontStyle.Bold));
             PosePreview.Draw(skin,new Rect(70,130,560,400),data,true);
-            GUI.Label(new Rect(680,145,510,160),@"연결된 얼굴 서버에 얼굴 특징과 얼굴 사진, 플레이 기록을 저장합니다.
+            GUI.Label(new Rect(680,145,510,160),@"연결된 얼굴 서버에 얼굴 특징값과 플레이 기록을 저장합니다. 얼굴 사진은 저장하지 않습니다.
 최초 등록에 동의한 사람만 이용할 수 있습니다.
 등록 후에는 이름 입력 없이 얼굴로 로그인합니다.",paragraph);
             GUI.Label(new Rect(680,305,510,90),"전시용 얼굴 로그인입니다. 사진·영상 위조를 차단하는 보안 인증 기능은 포함하지 않습니다.",notice);
