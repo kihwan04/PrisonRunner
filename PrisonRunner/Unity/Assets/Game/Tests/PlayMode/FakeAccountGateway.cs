@@ -19,6 +19,7 @@ namespace Muhanok.Tests
         public bool Offline, FailEnroll;
         public string TakenName = "";
         public readonly List<AccountEnrollment> Enrollments = new List<AccountEnrollment>();
+        public readonly List<AccountProfileUpdate> Updates = new List<AccountProfileUpdate>();
 
         public void Health(Action<AccountResult> done) { Calls.Add("health"); done?.Invoke(new AccountResult { ok = !Offline, message = Offline ? "얼굴 서버 연결 실패" : "" }); }
         public void NameCheck(string name, Action<AccountReply> done)
@@ -35,7 +36,7 @@ namespace Muhanok.Tests
         }
         public void Login(string[] images, Action<AccountReply> done) { Calls.Add("login"); done?.Invoke(SignedIn()); }
         public void FetchProfile(string token, Action<AccountReply> done) { Calls.Add("profile"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
-        public void UpdateProfile(string token, AccountProfileUpdate update, Action<AccountReply> done) { Calls.Add("profile/update"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
+        public void UpdateProfile(string token, AccountProfileUpdate update, Action<AccountReply> done) { Calls.Add("profile/update"); Updates.Add(update); if (update != null && update.TutorialDone.HasValue) Profile.tutorial_done = update.TutorialDone.Value; done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
         public void SaveRun(string token, AccountRun run, Action<AccountReply> done)
         {
             Calls.Add("runs"); SavedRuns.Add(run); RunTokens.Add(token);
