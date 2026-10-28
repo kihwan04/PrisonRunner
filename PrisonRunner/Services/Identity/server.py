@@ -12,12 +12,12 @@ from storage import NAME_MAX,ApiError,ConfigError,SchemaError,Store,clean_name,n
 LIMIT_WINDOW=60; FACE_LIMIT=15; NAME_CHECK_LIMIT=60 # attempts per window, shared by every PC
 ITEM_PRICES={0:30,1:60,2:100} # ItemKind: magnet, coin x2, shield; same as client ItemCatalog
 MODES=range(3) # PlayStyle: 0 full body, 1 upper body, 2 keyboard
-DEFAULT_WEIGHT=65; LEADERBOARD_SIZE=50; CONSENT_VERSION='account-v2'
+DEFAULT_WEIGHT=65; WEIGHT_MIN,WEIGHT_MAX=10,350; LEADERBOARD_SIZE=50; CONSENT_VERSION='account-v2' # weight range = the game's WorkoutEstimate
 KST=9*3600
 def kst_midnight(now): return (int(now)+KST)//86400*86400-KST
-def number(data,key,low,high,integer=False):
+def number(data,key,low,high,integer=False,message=None):
     v=data.get(key) # bool is not accepted: type() is checked, not isinstance()
-    if type(v) not in ((int,) if integer else (int,float)) or not math.isfinite(v) or v<low or v>high: raise ApiError('잘못된 값: '+key)
+    if type(v) not in ((int,) if integer else (int,float)) or not math.isfinite(v) or v<low or v>high: raise ApiError(message or '잘못된 값: '+key)
     return v
 
 class Faces:
@@ -75,7 +75,7 @@ class App:
     def settings(self,data):
         """Profile fields present in the request; weight null means the 65 kg default."""
         values={}
-        if 'weight' in data: values['weight']=DEFAULT_WEIGHT if data['weight'] is None else number(data,'weight',1,500)
+        if 'weight' in data: values['weight']=DEFAULT_WEIGHT if data['weight'] is None else number(data,'weight',WEIGHT_MIN,WEIGHT_MAX,message=f'몸무게는 {WEIGHT_MIN}~{WEIGHT_MAX}kg 숫자로 입력하세요.')
         if 'style' in data: values['style']=number(data,'style',0,2,True)
         if 'goal' in data: values['goal']=number(data,'goal',1,5000)
         if 'tutorial_done' in data:

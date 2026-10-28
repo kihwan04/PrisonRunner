@@ -10,6 +10,9 @@ namespace Muhanok.Domain
         public const double AssumedMet=4;
         // An empty weight field uses this, so every camera run gets a calorie estimate.
         public const double DefaultWeightKg=65;
+        // Accepted weight range; the account server and AccountSession use the same one.
+        public const double MinWeightKg=10, MaxWeightKg=350;
+        public static bool ValidWeight(double kg)=>!double.IsNaN(kg)&&!double.IsInfinity(kg)&&kg>=MinWeightKg&&kg<=MaxWeightKg;
         public double WeightKg {get; private set;}=DefaultWeightKg;
         public double ActiveSeconds {get; private set;}
         public double Met {get;set;}=AssumedMet;
@@ -34,7 +37,7 @@ namespace Muhanok.Domain
         {
             if(string.IsNullOrWhiteSpace(value)){WeightKg=DefaultWeightKg; Reset(); return true;}
             if(!double.TryParse(value,NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out double kg)
-                ||double.IsNaN(kg)||double.IsInfinity(kg)||kg<10||kg>350) return false;
+                ||!ValidWeight(kg)) return false;
             WeightKg=kg; Reset(); return true;
         }
         public void Tick(double seconds,bool playing,bool poseConnected,MotionCommand recognizedMotion)

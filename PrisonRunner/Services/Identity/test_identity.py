@@ -111,8 +111,10 @@ class IdentityTests(PostgresCase):
   self.assertEqual(self.status('/profile',{}),401);self.assertEqual(self.status('/profile/update',dict(name='Gamma'),'bad'),401)
   self.assertEqual(self.app.handle('/profile',{},token)['profile'],dict(id=pid,name='Alpha',weight=65.0,style=0,goal=50.0,coins=0,unlocked=[],tutorial_done=False))
   self.assertEqual(self.status('/profile/update',dict(name='beta'),token),409)
-  for fields in (dict(name=''),dict(name='12345678901'),dict(weight=-1),dict(style=2.5),dict(goal=6000),dict(tutorial_done=1)):
+  for fields in (dict(name=''),dict(name='12345678901'),dict(weight=-1),dict(weight=9.9),dict(weight=351),dict(style=2.5),dict(goal=6000),dict(tutorial_done=1)):
    self.assertEqual(self.status('/profile/update',fields,token),400,fields)
+  with self.assertRaisesRegex(ApiError,'10~350kg'):self.app.handle('/profile/update',dict(weight=500),token) # the game's 10-350 kg rule
+  self.assertEqual([self.app.handle('/profile/update',dict(weight=w),token)['profile']['weight'] for w in (10,350)],[10.0,350.0])
   self.assertEqual(self.app.handle('/profile/update',dict(name='ALPHA '),token)['profile']['name'],'ALPHA') # own name, new case
   profile=self.app.handle('/profile/update',dict(weight=80,style=2,tutorial_done=True),token)['profile']
   self.assertEqual((profile['name'],profile['weight'],profile['style'],profile['goal'],profile['tutorial_done']),('ALPHA',80.0,2,50.0,True))

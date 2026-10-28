@@ -116,7 +116,7 @@ namespace Muhanok.Application
         }
         private static AccountSettings Sanitize(double weight, int style, double goal) => new AccountSettings
         {
-            Weight = double.IsNaN(weight) || weight < 1 || weight > 500 ? AccountSettings.DefaultWeight : weight,
+            Weight = WorkoutEstimate.ValidWeight(weight) ? weight : AccountSettings.DefaultWeight,
             Style = style >= 0 && style <= 2 ? (PlayStyle)style : PlayStyle.FullBody,
             Goal = double.IsNaN(goal) || goal < 1 || goal > 5000 ? AccountSettings.DefaultGoal : goal,
         };

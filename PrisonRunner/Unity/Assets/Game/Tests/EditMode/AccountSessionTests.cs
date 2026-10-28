@@ -49,6 +49,10 @@ namespace Muhanok.Tests
             var session = new AccountSession();
             session.UpdateSettings(new AccountSettings { Weight = 0, Style = PlayStyle.Keyboard, Goal = 200 });
             Assert.AreEqual(65, session.Settings.Weight, "Weight is never 0: 65 stands for not entered");
+            // Same 10-350 kg range as the run's WorkoutEstimate and the server, so a saved weight always starts a run.
+            foreach (double kg in new[] { 9.9, 351, 500 }) { session.UpdateSettings(new AccountSettings { Weight = kg }); Assert.AreEqual(65, session.Settings.Weight, kg.ToString()); }
+            foreach (double kg in new[] { 10.0, 350 }) { session.UpdateSettings(new AccountSettings { Weight = kg }); Assert.IsTrue(new WorkoutEstimate().SetWeight(session.Profile.Weight), kg.ToString()); }
+            session.UpdateSettings(new AccountSettings { Weight = 0, Style = PlayStyle.Keyboard, Goal = 200 });
             Assert.AreEqual(PlayStyle.Keyboard, session.Settings.Style); Assert.AreEqual(200, session.Settings.Goal);
             session.SetCoins(500); Assert.AreEqual(0, session.Coins);
             Assert.IsFalse(session.Apply(Member()), "A server profile does not turn a guest into a member");

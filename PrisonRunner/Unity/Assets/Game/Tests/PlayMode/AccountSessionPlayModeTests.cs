@@ -57,6 +57,19 @@ namespace Muhanok.Tests
         }
 
         [UnityTest]
+        public IEnumerator WeightOutsideTheRangeStillStartsTheRunAt65Kg()
+        {
+            yield return Open();
+            game.StartPlayerRun(new PlayerProfile{Name="Weight QA",Weight="500",Style=PlayStyle.Keyboard});
+            Assert.AreNotEqual(GameFlowState.TitleIdle,game.Session.Flow.State,"The run starts instead of returning silently");
+            Assert.AreEqual(WorkoutEstimate.DefaultWeightKg,game.Session.Workout.WeightKg);
+            float deadline=Time.realtimeSinceStartup+10;
+            while((game.IsLoading||game.Session.Flow.State!=GameFlowState.Running)&&Time.realtimeSinceStartup<deadline)yield return null;
+            Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
+            game.TogglePause();game.ExitToMenu();
+        }
+
+        [UnityTest]
         public IEnumerator MemberRunIsSavedWithModeAndCoinsAndOnlyUnlockedItems()
         {
             yield return Open();

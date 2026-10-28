@@ -220,7 +220,9 @@ namespace Muhanok.Bootstrap
         // the chosen play style becomes the account's default.
         public void StartPlayerRun(PlayerProfile profile)
         {
-            if(profile==null||Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading||!Session.Workout.SetWeight(profile.Weight)) return;
+            if(profile==null||Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
+            // A weight outside 10-350 kg (an old profile) never blocks the run: it counts as the 65 kg default.
+            if(!Session.Workout.SetWeight(profile.Weight)) Session.Workout.SetWeight("");
             if(!userSettings.DeveloperMode&&profile.Style!=Account.Settings.Style){var saved=Account.Settings;saved.Style=profile.Style;SaveSettings(saved);}
             player=profile; playerRun=true; KeyboardGameInput.SetTextInput(false);
             // The best to beat is read before the run (and before its save).
