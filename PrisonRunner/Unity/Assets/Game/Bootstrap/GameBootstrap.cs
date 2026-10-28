@@ -310,6 +310,8 @@ namespace Muhanok.Bootstrap
             {
                 StartBannerSounds();
                 Tutorial.Tick(Time.realtimeSinceStartup);
+                // The finished tutorial has already gone back to the menu (Retry); nothing of the run may follow this frame.
+                if (Session.Flow.State != GameFlowState.Running) return;
                 float previousZ = Session.Runner.Z;
                 Session.Tick(dt); Map.Tick(Session.Runner.Z); Hero.Apply(Session.Runner); Map.Evaluate(previousZ);
                 Map.AnimateGates(Session.Runner.Z);

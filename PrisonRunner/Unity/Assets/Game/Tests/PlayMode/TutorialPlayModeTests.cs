@@ -98,6 +98,10 @@ namespace Muhanok.Tests
             Time.timeScale=1;
             Assert.IsFalse(game.Tutorial.Active,"The keyboard tutorial reaches the end");
             Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);Assert.AreEqual(MenuPage.Main,hud.Page);
+            // The frame that finished the tutorial stops there: no running dust or run fade over the menu.
+            var dust=game.Hero.transform.Find("VFX_Dust_Run")?.GetComponentInChildren<ParticleSystem>();
+            if(dust!=null)Assert.IsFalse(dust.isPlaying,"Running dust stays stopped on the menu");
+            Assert.AreEqual(1f,hud.Fade);
             Assert.IsTrue(game.Account.TutorialDone);CollectionAssert.Contains(fake.Calls,"profile/update");
             Assert.IsTrue(fake.Updates[fake.Updates.Count-1].TutorialDone==true);
             Assert.AreEqual(0,game.Store.Board.All.Count);Assert.AreEqual(0,fake.SavedRuns.Count);Assert.AreEqual(40,game.Account.Coins);
