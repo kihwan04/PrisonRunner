@@ -22,7 +22,9 @@ namespace Muhanok.Presentation
             notice??=new GUIStyle(skin.Style(17,FontStyle.Normal)){wordWrap=true};
             skin.Card(new Rect(0,0,1280,720),new Color(.025f,.035f,.06f,.99f));
             GUI.Label(new Rect(80,45,950,56),"나의 얼굴로 탈출 준비",skin.Style(38,FontStyle.Bold));
-            PosePreview.Draw(skin,new Rect(70,130,560,400),data,true);
+            // Video only: no body skeleton or pose status here, just a fixed face guide. Hand pointing still runs.
+            var view=PosePreview.Draw(skin,new Rect(70,130,560,400),data,showStatus:false,drawSkeleton:false);
+            DrawFaceGuide(view,identity.IdentityBusy);
             GUI.Label(new Rect(680,145,510,160),@"연결된 얼굴 서버에 얼굴 특징과 얼굴 사진, 플레이 기록을 저장합니다.
 최초 등록에 동의한 사람만 이용할 수 있습니다.
 등록 후에는 이름 입력 없이 얼굴로 로그인합니다.",paragraph);
@@ -47,6 +49,33 @@ namespace Muhanok.Presentation
             GUI.enabled=!identity.IdentityBusy;
             if(skin.FlatButton(new Rect(1020,615,190,52),"돌아가기",false)){deleteConfirm=false;close();}
             GUI.enabled=true;
+        }
+        private static readonly Color GuideIdle=new Color(1f,1f,1f,.85f),Shade=new Color(0,0,0,.55f);
+        // Fixed oval face guide over the video: shade outside, dotted outline, hint below. Repaint only.
+        private void DrawFaceGuide(Rect view,bool busy)
+        {
+            if(Event.current.type!=EventType.Repaint)return;
+            float h=view.height*.6f,w=h*.75f,cx=view.center.x,cy=view.center.y,top=cy-h*.5f,bottom=cy+h*.5f;
+            var white=Texture2D.whiteTexture;
+            GUI.color=Shade;
+            GUI.DrawTexture(new Rect(view.x,view.y,view.width,top-view.y),white);
+            GUI.DrawTexture(new Rect(view.x,bottom,view.width,view.yMax-bottom),white);
+            // 3px rows left and right of the oval; rows tile exactly so the shade never doubles.
+            for(float y=top;y<bottom;y+=3)
+            {
+                float rh=Mathf.Min(3,bottom-y),dy=(y+rh*.5f-cy)/(h*.5f),half=w*.5f*Mathf.Sqrt(Mathf.Max(0,1-dy*dy));
+                GUI.DrawTexture(new Rect(view.x,y,cx-half-view.x,rh),white);
+                GUI.DrawTexture(new Rect(cx+half,y,view.xMax-cx-half,rh),white);
+            }
+            GUI.color=busy?Palette.Gold:GuideIdle;
+            for(int i=0;i<160;i++)
+            {
+                float a=i*Mathf.PI*2f/160f;
+                GUI.DrawTexture(new Rect(cx+Mathf.Cos(a)*w*.5f-2.5f,cy+Mathf.Sin(a)*h*.5f-2.5f,5,5),white);
+            }
+            GUI.color=busy?Palette.Gold:Color.white;
+            GUI.Label(new Rect(view.x,bottom+8,view.width,30),busy?"가만히 계세요":"틀 안에 얼굴을 맞춰 주세요",skin.Centered(22,FontStyle.Bold));
+            GUI.color=Color.white;
         }
     }
 }
