@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Muhanok.Presentation
 {
-    public enum MenuPage { None, Main, Setup, Profile, Shop, Ranking, Identity, Login, SignUp }
+    public enum MenuPage { None, Main, Setup, Profile, Shop, Ranking, Identity, Login, SignUp, TutorialOffer }
 
     // UI root: owns the menu page state and draws exactly one screen for the current game state.
     public sealed class HUDPresenter : MonoBehaviour
@@ -24,6 +24,11 @@ namespace Muhanok.Presentation
         public Action OpenSettings;
         public Action Quit;
         public Func<bool> PoliceAlert;
+        // Tutorial: starts it, and decides (and remembers) whether "게임 시작" offers it first.
+        public Action StartTutorial;
+        public Func<bool> OfferTutorial;
+        private TutorialOfferScreen tutorialOffer;
+        private bool offerAfterSignUp;
         private IdentityScreen identity;
         private LoginGateScreen gate;
         private SignUpScreen signUp;
@@ -69,7 +74,7 @@ namespace Muhanok.Presentation
             skin = new HudSkin();
             overlaySkin = new OverlaySkin(Resources.Load<Font>("MuhanokUI/BlackHanSans-Regular"), null);
             title = new TitleScreen(skin); setup = new SetupScreen(skin); loading = new LoadingScreen(skin); identity=new IdentityScreen(skin); signUp=new SignUpScreen(skin,identity);
-            menu = new MainMenuScreen(overlaySkin); gate = new LoginGateScreen(overlaySkin); profile = new ProfileScreen(overlaySkin); shop = new ShopScreen(overlaySkin); board = new LeaderboardScreen(overlaySkin, Ranking);
+            menu = new MainMenuScreen(overlaySkin); tutorialOffer = new TutorialOfferScreen(overlaySkin); gate = new LoginGateScreen(overlaySkin); profile = new ProfileScreen(overlaySkin); shop = new ShopScreen(overlaySkin); board = new LeaderboardScreen(overlaySkin, Ranking);
             calibration = new CalibrationPanel(overlaySkin, skin);
             runHud = new RunHud(skin, new ProgressHud(overlaySkin)); pause = new PauseScreen(skin);
         }
@@ -94,8 +99,15 @@ namespace Muhanok.Presentation
         public void ChooseGuest() => OpenMainMenu();
         // A recognized face goes to the main menu; a failure stays for another try.
         public void LoginWithFace() => Account?.FaceLogin(ok => { if (ok && Page == MenuPage.Identity) OpenMainMenu(); });
-        // Sign-up capture: the new member is signed in and goes to the main menu.
-        public void EnrollFace() => SignUp.Capture(ok => { if (ok && Page == MenuPage.SignUp) OpenMainMenu(); });
+        // Sign-up capture: the new member is signed in and is offered the tutorial.
+        public void EnrollFace() => SignUp.Capture(ok => { if (ok && Page == MenuPage.SignUp) { OfferTutorial?.Invoke(); ShowTutorialOffer(true); } });
+        public void ShowTutorialOffer(bool afterSignUp) { offerAfterSignUp = afterSignUp; ShowPage(MenuPage.TutorialOffer); }
+        // "튜토리얼 시작" runs it; skipping goes on to where the player was heading.
+        public void ChooseTutorial(TutorialChoice choice)
+        {
+            if (choice == TutorialChoice.Start) StartTutorial?.Invoke();
+            else if (choice == TutorialChoice.Skip) { if (offerAfterSignUp) OpenMainMenu(); else ShowPage(MenuPage.Setup); }
+        }
         public void ChooseLogin(LoginAction action)
         {
             if (action == LoginAction.Face) ShowIdentity();
@@ -103,10 +115,11 @@ namespace Muhanok.Presentation
             else if (action == LoginAction.Guest) ChooseGuest();
             else if (action == LoginAction.Settings) OpenSettings?.Invoke();
         }
-        // Main menu actions. "게임 시작" goes straight to the run setup; the login entry signs a member out first.
+        // Main menu actions. "게임 시작" goes to the run setup, after a one-time tutorial offer; the login entry signs a member out first.
         public void SelectMenu(MenuAction action)
         {
-            if (action == MenuAction.Play) ShowPage(MenuPage.Setup);
+            if (action == MenuAction.Play) { if (OfferTutorial?.Invoke() ?? false) ShowTutorialOffer(false); else ShowPage(MenuPage.Setup); }
+            else if (action == MenuAction.Tutorial) StartTutorial?.Invoke();
             else if (action == MenuAction.Ranking) ShowPage(MenuPage.Ranking);
             else if (action == MenuAction.Shop) ShowPage(MenuPage.Shop);
             else if (action == MenuAction.Profile) ShowPage(MenuPage.Profile);
@@ -183,6 +196,7 @@ namespace Muhanok.Presentation
                     if (Account != null) identity.Draw(Data, Account, "얼굴 로그인", "정면을 보고 틀 안에 얼굴을 맞춘 뒤 [얼굴로 로그인]을 누르세요.\n가입한 얼굴이면 이름 입력 없이 로그인됩니다.", "얼굴로 로그인", LoginWithFace, OpenLogin);
                     break;
                 case MenuPage.Main: SelectMenu(menu.Draw(Data, TitleLogo)); break;
+                case MenuPage.TutorialOffer: ChooseTutorial(tutorialOffer.Draw(offerAfterSignUp)); break;
             }
         }
         private void OnDestroy() { skin?.Dispose(); overlaySkin?.Dispose(); }

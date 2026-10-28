@@ -73,6 +73,9 @@ namespace Muhanok.Bootstrap
         public PolicePursuitCue PursuitCue { get; private set; }
         private float guardDistance=15;
         private bool automated;
+        // Tutorial lessons on the ordinary run; offered once per session on "게임 시작".
+        public TutorialDirector Tutorial { get; private set; }
+        private bool tutorialOffered;
         private void Awake()
         {
             var flags=System.Environment.GetCommandLineArgs();
@@ -99,7 +102,7 @@ namespace Muhanok.Bootstrap
             OutputCamera.GetComponent<CinematicFocus>()?.Configure(Session,Hero);
             var mapRoot = new GameObject("ChunkPool"); mapRoot.transform.SetParent(transform, false);
             Map = new ChunkSpawner(ChunkPrefabs, mapRoot.transform, Session, Settings != null ? Settings.Render : new RenderBudget());
-            Map.Decorator = new RuntimeContent(mapRoot.transform, RunItems, Settings != null ? Settings.ItemChancePerChunk : .35f);
+            Map.Decorator = new TutorialLayout(new RuntimeContent(mapRoot.transform, RunItems, Settings != null ? Settings.ItemChancePerChunk : .35f), Session);
             CameraRig.Configure(OutputCamera);
             if(OutputCamera.GetComponent<GameViewport>()==null) OutputCamera.gameObject.AddComponent<GameViewport>();
             if (HandsPrefab != null)
@@ -124,6 +127,10 @@ namespace Muhanok.Bootstrap
             hud.TitleLogo = TitleLogo;
             hud.LoadingImage=LoadingImage; hud.BeginRun=StartPlayerRun; hud.PauseRun=TogglePause; hud.NextPlayer=NextPlayer; hud.ToMenu=ExitToMenu;
             hud.TextInput=KeyboardGameInput.SetTextInput; hud.Quit=QuitGame;
+            hud.StartTutorial=StartTutorial; hud.OfferTutorial=OfferTutorial;
+            Tutorial=gameObject.AddComponent<TutorialDirector>();
+            Tutorial.Configure(Session,Map,()=>Pose.Status==PoseStatus.Tracking||Pose.Status==PoseStatus.Off||Pose.Status==PoseStatus.NoCamera||Pose.Status==PoseStatus.NoModel,
+                RestartTutorial,FinishTutorial,()=>!hud.Hidden&&!hud.Loading&&!hud.Revealing);
             audioPlayer = gameObject.AddComponent<GameAudio>();
             audioPlayer.Configure(Session, Settings != null ? Settings.MusicVolume : .35f, Settings != null ? Settings.EffectsVolume : .7f);
             SetupSettings();
@@ -223,6 +230,41 @@ namespace Muhanok.Bootstrap
             Pose.SetStyle(profile.Style);
             StartCoroutine(PrepareRun(Settings != null && Settings.Run.RandomizeLayout ? Random.Range(1, int.MaxValue) : 723));
         }
+        // Tutorial (main menu, after sign-up or the "게임 시작" offer): the same scene and map on a fixed lesson course.
+        // It never reaches the result screen, so nothing goes to the ranking, coins or calories.
+        public void StartTutorial()
+        {
+            if(Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
+            tutorialOffered=true; playerRun=false; KeyboardGameInput.SetTextInput(false);
+            Session.Workout.SetWeight(""); Session.Workout.Met=PlayStyleInfo.Met(player.Style);
+            Pose.SetStyle(player.Style);
+            Session.IsTutorial=true; Tutorial.Begin(player.Style,Session.Config.ExtendedRoutes);
+            StartCoroutine(PrepareRun(TutorialCourse.Seed));
+        }
+        // Members who have not finished it and every guest are offered it once per session.
+        private bool OfferTutorial()
+        {
+            if(!TutorialScript.ShouldOffer(Account.IsMember,Account.TutorialDone,tutorialOffered)) return false;
+            tutorialOffered=true; return true;
+        }
+        // After a mistake: a fresh course, started at the given route z in front of the step.
+        private void RestartTutorial(float z)
+        {
+            RouteSurface.UsePlan(TutorialCourse.Plan(Session.Config));
+            Session.Reset(); Session.Runner.SetStartZ(z); keyboard.Clear(); poseInput.Clear(); Pose.ResetCommands();
+            Map.Reset(); Map.Tick(z); Map.AnimateGates(z);
+            guardDistance=15; previousStumble=false; Hero.Apply(Session.Runner); CameraRig.Takeover(Hero.Head);
+        }
+        // A member's profile remembers the finished tutorial; then back to the main menu.
+        private void FinishTutorial()
+        {
+            if(Account.IsMember)
+            {
+                string id=Account.Id; Account.SetTutorialDone(true);
+                gateway.UpdateProfile(Account.Token,new AccountProfileUpdate{TutorialDone=true},reply=>{ if(reply!=null&&reply.HasProfile&&reply.profile.id==id&&reply.profile.tutorial_done) Account.Apply(reply.profile); });
+            }
+            ExitToMenu();
+        }
         private IEnumerator PrepareRun(int seed)
         {
             Session.Flow.Transition(GameFlowState.LoadingIntro);
@@ -230,7 +272,7 @@ namespace Muhanok.Bootstrap
             // The player stands still during loading; that is the calibration pose. A fresh result-screen calibration is kept.
             if (!Pose.CalibrationFresh(Time.realtimeSinceStartupAsDouble)) Pose.Recalibrate();
             yield return new WaitForSecondsRealtime(.25f);
-            RouteSurface.UsePlan(new RoutePlan(Session.Config, seed));
+            RouteSurface.UsePlan(Session.IsTutorial?TutorialCourse.Plan(Session.Config):new RoutePlan(Session.Config, seed));
             Session.Reset(); keyboard.Clear(); poseInput.Clear(); hud.LoadingProgress=.42f;
             yield return new WaitForSecondsRealtime(.25f);
             Map.Reset(seed); Map.AnimateGates(Session.Runner.Z); hud.LoadingProgress=.78f;
@@ -265,6 +307,7 @@ namespace Muhanok.Bootstrap
             if (Session.Flow.State == GameFlowState.Running)
             {
                 StartBannerSounds();
+                Tutorial.Tick(Time.realtimeSinceStartup);
                 float previousZ = Session.Runner.Z;
                 Session.Tick(dt); Map.Tick(Session.Runner.Z); Hero.Apply(Session.Runner); Map.Evaluate(previousZ);
                 Map.AnimateGates(Session.Runner.Z);
@@ -379,6 +422,7 @@ namespace Muhanok.Bootstrap
         // which credits the coins (none in developer mode). Guests collect no coins.
         public void RecordFinishedRun()
         {
+            if(Session.IsTutorial) return;
             bool developer=userSettings.DeveloperMode;
             var now=System.DateTime.Now;
             string name=Account.IsMember||!developer?Account.Nickname
@@ -423,7 +467,7 @@ namespace Muhanok.Bootstrap
         {
             if (!Session.Flow.Transition(GameFlowState.Retry)) return;
             Capture.ResetSequence();
-            guardDistance=15;
+            guardDistance=15; Session.IsTutorial=false; Tutorial.End();
             Session.Reset(); keyboard.Clear(); poseInput.Clear(); Map.Reset(); Intro.ResetSequence();
             Time.timeScale=1; hud.CloseSetup();
             if (dust != null) dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -443,7 +487,7 @@ namespace Muhanok.Bootstrap
         {
             var style = player.Style;
             Retry();
-            SignOutMember();
+            SignOutMember(); tutorialOffered=false;
             player = new PlayerProfile { Style = style == PlayStyle.Keyboard ? PlayStyle.FullBody : style };
             playerRun = false; OpenLogin();
         }
@@ -478,6 +522,7 @@ namespace Muhanok.Bootstrap
         // Items placed on the map: every item in developer mode, otherwise what the member unlocked (none for guests).
         public System.Collections.Generic.List<ItemKind> RunItems()
         {
+            if (Session != null && Session.IsTutorial) return new System.Collections.Generic.List<ItemKind>();
             if (userSettings != null && userSettings.DeveloperMode)
             {
                 var all = new System.Collections.Generic.List<ItemKind>();
@@ -557,7 +602,7 @@ namespace Muhanok.Bootstrap
         {
             string id = Account.IsMember ? Account.Id : "";
             if (id == shownAccount) return;
-            shownAccount = id;
+            shownAccount = id; tutorialOffered = false;
             if (!Account.IsMember) ClearPortrait();
             faceAvatar.Apply(portrait);
             // The HUD best and the next result compare with this member's /stats.

@@ -50,7 +50,11 @@ namespace Muhanok.Tests
             Assert.AreEqual(MenuPage.Main,hud.Page);Assert.IsFalse(game.SignedIn);
             Assert.AreEqual(AccountSession.GuestName,((IHudData)game).SavedProfile.Name);
             hud.SelectMenu(MenuAction.Play);
+            Assert.AreEqual(MenuPage.TutorialOffer,hud.Page,"A guest is offered the tutorial once");
+            hud.ChooseTutorial(TutorialChoice.Skip);
             Assert.AreEqual(MenuPage.Setup,hud.Page,"게임 시작 goes to the run setup without asking a nickname");
+            hud.OpenMainMenu();hud.SelectMenu(MenuAction.Play);
+            Assert.AreEqual(MenuPage.Setup,hud.Page,"The offer is shown once per session");
         }
 
         [UnityTest]
@@ -71,7 +75,8 @@ namespace Muhanok.Tests
             Assert.IsFalse(game.SignedIn);Assert.AreEqual(MenuPage.SignUp,hud.Page);Assert.AreEqual(SignUpStep.Capture,flow.Step);
             Assert.AreEqual("새회원",flow.Nickname);Assert.AreEqual(72,flow.Settings.Weight);
             hud.EnrollFace();
-            Assert.IsTrue(game.SignedIn);Assert.AreEqual(MenuPage.Main,hud.Page);Assert.AreEqual(2,fake.Enrollments.Count);
+            Assert.IsTrue(game.SignedIn);Assert.AreEqual(MenuPage.TutorialOffer,hud.Page,"A new member is offered the tutorial");Assert.AreEqual(2,fake.Enrollments.Count);
+            hud.ChooseTutorial(TutorialChoice.Skip);Assert.AreEqual(MenuPage.Main,hud.Page);
             var sent=fake.Enrollments[1];
             Assert.AreEqual("새회원",sent.name);Assert.AreEqual(72,sent.weight);Assert.AreEqual((int)PlayStyle.UpperBody,sent.style);Assert.AreEqual(3,sent.images.Length);
             Assert.AreEqual("새회원",game.Account.Nickname);

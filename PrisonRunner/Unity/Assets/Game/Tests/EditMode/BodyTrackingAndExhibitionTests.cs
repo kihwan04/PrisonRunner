@@ -55,9 +55,26 @@ namespace Muhanok.Tests
             Assert.AreEqual(3, three.FindAll(e => e == "jump").Count);
             Assert.IsFalse(three.Contains("crouch"));
         }
+        [Test] public void KneeBendBeforeJumpIsNotACrouch()
+        {
+            // 0.25 s knee bend (shoulders down a third of the torso), then take-off: one jump, no crouch.
+            CollectionAssert.AreEqual(new[] { "jump" }, Play(PlayStyle.FullBody, t => new Body { Dy = In(t, .2, .45) ? .09f : In(t, .45, .75) ? -.06f : 0, Ankle = In(t, .45, .75) ? .06f : 0 }, 1.5));
+            // A deeper wind-up that already confirmed as a crouch is cancelled by the take-off, which still counts.
+            CollectionAssert.AreEqual(new[] { "crouch", "stand", "jump" }, Play(PlayStyle.FullBody, t => new Body { Dy = In(t, .2, .55) ? .13f : In(t, .55, .85) ? -.06f : 0, Ankle = In(t, .55, .85) ? .06f : 0 }, 1.5));
+        }
+        [Test] public void LowHopLandingIsNotACrouch()
+        {
+            // Hips rise 0.10 torso (under the jump line), then the landing bends well past the crouch line for 0.3 s.
+            Assert.IsEmpty(Play(PlayStyle.FullBody, t => new Body { Dy = In(t, .2, .45) ? -.027f : In(t, .45, .75) ? .13f : 0 }, 1.5));
+        }
+        [Test] public void RealCrouchHeldHalfASecondCountsOnce()
+        {
+            // Shoulders down half a torso for 0.5 s.
+            CollectionAssert.AreEqual(new[] { "crouch", "stand" }, Play(PlayStyle.FullBody, t => new Body { Dy = In(t, .2, .7) ? .135f : 0 }, 1.5));
+        }
         [Test] public void HeldCrouchAndAlternatingKneesAreHeldActions()
         {
-            CollectionAssert.AreEqual(new[] { "crouch", "stand" }, Play(PlayStyle.FullBody, t => new Body { Shoulder = In(t, .2, 1.2) ? .09f : 0, Hip = In(t, .2, 1.2) ? .04f : 0 }, 1.6));
+            CollectionAssert.AreEqual(new[] { "crouch", "stand" }, Play(PlayStyle.FullBody, t => new Body { Shoulder = In(t, .2, 1.2) ? .12f : 0, Hip = In(t, .2, 1.2) ? .04f : 0 }, 1.6));
             CollectionAssert.AreEqual(new[] { "knee" }, Play(PlayStyle.FullBody, t => { int s = (int)((t - .2) / .3) % 2; bool on = In(t, .2, 1.6); return new Body { KneeL = on && s == 0 ? .09f : 0, KneeR = on && s == 1 ? .09f : 0 }; }, 1.8));
         }
         [Test] public void StandingStillAndJoggingInPlaceTriggerNothing()

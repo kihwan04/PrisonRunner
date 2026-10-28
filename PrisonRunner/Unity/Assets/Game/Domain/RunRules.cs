@@ -205,6 +205,12 @@ namespace Muhanok.Domain
         public readonly WorkoutEstimate Workout=new WorkoutEstimate();
         public readonly PowerUpState Items=new PowerUpState();
         public bool Paused {get; set;}
+        // Tutorial runs never end in a capture: a mistake is only counted and the tutorial restarts the step.
+        public bool IsTutorial { get => tutorial; set { tutorial = value; TutorialMisses = 0; } }
+        public int TutorialMisses {get;private set;}
+        // The tutorial slows the runner in front of a lesson obstacle (1 = normal speed).
+        public float SpeedScale {get;set;}=1f;
+        private bool tutorial;
         public int BananaHits {get;private set;}
         public int ShieldSaves {get;private set;}
         public int DodgeStreak {get;private set;}
@@ -212,7 +218,7 @@ namespace Muhanok.Domain
         public void RecordDodge() { DodgeStreak++;BestDodgeStreak=Math.Max(BestDodgeStreak,DodgeStreak); }
         public bool BananaPursuit=>bananaCatchLeft>0;
         public float TargetSpeed => Config.IntervalMode ? IntervalSpeed() : Difficulty.Speed(Score.Distance, Config, Runner.Riding);
-        public float CurrentSpeed => Flow.State == GameFlowState.Running && !Paused ? MoveSpeed * Runner.SpeedMultiplier : 0f;
+        public float CurrentSpeed => Flow.State == GameFlowState.Running && !Paused ? MoveSpeed * Runner.SpeedMultiplier * SpeedScale : 0f;
         private float MoveSpeed => Config.IntervalMode ? smoothSpeed : TargetSpeed;
         // Interval rhythm comes from the route: walking chunks sprint, the cart ride rests.
         public bool Resting => Config.IntervalMode && Runner.Riding;
@@ -238,7 +244,7 @@ namespace Muhanok.Domain
             smoothSpeed = smoothSpeed < target ? Math.Min(target, smoothSpeed + Config.SpeedChangeRate * dt) : Math.Max(target, smoothSpeed - Config.SpeedChangeRate * 1.6f * dt);
             Items.Tick(dt); Score.CoinMultiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1;
             float z = Runner.Z;
-            Runner.Tick(dt, MoveSpeed);
+            Runner.Tick(dt, MoveSpeed * SpeedScale);
             Score.Advance(Runner.Z - z);
             if(BananaPursuit)
             {
@@ -255,6 +261,7 @@ namespace Muhanok.Domain
         public bool Fail(CaptureReason reason)
         {
             if (Flow.State != GameFlowState.Running || Paused) return false;
+            if (tutorial) { Reason = reason; lastHit = clock; TutorialMisses++; return true; }
             if (reason == CaptureReason.Collision && Items.ConsumeShield())
             {
                 // The shield absorbs one solid hit: a stumble instead of a capture.
@@ -281,6 +288,6 @@ namespace Muhanok.Domain
             }
             return true;
         }
-        public void Reset() { Runner.Reset(); Chase.Reset(); Score.Reset(); Workout.Reset(); Items.Reset(); Paused=false; clock = 0f; lastHit = -100f;BananaHits=0;ShieldSaves=0;DodgeStreak=BestDodgeStreak=0;bananaCatchLeft=0;Reason=CaptureReason.Collision; smoothSpeed = TargetSpeed; }
+        public void Reset() { Runner.Reset(); Chase.Reset(); Score.Reset(); Workout.Reset(); Items.Reset(); Paused=false; SpeedScale=1f; clock = 0f; lastHit = -100f;BananaHits=0;ShieldSaves=0;DodgeStreak=BestDodgeStreak=0;bananaCatchLeft=0;Reason=CaptureReason.Collision; smoothSpeed = TargetSpeed; }
     }
 }
