@@ -62,6 +62,13 @@ namespace Muhanok.Tests
             model.Tick(run, null, style, pose, false, 1); model.Tick(run, null, style, pose, false, 2);
             Assert.AreEqual(camera, model.ShowCamera); Assert.AreEqual(recovery, model.ShowPoseRecovery);
         }
+        [Test] public void DoubleCoinItemMarksTheCoinCounter()
+        {
+            var run = Running(); var model = new RunHudModel();
+            model.Tick(run, null, PlayStyle.Keyboard, PoseStatus.Off, false, 1); Assert.IsFalse(model.CoinBoost);
+            run.Items.Activate(ItemKind.DoubleScore); model.Tick(run, null, PlayStyle.Keyboard, PoseStatus.Off, false, 2); Assert.IsTrue(model.CoinBoost);
+            StringAssert.StartsWith("코인 2배", model.ItemLabels[(int)ItemKind.DoubleScore]);
+        }
         [Test] public void InGameCameraHidesOutsideRunning()
         {
             var run = Running(); var model = new RunHudModel();

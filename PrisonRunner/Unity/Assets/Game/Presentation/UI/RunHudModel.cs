@@ -12,6 +12,8 @@ namespace Muhanok.Presentation
     {
         public const float CueInterval = .1f;
         public string Coins { get; private set; } = "0";
+        // The double-coin item marks the coin counter with "×2" while it lasts.
+        public bool CoinBoost { get; private set; }
         public string Workout { get; private set; } = "";
         public bool ShowWorkout { get; private set; }
         public bool ShowPoseRecovery { get; private set; }
@@ -40,6 +42,7 @@ namespace Muhanok.Presentation
             }
             lastZ = session.Runner.Z; lastTime = now;
             if (session.Score.Coins != coins) { coins = session.Score.Coins; Coins = coins.ToString(); }
+            CoinBoost = session.Items.IsActive(ItemKind.DoubleScore);
             ShowWorkout = PlayStyleInfo.UsesCamera(style) && session.Workout.WeightKg.HasValue;
             GoalProgress = (float)session.Workout.GoalProgress;
             if (ShowWorkout)

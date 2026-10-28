@@ -187,12 +187,16 @@ namespace Muhanok.Tests
             }
             finally { RouteSurface.UsePlan(null); }
         }
-        [Test] public void ItemsDoubleScoreShieldOneHitAndExpire()
+        [Test] public void ItemsDoubleCoinsShieldOneHitAndExpire()
         {
             var run = new RunSession(new RunConfig());
             run.Flow.Transition(GameFlowState.TitleIdle); run.Flow.Transition(GameFlowState.LoadingIntro); run.Flow.Transition(GameFlowState.Running);
-            run.Items.Activate(ItemKind.DoubleScore); run.Tick(.01f); int before = run.Score.Score; run.Score.CollectCoin();
-            Assert.AreEqual(before + 20, run.Score.Score);
+            Assert.AreEqual("코인 2배", ItemCatalog.Get(ItemKind.DoubleScore).Name);
+            run.CollectCoin(); Assert.AreEqual(1, run.Score.Coins);
+            // Picked up in the same frame as the item, before the next tick, already doubles.
+            run.Items.Activate(ItemKind.DoubleScore); run.CollectCoin(); Assert.AreEqual(3, run.Score.Coins);
+            run.Tick(.01f); run.Score.CollectCoin(); Assert.AreEqual(5, run.Score.Coins);
+            run.Tick(ItemCatalog.Get(ItemKind.DoubleScore).Seconds); run.CollectCoin(); Assert.AreEqual(6, run.Score.Coins);
             run.Items.Activate(ItemKind.Shield);
             Assert.IsFalse(run.Hit(true)); Assert.AreEqual(GameFlowState.Running, run.Flow.State); Assert.AreEqual(1, run.ShieldSaves);
             Assert.IsTrue(run.Hit(true)); Assert.AreEqual(GameFlowState.Caught, run.Flow.State);

@@ -78,8 +78,10 @@ namespace Muhanok.Domain
             if (Multiplier > 1) extra += step * 10f * (Multiplier - 1);
         }
         public void CleanPass(int points) { bonus += Math.Max(0, points) * Math.Max(1, Multiplier); }
-        public void CollectCoin() { Coins++; bonus += 10 * Math.Max(1, Multiplier); }
-        public void Reset() { Distance = 0f; bonus = 0; Coins = 0; extra = 0f; Multiplier = 1; }
+        // The double-coin item adds extra coins per pickup; coin points stay one pickup's worth.
+        public int CoinMultiplier { get; set; } = 1;
+        public void CollectCoin() { Coins += Math.Max(1, CoinMultiplier); bonus += 10 * Math.Max(1, Multiplier); }
+        public void Reset() { Distance = 0f; bonus = 0; Coins = 0; extra = 0f; Multiplier = 1; CoinMultiplier = 1; }
     }
 
     public sealed class DifficultyDirector
@@ -234,7 +236,7 @@ namespace Muhanok.Domain
             clock += dt;
             float target = TargetSpeed;
             smoothSpeed = smoothSpeed < target ? Math.Min(target, smoothSpeed + Config.SpeedChangeRate * dt) : Math.Max(target, smoothSpeed - Config.SpeedChangeRate * 1.6f * dt);
-            Items.Tick(dt); Score.Multiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1;
+            Items.Tick(dt); Score.Multiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1; Score.CoinMultiplier = Score.Multiplier;
             float z = Runner.Z;
             Runner.Tick(dt, MoveSpeed);
             Score.Advance(Runner.Z - z);
@@ -246,6 +248,8 @@ namespace Muhanok.Domain
             }
             else if (BananaHits==0&&clock - lastHit > 2f) Chase.Recover(Config.Recovery * dt);
         }
+        // Reads the item state at pickup time, so a coin in the same frame as the item already counts double.
+        public void CollectCoin() { Score.CoinMultiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1; Score.CollectCoin(); }
         public bool Hit(bool heavy)
         {DodgeStreak=0;return Fail(CaptureReason.Collision);}
         public bool Fail(CaptureReason reason)

@@ -18,7 +18,8 @@ namespace Muhanok.Domain
         public static readonly ItemDefinition[] All =
         {
             new ItemDefinition(ItemKind.Magnet, "자석", "옆 레인의 코인까지 끌어당깁니다.", 30, 8f),
-            new ItemDefinition(ItemKind.DoubleScore, "점수 2배", "잠시 동안 모든 점수가 두 배입니다.", 60, 10f),
+            // DoubleScore keeps its saved enum name; the effect is now double coins.
+            new ItemDefinition(ItemKind.DoubleScore, "코인 2배", "잠시 동안 코인을 두 배로 얻습니다.", 60, 10f),
             new ItemDefinition(ItemKind.Shield, "보호막", "장애물 충돌을 한 번 막아 줍니다.", 100, 15f),
         };
         public static ItemDefinition Get(ItemKind kind) { foreach (var item in All) if (item.Kind == kind) return item; return All[0]; }
