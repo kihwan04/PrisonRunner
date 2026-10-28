@@ -23,6 +23,11 @@ namespace Muhanok.Tests
         public readonly List<AccountProfileUpdate> Updates = new List<AccountProfileUpdate>();
         public StatsReply StatsResult = new StatsReply { ok = true };
         public int Deletes;
+        // /leaderboard answers BoardResult (or fails with FailBoard) and records each request; FailStats makes /stats fail.
+        public sealed class BoardRequest { public string Token; public PlayStyle Mode; public bool Today; }
+        public readonly List<BoardRequest> BoardRequests = new List<BoardRequest>();
+        public LeaderboardReply BoardResult = new LeaderboardReply { ok = true };
+        public bool FailBoard, FailStats;
 
         public void Health(Action<AccountResult> done) { Calls.Add("health"); done?.Invoke(new AccountResult { ok = !Offline, message = Offline ? "얼굴 서버 연결 실패" : "" }); }
         private bool Taken(string name) => !string.IsNullOrEmpty(TakenName) && string.Equals(name?.Trim(), TakenName, StringComparison.OrdinalIgnoreCase);
@@ -69,8 +74,12 @@ namespace Muhanok.Tests
             Profile.coins -= ItemCatalog.Get(item).UnlockCost; owned.Add((int)item); Profile.unlocked = owned.ToArray();
             done?.Invoke(new AccountReply { ok = true, profile = Profile });
         }
-        public void Leaderboard(string token, PlayStyle mode, bool today, Action<LeaderboardReply> done) { Calls.Add("leaderboard"); done?.Invoke(new LeaderboardReply { ok = true }); }
-        public void Stats(string token, Action<StatsReply> done) { Calls.Add("stats"); done?.Invoke(StatsResult); }
+        public void Leaderboard(string token, PlayStyle mode, bool today, Action<LeaderboardReply> done)
+        {
+            Calls.Add("leaderboard"); BoardRequests.Add(new BoardRequest { Token = token, Mode = mode, Today = today });
+            done?.Invoke(FailBoard ? new LeaderboardReply { ok = false, message = "offline" } : BoardResult);
+        }
+        public void Stats(string token, Action<StatsReply> done) { Calls.Add("stats"); done?.Invoke(FailStats ? new StatsReply { ok = false, message = "offline" } : StatsResult); }
         public void Logout(string token, Action<AccountReply> done) { Calls.Add("logout"); Logouts++; done?.Invoke(new AccountReply { ok = true }); }
         public void Delete(string token, Action<AccountReply> done) { Calls.Add("delete"); Deletes++; done?.Invoke(new AccountReply { ok = true }); }
         private AccountReply SignedIn() => new AccountReply { ok = true, token = "fake-token", profile = Profile, id = Profile.id, name = Profile.name };
