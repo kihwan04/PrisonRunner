@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace Muhanok.Infrastructure
 {
-    // Player data on this PC: profile, wallet and unlocked items, the distance leaderboard and lifetime stats.
+    // Player data on this PC: the distance leaderboard and lifetime stats. The old PC profile and wallet are only read
+    // in developer (exhibition) mode; players otherwise come from AccountSession and the files stay untouched.
     // Everything goes through this class so a server-backed store can replace it later.
     public sealed class PlayerProgressStore
     {
@@ -17,8 +18,12 @@ namespace Muhanok.Infrastructure
         private readonly string folder;
         private readonly string legacyFolder;
         private readonly bool useLegacyPrefs;
-        public PlayerProfile Profile { get; private set; } = new PlayerProfile();
-        public readonly PlayerWallet Wallet = new PlayerWallet();
+        private PlayerProfile profile;
+        private readonly PlayerWallet wallet = new PlayerWallet();
+        // Developer mode only: read from profile.json and wallet.json on first use.
+        public PlayerProfile Profile { get { LoadDeveloperData(); return profile; } }
+        public PlayerWallet Wallet { get { LoadDeveloperData(); return wallet; } }
+        public bool DeveloperDataLoaded => profile != null;
         public readonly Leaderboard Board = new Leaderboard();
         public PlayerStats Stats { get; private set; } = new PlayerStats();
         public PlayerProgressStore(string root = null)
@@ -26,13 +31,12 @@ namespace Muhanok.Infrastructure
             folder = Path.Combine(root ?? UnityEngine.Application.persistentDataPath, "Player");
             legacyFolder = Path.Combine(root ?? UnityEngine.Application.persistentDataPath,"Exhibition");
             useLegacyPrefs=root==null;
-            Profile = Read<PlayerProfile>(ProfilePath) ?? new PlayerProfile();
-            LoadWallet(); LoadRecords();
+            LoadRecords();
         }
         private string ProfilePath => Path.Combine(folder, "profile.json");
         private string WalletPath => Path.Combine(folder, "wallet.json");
         private string RecordsPath => Path.Combine(folder, "records.json");
-        public void SaveProfile(PlayerProfile profile) { Profile = profile.Clone(); Write(ProfilePath, Profile); }
+        public void SaveProfile(PlayerProfile value) { LoadDeveloperData(); profile = value.Clone(); Write(ProfilePath, profile); }
         // Adds a finished run; returns its rank among all runs.
         public int Record(RankingEntry entry, double kcal)
         {
@@ -44,6 +48,12 @@ namespace Muhanok.Infrastructure
         public void ClearToday() { Board.ClearDay(Leaderboard.DayKey(DateTime.Now)); SaveRecords(); }
         public void DepositCoins(int coins) { Wallet.Deposit(coins); SaveWallet(); }
         public bool Unlock(ItemKind kind) { bool done = Wallet.TryUnlock(kind); if (done) SaveWallet(); return done; }
+        private void LoadDeveloperData()
+        {
+            if (profile != null) return;
+            profile = Read<PlayerProfile>(ProfilePath) ?? new PlayerProfile();
+            LoadWallet();
+        }
         private void LoadWallet()
         {
             var file = Read<WalletFile>(WalletPath);
@@ -54,13 +64,13 @@ namespace Muhanok.Infrastructure
             }
             if (file == null) return;
             var kinds = new List<ItemKind>(); foreach (int id in file.Unlocked) if (Enum.IsDefined(typeof(ItemKind), id)) kinds.Add((ItemKind)id);
-            Wallet.Restore(file.Coins, kinds);
+            wallet.Restore(file.Coins, kinds);
             if(!File.Exists(WalletPath))SaveWallet();
         }
         private void SaveWallet()
         {
-            var file = new WalletFile { Coins = Wallet.Coins };
-            foreach (var kind in Wallet.Unlocked) file.Unlocked.Add((int)kind);
+            var file = new WalletFile { Coins = wallet.Coins };
+            foreach (var kind in wallet.Unlocked) file.Unlocked.Add((int)kind);
             Write(WalletPath, file);
         }
         private void LoadRecords()

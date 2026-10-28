@@ -30,6 +30,8 @@ namespace Muhanok.Presentation
         int LastTodayRank { get; }
         bool LastNewBest { get; }
         float BestDistance { get; }
+        // The member's last run could not be saved on the account server (kept in memory and retried with the next run).
+        bool RunSaveFailed { get; }
         float StartBanner { get; }
         float CaughtFlash { get; }
         void PreviewStyle(PlayStyle style);

@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using Muhanok.Application;
 using Muhanok.Domain;
 using Muhanok.Presentation;
 using UnityEngine;
@@ -100,7 +101,7 @@ namespace Muhanok.Bootstrap
         {
             while (shielded) { if (game.Session.Flow.State == GameFlowState.Running) game.Session.Items.Activate(ItemKind.Shield); yield return null; }
         }
-        // A profile, coins, one unlocked item and runs from today and yesterday.
+        // A profile, runs from today and yesterday, and a member with coins and one unlocked item.
         private void Seed(IHudData data)
         {
             data.SaveProfile(new PlayerProfile { Name = "탈옥왕", Weight = "65", Style = PlayStyle.Keyboard,CalorieGoal=180 });
@@ -108,7 +109,8 @@ namespace Muhanok.Bootstrap
             float[] todayRuns = { 2310, 1530, 980, 640, 455 }, earlier = { 1820, 1240 };
             for (int i = 0; i < todayRuns.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = todayRuns[i], Score = (int)todayRuns[i] * 3, Style = "키보드", Ticks = today.AddMinutes(-i * 7).Ticks }, todayRuns[i] / 25);
             for (int i = 0; i < earlier.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = earlier[i], Score = (int)earlier[i] * 3, Style = "전신", Ticks = yesterday.AddMinutes(-i * 9).Ticks }, earlier[i] / 18);
-            game.Store.DepositCoins(240); game.Store.Unlock(ItemKind.Magnet);
+            // Coins and items belong to a member account now; a synthetic member (no token, no server calls) fills the shop.
+            game.Account.SignInMember(new AccountProfile { id = "ui-review", name = "탈옥왕", weight = 65, style = (int)PlayStyle.Keyboard, goal = 180, coins = 240, unlocked = new[] { (int)ItemKind.Magnet } }, "");
         }
         private IEnumerator Shot(string name)
         {

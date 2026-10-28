@@ -30,6 +30,8 @@ namespace Muhanok.Domain
     public sealed class RankingEntry
     {
         public string Name; public int Score; public float Distance; public int Coins; public string Style; public long Ticks;
+        // Member id on the account server; empty for guest runs.
+        public string AccountId = "";
         public string Day => Leaderboard.DayKey(new DateTime(Ticks));
     }
 
