@@ -227,8 +227,8 @@ namespace Muhanok.Bootstrap
         {
             Session.Flow.Transition(GameFlowState.LoadingIntro);
             hud.BeginLoading(); hud.LoadingProgress=.12f;
-            // The player stands still during loading; that is the calibration pose.
-            Pose.Recalibrate();
+            // The player stands still during loading; that is the calibration pose. A fresh result-screen calibration is kept.
+            if (!Pose.CalibrationFresh(Time.realtimeSinceStartupAsDouble)) Pose.Recalibrate();
             yield return new WaitForSecondsRealtime(.25f);
             RouteSurface.UsePlan(new RoutePlan(Session.Config, seed));
             Session.Reset(); keyboard.Clear(); poseInput.Clear(); hud.LoadingProgress=.42f;

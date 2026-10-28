@@ -81,13 +81,18 @@ namespace Muhanok.Infrastructure
         private readonly PoseCommandSource commands;
         private readonly PoseFrame incoming = new PoseFrame();
         private IPoseEstimator estimator;
-        private bool estimatorFailed;
+        private bool estimatorFailed, calibrated;
         public readonly PoseFrame LastFrame = new PoseFrame();
         public PlayStyle Style { get; private set; } = PlayStyle.Keyboard;
         public MotionReading Reading => classifier.Reading;
         public float CalibrationProgress => classifier.CalibrationProgress;
         public float StepsPerMinute => classifier.StepsPerMinute;
         public double LastJumpTime { get; private set; } = -10;
+        // When the last calibration finished (Tick time, -1 none) and whether tracking dropped or restarted since.
+        public double CalibratedAt { get; private set; } = -1;
+        public bool LostSinceCalibration { get; private set; } = true;
+        // A run may skip its loading calibration while the last one is fresh (CalibrationReuse).
+        public bool CalibrationFresh(double now) => UsesCamera && calibrated && CalibrationReuse.Keep(now, CalibratedAt, LostSinceCalibration);
         public Texture CameraTexture => estimator?.CameraTexture;
         public string Message => estimator?.Message ?? "";
         public string Diagnostics => estimator?.Diagnostics ?? "";
@@ -113,7 +118,7 @@ namespace Muhanok.Infrastructure
         public void SetStyle(PlayStyle style)
         {
             if (style == Style && (estimator != null || !UsesCamera)) return;
-            Style = style; classifier.SetStyle(style); commands.Reset(0);
+            Style = style; classifier.SetStyle(style); commands.Reset(0); ForgetCalibration();
             if (!UsesCamera) { estimator?.Stop(); return; }
             if (estimator == null && !estimatorFailed)
             {
@@ -140,19 +145,25 @@ namespace Muhanok.Infrastructure
             if (device == options.DeviceName && liteModel == !options.FullLandmarkModel) return;
             options.DeviceName = device; options.FullLandmarkModel = !liteModel;
             // A new camera or model needs a fresh estimator; restart it if a camera style is active.
-            estimator?.Dispose(); estimator = null; estimatorFailed = false;
+            estimator?.Dispose(); estimator = null; estimatorFailed = false; ForgetCalibration();
             if (UsesCamera) { var style = Style; Style = PlayStyle.Keyboard; SetStyle(style); }
         }
-        public void Recalibrate() { classifier.Recalibrate(); smoother.Reset(); commands.Reset(0); }
+        public void Recalibrate() { classifier.Recalibrate(); smoother.Reset(); commands.Reset(0); ForgetCalibration(); }
+        private void ForgetCalibration() { calibrated = false; LostSinceCalibration = true; }
         public void ResetCommands() => commands.Reset(classifier.Reading.Lane);
         public void Tick(double now, bool feedCommands)
         {
             if (!UsesCamera || estimator == null) return;
             estimator.Tick(now);
+            // A camera that stops delivering (or the person leaving) after calibration counts as lost tracking.
+            if (calibrated && Status != PoseStatus.Tracking) LostSinceCalibration = true;
             if (!estimator.TryTakeFrame(incoming)) return;
             smoother.Apply(incoming, tuning);
             LastFrame.CopyFrom(incoming);
             var reading = classifier.Update(incoming);
+            if (classifier.Calibrated && !calibrated) { CalibratedAt = now; LostSinceCalibration = false; }
+            else if (!classifier.Calibrated || classifier.Status != PoseStatus.Tracking) LostSinceCalibration |= calibrated;
+            calibrated = classifier.Calibrated;
             if (reading.JumpEdge) LastJumpTime = now;
             if (feedCommands && classifier.Status == PoseStatus.Tracking) commands.Feed(reading, now);
             else commands.Reset(reading.Lane);

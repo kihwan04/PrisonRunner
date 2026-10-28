@@ -31,6 +31,7 @@ namespace Muhanok.Domain
         private readonly double[] stepTimes = new double[8];
         private int stepIndex;
         public PoseStatus Status { get; private set; } = PoseStatus.Searching;
+        public bool Calibrated => calibrated;
         public float CalibrationProgress => calibrated ? 1f : Math.Min(1f, samples / (float)Math.Max(1, tuning.CalibrationFrames));
         public readonly MotionReading Reading = new MotionReading();
         public float StepsPerMinute { get; private set; }
