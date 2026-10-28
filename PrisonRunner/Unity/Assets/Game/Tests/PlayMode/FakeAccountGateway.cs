@@ -19,12 +19,17 @@ namespace Muhanok.Tests
         public bool Offline, FailEnroll;
         public string TakenName = "";
         public readonly List<AccountEnrollment> Enrollments = new List<AccountEnrollment>();
+        // /profile/update applies the sent fields (TakenName answers 409), /shop/buy checks coins like the server, /stats answers StatsResult.
+        public readonly List<AccountProfileUpdate> Updates = new List<AccountProfileUpdate>();
+        public StatsReply StatsResult = new StatsReply { ok = true };
+        public int Deletes;
 
         public void Health(Action<AccountResult> done) { Calls.Add("health"); done?.Invoke(new AccountResult { ok = !Offline, message = Offline ? "얼굴 서버 연결 실패" : "" }); }
+        private bool Taken(string name) => !string.IsNullOrEmpty(TakenName) && string.Equals(name?.Trim(), TakenName, StringComparison.OrdinalIgnoreCase);
         public void NameCheck(string name, Action<AccountReply> done)
         {
             Calls.Add("name-check");
-            bool taken = !string.IsNullOrEmpty(TakenName) && string.Equals(name?.Trim(), TakenName, StringComparison.OrdinalIgnoreCase);
+            bool taken = Taken(name);
             done?.Invoke(new AccountReply { ok = true, available = !taken, message = taken ? "이미 사용 중인 닉네임입니다." : "사용할 수 있는 닉네임입니다." });
         }
         public void Enroll(AccountEnrollment enrollment, Action<AccountReply> done)
@@ -35,18 +40,39 @@ namespace Muhanok.Tests
         }
         public void Login(string[] images, Action<AccountReply> done) { Calls.Add("login"); done?.Invoke(SignedIn()); }
         public void FetchProfile(string token, Action<AccountReply> done) { Calls.Add("profile"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
-        public void UpdateProfile(string token, AccountProfileUpdate update, Action<AccountReply> done) { Calls.Add("profile/update"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
+        public void UpdateProfile(string token, AccountProfileUpdate update, Action<AccountReply> done)
+        {
+            Calls.Add("profile/update"); Updates.Add(update);
+            if (update?.Name != null && Taken(update.Name)) { done?.Invoke(new AccountReply { ok = false, status = 409, message = "이미 사용 중인 닉네임입니다." }); return; }
+            if (update != null)
+            {
+                if (update.Name != null) Profile.name = update.Name;
+                if (update.Weight.HasValue) Profile.weight = update.Weight.Value;
+                if (update.Style.HasValue) Profile.style = (int)update.Style.Value;
+                if (update.Goal.HasValue) Profile.goal = update.Goal.Value;
+                if (update.TutorialDone.HasValue) Profile.tutorial_done = update.TutorialDone.Value;
+            }
+            done?.Invoke(new AccountReply { ok = true, profile = Profile });
+        }
         public void SaveRun(string token, AccountRun run, Action<AccountReply> done)
         {
             Calls.Add("runs"); SavedRuns.Add(run); RunTokens.Add(token);
             if (FailRuns) { done?.Invoke(new AccountReply { ok = false, message = "offline" }); return; }
             Balance += run.coins; done?.Invoke(new AccountReply { ok = true, coins = Balance });
         }
-        public void Buy(string token, ItemKind item, Action<AccountReply> done) { Calls.Add("shop/buy"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
+        public void Buy(string token, ItemKind item, Action<AccountReply> done)
+        {
+            Calls.Add("shop/buy");
+            var owned = new List<int>(Profile.unlocked ?? new int[0]);
+            if (owned.Contains((int)item)) { done?.Invoke(new AccountReply { ok = false, status = 409, message = "이미 해금한 아이템입니다." }); return; }
+            if (Profile.coins < ItemCatalog.Get(item).UnlockCost) { done?.Invoke(new AccountReply { ok = false, status = 400, message = "코인이 부족합니다." }); return; }
+            Profile.coins -= ItemCatalog.Get(item).UnlockCost; owned.Add((int)item); Profile.unlocked = owned.ToArray();
+            done?.Invoke(new AccountReply { ok = true, profile = Profile });
+        }
         public void Leaderboard(string token, PlayStyle mode, bool today, Action<LeaderboardReply> done) { Calls.Add("leaderboard"); done?.Invoke(new LeaderboardReply { ok = true }); }
-        public void Stats(string token, Action<StatsReply> done) { Calls.Add("stats"); done?.Invoke(new StatsReply { ok = true }); }
+        public void Stats(string token, Action<StatsReply> done) { Calls.Add("stats"); done?.Invoke(StatsResult); }
         public void Logout(string token, Action<AccountReply> done) { Calls.Add("logout"); Logouts++; done?.Invoke(new AccountReply { ok = true }); }
-        public void Delete(string token, Action<AccountReply> done) { Calls.Add("delete"); done?.Invoke(new AccountReply { ok = true }); }
+        public void Delete(string token, Action<AccountReply> done) { Calls.Add("delete"); Deletes++; done?.Invoke(new AccountReply { ok = true }); }
         private AccountReply SignedIn() => new AccountReply { ok = true, token = "fake-token", profile = Profile, id = Profile.id, name = Profile.name };
     }
 }
