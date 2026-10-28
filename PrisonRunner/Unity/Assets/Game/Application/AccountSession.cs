@@ -23,6 +23,7 @@ namespace Muhanok.Application
     public sealed class AccountSession
     {
         public const string GuestName = "게스트";
+        public const int MaxNickname = 10;
         private readonly PlayerWallet wallet = new PlayerWallet();
         private AccountSettings settings = new AccountSettings();
         private PlayerProfile profile;
@@ -86,6 +87,15 @@ namespace Muhanok.Application
             if (!IsMember) return list;
             foreach (var item in ItemCatalog.All) if (wallet.IsUnlocked(item.Kind)) list.Add(item.Kind);
             return list;
+        }
+        // Server nickname rule (1-10 characters after trimming, no control characters); null when the name is acceptable.
+        public static string NicknameProblem(string name)
+        {
+            string text = name?.Trim() ?? "";
+            if (text.Length == 0) return "닉네임을 입력해 주세요.";
+            if (text.Length > MaxNickname) return "닉네임은 " + MaxNickname + "자 이하로 입력해 주세요.";
+            foreach (char c in text) if (char.IsControl(c)) return "닉네임에 쓸 수 없는 문자가 있습니다.";
+            return null;
         }
         // Profile screen values; an empty weight means the 65 kg default.
         public static AccountSettings SettingsOf(PlayerProfile value)

@@ -15,9 +15,24 @@ namespace Muhanok.Tests
         public bool FailRuns;
         public int Balance;
         public int Logouts;
+        // Offline: /health fails. TakenName: /name-check refuses it. FailEnroll: the next /enroll is refused (like a face already registered).
+        public bool Offline, FailEnroll;
+        public string TakenName = "";
+        public readonly List<AccountEnrollment> Enrollments = new List<AccountEnrollment>();
 
-        public void NameCheck(string name, Action<AccountReply> done) { Calls.Add("name-check"); done?.Invoke(new AccountReply { ok = true, available = true }); }
-        public void Enroll(AccountEnrollment enrollment, Action<AccountReply> done) { Calls.Add("enroll"); done?.Invoke(SignedIn()); }
+        public void Health(Action<AccountResult> done) { Calls.Add("health"); done?.Invoke(new AccountResult { ok = !Offline, message = Offline ? "얼굴 서버 연결 실패" : "" }); }
+        public void NameCheck(string name, Action<AccountReply> done)
+        {
+            Calls.Add("name-check");
+            bool taken = !string.IsNullOrEmpty(TakenName) && string.Equals(name?.Trim(), TakenName, StringComparison.OrdinalIgnoreCase);
+            done?.Invoke(new AccountReply { ok = true, available = !taken, message = taken ? "이미 사용 중인 닉네임입니다." : "사용할 수 있는 닉네임입니다." });
+        }
+        public void Enroll(AccountEnrollment enrollment, Action<AccountReply> done)
+        {
+            Calls.Add("enroll"); Enrollments.Add(enrollment);
+            if (FailEnroll) { FailEnroll = false; done?.Invoke(new AccountReply { ok = false, message = "이미 등록된 얼굴입니다.", status = 409 }); return; }
+            Profile.name = enrollment.name; Profile.weight = enrollment.weight; Profile.style = enrollment.style; done?.Invoke(SignedIn());
+        }
         public void Login(string[] images, Action<AccountReply> done) { Calls.Add("login"); done?.Invoke(SignedIn()); }
         public void FetchProfile(string token, Action<AccountReply> done) { Calls.Add("profile"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }
         public void UpdateProfile(string token, AccountProfileUpdate update, Action<AccountReply> done) { Calls.Add("profile/update"); done?.Invoke(new AccountReply { ok = true, profile = Profile }); }

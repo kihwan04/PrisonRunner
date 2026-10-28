@@ -89,6 +89,22 @@ namespace Muhanok.Infrastructure
         }
 
         // IAccountGateway
+        public void Health(Action<AccountResult> done)=>StartCoroutine(Ping(done));
+        private IEnumerator Ping(Action<AccountResult> done)
+        {
+            if(configurationError!=null){done?.Invoke(new AccountResult{message=configurationError});yield break;}
+            using(var request=UnityWebRequest.Get(endpoint+"/health"))
+            {
+                request.timeout=5;yield return request.SendWebRequest();
+                AccountResult reply=null;
+                try { reply=JsonUtility.FromJson<AccountResult>(request.downloadHandler.text); } catch { }
+                bool ok=request.result==UnityWebRequest.Result.Success&&reply!=null&&reply.ok;
+                // The server's own health text is English; players see the Korean connection hint.
+                var result=new AccountResult{ok=ok,message=ok?"":ConnectionFailed};
+                result.status=request.result==UnityWebRequest.Result.ConnectionError?0:request.responseCode;
+                done?.Invoke(result);
+            }
+        }
         public void NameCheck(string name,Action<AccountReply> done)=>Post("/name-check",JsonUtility.ToJson(new NameRequest{name=name}),"",done);
         public void Enroll(AccountEnrollment enrollment,Action<AccountReply> done)=>Face("/enroll",JsonUtility.ToJson(enrollment),done);
         public void Login(string[] images,Action<AccountReply> done)=>Face("/login",JsonUtility.ToJson(new FaceRequest{images=images}),done);
@@ -117,7 +133,7 @@ namespace Muhanok.Infrastructure
         private void Face(string path,string json,Action<AccountReply> done)
         {
             faceCalls++;
-            Post(path,json,"",reply=>{faceCalls--;if(reply.ok)Message=reply.name+"님 로그인 완료";done?.Invoke(reply);});
+            Post(path,json,"",reply=>{faceCalls--;if(reply.ok)Message=(reply.profile!=null&&!string.IsNullOrEmpty(reply.profile.name)?reply.profile.name:reply.name)+"님 로그인 완료";done?.Invoke(reply);});
         }
         private void Post(string path,string json,string token,Action<AccountReply> done)=>StartCoroutine(Send(path,json,token,done));
         private IEnumerator Send<T>(string path,string json,string token,Action<T> done) where T:AccountResult,new()

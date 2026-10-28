@@ -10,6 +10,8 @@ namespace Muhanok.Application
     // a failed or unreachable server answers with ok=false. Field names follow the server JSON.
     public interface IAccountGateway
     {
+        // GET /health: ok when the server and its database answer.
+        void Health(Action<AccountResult> done);
         void NameCheck(string name, Action<AccountReply> done);
         void Enroll(AccountEnrollment enrollment, Action<AccountReply> done);
         void Login(string[] images, Action<AccountReply> done);

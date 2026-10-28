@@ -75,5 +75,13 @@ namespace Muhanok.Tests
             Assert.AreEqual("{\"name\":\"a\\\"b\",\"tutorial_done\":true}", new AccountProfileUpdate { Name = "a\"b", TutorialDone = true }.ToJson());
             Assert.AreEqual("{\"weight\":65,\"style\":2,\"goal\":50}", AccountProfileUpdate.From(new AccountSettings { Style = PlayStyle.Keyboard }).ToJson());
         }
+
+        [Test]
+        public void NicknameRuleMatchesTheServer()
+        {
+            Assert.IsNull(AccountSession.NicknameProblem("민수")); Assert.IsNull(AccountSession.NicknameProblem(" 1234567890 "));
+            Assert.IsNotNull(AccountSession.NicknameProblem("")); Assert.IsNotNull(AccountSession.NicknameProblem("   ")); Assert.IsNotNull(AccountSession.NicknameProblem(null));
+            Assert.IsNotNull(AccountSession.NicknameProblem("12345678901")); Assert.IsNotNull(AccountSession.NicknameProblem("a\tb"));
+        }
     }
 }
