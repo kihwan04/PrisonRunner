@@ -76,6 +76,7 @@ namespace Muhanok.Bootstrap
             identity=gameObject.AddComponent<LocalProfileClient>(); faceAvatar=Hero.gameObject.AddComponent<FaceAvatarView>();
             identity.Changed+=IdentityChanged;
             gameObject.AddComponent<CartRideView>().Configure(Session,Hero,CartRidePrefab);
+            gameObject.AddComponent<PowerUpAuraView>().Configure(Session,Hero);
             OutputCamera.GetComponent<CinematicFocus>()?.Configure(Session,Hero);
             var mapRoot = new GameObject("ChunkPool"); mapRoot.transform.SetParent(transform, false);
             Map = new ChunkSpawner(ChunkPrefabs, mapRoot.transform, Session, Settings != null ? Settings.Render : new RenderBudget());

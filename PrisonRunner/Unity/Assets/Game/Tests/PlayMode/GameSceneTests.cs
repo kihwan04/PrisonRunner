@@ -157,6 +157,21 @@ namespace Muhanok.Tests
             }
             finally { Object.Destroy(node); }
         }
+        [UnityTest] public IEnumerator ItemAurasShowWhileActiveAndShieldBreaksOnHit()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();
+            game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
+            game.enabled=false;
+            var aura=game.GetComponent<Muhanok.Presentation.PowerUpAuraView>(); Assert.IsNotNull(aura);
+            yield return null; Assert.IsFalse(aura.ShieldVisible||aura.MagnetVisible);
+            game.Session.Items.Activate(ItemKind.Shield); game.Session.Items.Activate(ItemKind.Magnet); yield return null;
+            Assert.IsTrue(aura.ShieldVisible,"Shield bubble"); Assert.IsTrue(aura.MagnetVisible,"Magnet sparks");
+            Assert.IsFalse(game.Session.Hit(true)); Assert.IsFalse(game.Session.Items.IsActive(ItemKind.Shield)); yield return null;
+            Assert.IsTrue(aura.ShieldVisible,"The used shield bursts visibly before disappearing");
+            yield return new WaitForSecondsRealtime(Muhanok.Presentation.PowerUpAuraView.BurstSeconds+.3f);
+            Assert.IsFalse(aura.ShieldVisible); Assert.IsTrue(aura.MagnetVisible);
+        }
         [UnityTest] public IEnumerator MagnetPulledChunkCoinReturnsToItsSpotWhenPooled()
         {
             yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
