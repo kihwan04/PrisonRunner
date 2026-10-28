@@ -10,8 +10,8 @@ namespace Muhanok.Presentation
     internal sealed class MainMenuScreen
     {
         static readonly CultureInfo Num = CultureInfo.InvariantCulture;
-        // The login entry reads "로그아웃" for a member and "로그인 / 회원가입" for a guest.
-        static readonly string[] Labels = { "게임 시작", "랭킹", "상점", "프로필", "로그인 / 회원가입", "설정", "게임 종료" };
+        // The login entry reads "로그아웃" for a member and "로그인 / 회원가입" for a guest; 내 정보 is shown to members only.
+        static readonly string[] Labels = { "게임 시작", "랭킹", "상점", "내 정보", "로그인 / 회원가입", "설정", "게임 종료" };
         const string LogoutLabel = "로그아웃";
         static readonly MenuAction[] Actions = { MenuAction.Play, MenuAction.Ranking, MenuAction.Shop, MenuAction.Profile, MenuAction.Identity, MenuAction.Settings, MenuAction.Quit };
 
@@ -32,9 +32,10 @@ namespace Muhanok.Presentation
 
             var action = MenuAction.None;
             bool member = SignedIn(data);
-            for (int i = 0; i < Labels.Length; i++)
+            for (int i = 0, row = 0; i < Labels.Length; i++)
             {
-                var r = new Rect(860, 142 + i * 68, 340, 58);
+                if (Actions[i] == MenuAction.Profile && !member) continue;
+                var r = new Rect(860, 142 + row++ * 68, 340, 58);
                 bool primary = i == 0;
                 string label = Actions[i] == MenuAction.Identity && member ? LogoutLabel : Labels[i];
                 bool pressed = primary

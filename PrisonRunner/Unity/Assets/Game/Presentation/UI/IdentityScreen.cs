@@ -20,6 +20,12 @@ namespace Muhanok.Presentation
         void FaceLogin(Action<bool> done);
         void FaceEnroll(string nickname,AccountSettings settings,Action<bool> done);
         void FaceLogout(bool delete);
+        // 내 정보 (members). done(ok, reason) once the server answered; a taken nickname gives its reason.
+        void SaveMemberProfile(string nickname,AccountSettings settings,Action<bool,string> done);
+        // Totals for 내 정보; null without a member.
+        void MemberStats(Action<StatsReply> done);
+        // Deletes the account on the server and returns to a guest.
+        void DeleteAccount(Action<bool,string> done);
     }
     // Face capture step shared by face login and sign-up: camera with the face guide, one capture button and back.
     internal sealed class IdentityScreen

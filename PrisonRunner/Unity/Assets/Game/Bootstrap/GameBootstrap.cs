@@ -586,8 +586,46 @@ namespace Muhanok.Bootstrap
         {
             if (IdentityBusy || !Account.IsMember) return;
             if (!delete) { SignOutMember(); return; }
+            DeleteAccount(null);
+        }
+        // 내 정보: nickname and settings in one /profile/update; the session changes only after the server accepted them.
+        public void SaveMemberProfile(string nickname, AccountSettings settings, System.Action<bool,string> done)
+        {
+            if (!Account.IsMember) { done?.Invoke(false, "회원만 저장할 수 있습니다."); return; }
+            string problem = AccountSession.NicknameProblem(nickname);
+            if (problem != null) { done?.Invoke(false, problem); return; }
+            var update = AccountProfileUpdate.From(settings ?? Account.Settings);
+            string name = nickname.Trim(), id = Account.Id;
+            if (name != Account.Nickname) update.Name = name;
+            gateway.UpdateProfile(Account.Token, update, reply =>
+            {
+                if (reply != null && reply.HasProfile && reply.profile.id == id && Account.Apply(reply.profile))
+                {
+                    if (!userSettings.DeveloperMode) player = Account.Profile.Clone(); else player.Name = Account.Nickname;
+                    done?.Invoke(true, ""); return;
+                }
+                NoteServer(reply);
+                done?.Invoke(false, reply != null && reply.status == 409 && string.IsNullOrEmpty(reply.message) ? "이미 사용 중인 닉네임입니다." : ServerReason(reply));
+            });
+        }
+        // Server totals for 내 정보; null when there is no member or no token.
+        public void MemberStats(System.Action<StatsReply> done)
+        {
+            if (!Account.IsMember || string.IsNullOrEmpty(Account.Token)) { done?.Invoke(null); return; }
+            gateway.Stats(Account.Token, done);
+        }
+        // Account deletion (face, profile and runs on the server, and the member's rows on this PC's ranking); the player becomes a guest.
+        public void DeleteAccount(System.Action<bool,string> done)
+        {
+            if (IdentityBusy || !Account.IsMember) { done?.Invoke(false, "회원만 탈퇴할 수 있습니다."); return; }
             string id = Account.Id;
-            gateway.Delete(Account.Token, reply => { if (reply.ok && Account.IsMember && Account.Id == id) Account.SignOut(); });
+            gateway.Delete(Account.Token, reply =>
+            {
+                bool ok = reply != null && reply.ok;
+                if (ok) { Store.RemoveAccount(id); if (Account.IsMember && Account.Id == id) Account.SignOut(); }
+                else NoteServer(reply);
+                done?.Invoke(ok, ok ? "" : ServerReason(reply));
+            });
         }
 
         // ISettingsHost

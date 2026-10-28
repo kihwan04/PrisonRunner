@@ -45,7 +45,7 @@ namespace Muhanok.Presentation
                 skin.Panel(new Rect(195, 150, 400, 182), .95f);
                 GUI.Label(new Rect(215, 166, 360, 40), data?.SavedProfile.DisplayName ?? "플레이어", skin.Style(30, FontStyle.Bold));
                 GUI.Label(new Rect(215, 214, 360, 34), string.IsNullOrWhiteSpace(weightText) ? "몸무게 미입력 · 칼로리 계산 안 함" : "몸무게 " + weightText + " kg", skin.Small);
-                GUI.color = new Color(1, 1, 1, .7f); GUI.Label(new Rect(215, 280, 360, 34), "이름과 몸무게는 메인 메뉴 > 프로필에서 바꿉니다.", skin.Style(15, FontStyle.Normal)); GUI.color = Color.white;
+                GUI.color = new Color(1, 1, 1, .7f); GUI.Label(new Rect(215, 280, 360, 34), data is IIdentityData account && account.SignedIn ? "닉네임과 몸무게는 메인 메뉴 > 내 정보에서 바꿉니다." : "회원가입하면 닉네임과 설정이 계정에 저장됩니다.", skin.Style(15, FontStyle.Normal)); GUI.color = Color.white;
             }
             GUI.Label(new Rect(195, 344, 300, 34), "플레이 방식", skin.Label);
             for (int i = 0; i < 3; i++)

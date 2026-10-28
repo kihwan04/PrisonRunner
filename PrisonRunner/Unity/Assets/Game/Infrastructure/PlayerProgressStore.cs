@@ -46,6 +46,7 @@ namespace Muhanok.Infrastructure
             return rank;
         }
         public void ClearToday() { Board.ClearDay(Leaderboard.DayKey(DateTime.Now)); SaveRecords(); }
+        public void RemoveAccount(string id) { Board.RemoveAccount(id); SaveRecords(); }
         public void DepositCoins(int coins) { Wallet.Deposit(coins); SaveWallet(); }
         public bool Unlock(ItemKind kind) { bool done = Wallet.TryUnlock(kind); if (done) SaveWallet(); return done; }
         private void LoadDeveloperData()

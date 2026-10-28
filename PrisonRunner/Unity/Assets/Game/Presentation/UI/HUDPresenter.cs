@@ -29,6 +29,8 @@ namespace Muhanok.Presentation
         private SignUpScreen signUp;
         // Sign-up step state; tests and tools can drive it without clicking.
         public SignUpFlow SignUp { get; } = new SignUpFlow();
+        // 내 정보 form state (members only).
+        public ProfileForm Profile { get; } = new ProfileForm();
         public bool IdentityOpen=>Page==MenuPage.Identity;
         // Login gate, sign-up and face login keep the upper-body camera on for hand pointing and face capture.
         public bool AccountPageOpen=>Page==MenuPage.Login||Page==MenuPage.SignUp||Page==MenuPage.Identity;
@@ -69,9 +71,11 @@ namespace Muhanok.Presentation
         }
         public void ShowPage(MenuPage page)
         {
+            // 내 정보 is for members; a guest stays on the main menu.
+            if (page == MenuPage.Profile && (Account == null || !Account.SignedIn)) page = MenuPage.Main;
             Page = page;
             if (page == MenuPage.Setup) setup.Open(Data);
-            else if (page == MenuPage.Profile) profile.Open(Data, false);
+            else if (page == MenuPage.Profile) { Profile.Open(Data, Account); profile.Open(); }
             else if (page == MenuPage.Ranking) board.OpenBoard(Data);
             else if (page == MenuPage.Login) Account?.CheckServer();
             else if (page == MenuPage.SignUp) { SignUp.Open(Account); signUp.Open(); }
@@ -101,10 +105,14 @@ namespace Muhanok.Presentation
             else if (action == MenuAction.Ranking) ShowPage(MenuPage.Ranking);
             else if (action == MenuAction.Shop) ShowPage(MenuPage.Shop);
             else if (action == MenuAction.Profile) ShowPage(MenuPage.Profile);
-            else if (action == MenuAction.Identity) { if (Account != null && Account.SignedIn) Account.FaceLogout(false); OpenLogin(); }
+            else if (action == MenuAction.Identity) Logout();
             else if (action == MenuAction.Settings) OpenSettings?.Invoke();
             else if (action == MenuAction.Quit) Quit?.Invoke();
         }
+        // Main menu "로그아웃" and 내 정보: a member is signed out; both go to the login gate.
+        public void Logout() { if (Account != null && Account.SignedIn) Account.FaceLogout(false); OpenLogin(); }
+        // 내 정보 "회원 탈퇴": two questions, then the account is deleted and the login gate opens.
+        public void DeleteAccount() => Profile.RequestDelete(() => { if (Page == MenuPage.Profile) OpenLogin(); });
         public void CloseSetup() { ShowPage(MenuPage.None); Loading = false; revealRemaining = 0; }
         public void BeginLoading() { ShowPage(MenuPage.None); Loading = true; }
         public void EndLoading() { Loading = false; revealRemaining = .85f; }
@@ -145,7 +153,10 @@ namespace Muhanok.Presentation
             {
                 case MenuPage.None: title.Draw(TitleLogo, Fade); break;
                 case MenuPage.Setup: setup.Draw(Data, BeginRun, OpenMainMenu, OpenSettings); break;
-                case MenuPage.Profile: profile.Draw(Data, OpenMainMenu, OpenMainMenu); break;
+                case MenuPage.Profile:
+                    if (Account == null || !Account.SignedIn) OpenMainMenu();
+                    else profile.Draw(Profile, OpenMainMenu, Logout, DeleteAccount);
+                    break;
                 case MenuPage.Shop: shop.Draw(Data, OpenMainMenu); break;
                 case MenuPage.Ranking: board.Draw(Data, session, OpenMainMenu, "닫기", null, null); break;
                 case MenuPage.Login: ChooseLogin(gate.Draw(Account, TitleLogo)); break;

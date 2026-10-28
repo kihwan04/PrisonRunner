@@ -66,6 +66,8 @@ namespace Muhanok.Domain
             if(entries.Count>MaxEntries)entries.RemoveRange(MaxEntries,entries.Count-MaxEntries);
         }
         public void ClearDay(string day) => entries.RemoveAll(e => e.Day == day);
+        // A deleted member's runs leave this PC's board too.
+        public void RemoveAccount(string id) { if (!string.IsNullOrEmpty(id)) entries.RemoveAll(e => e.AccountId == id); }
         private void Sort() => entries.Sort((a, b) => b.Distance != a.Distance ? b.Distance.CompareTo(a.Distance) : a.Ticks.CompareTo(b.Ticks));
     }
 
