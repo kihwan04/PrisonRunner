@@ -76,6 +76,7 @@ namespace Muhanok.Presentation
             Page = page;
             if (page == MenuPage.Setup) setup.Open(Data);
             else if (page == MenuPage.Profile) { Profile.Open(Data, Account); profile.Open(); }
+            else if (page == MenuPage.Shop) shop.Open();
             else if (page == MenuPage.Ranking) board.OpenBoard(Data);
             else if (page == MenuPage.Login) Account?.CheckServer();
             else if (page == MenuPage.SignUp) { SignUp.Open(Account); signUp.Open(); }

@@ -35,7 +35,8 @@ namespace Muhanok.Presentation
         float StartBanner { get; }
         float CaughtFlash { get; }
         void PreviewStyle(PlayStyle style);
-        void Unlock(ItemKind kind);
+        // done(ok, reason): members buy on the account server; guests and developer mode cannot buy.
+        void Unlock(ItemKind kind, System.Action<bool, string> done);
         void SaveProfile(PlayerProfile profile);
         void Recalibrate();
     }

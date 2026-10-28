@@ -487,12 +487,19 @@ namespace Muhanok.Bootstrap
         public float StartBanner => Session.Flow.State == GameFlowState.Running ? Mathf.Max(0, 2.2f - (Time.realtimeSinceStartup - runStartedAt)) : 0;
         float IHudData.CaughtFlash => Session.Flow.State == GameFlowState.Caught ? Mathf.Clamp01(1 - (Time.realtimeSinceStartup - caughtAt) / .6f) : 0;
         void IHudData.PreviewStyle(PlayStyle style) { player.Style = style; Pose.SetStyle(style); }
-        // Members buy on the server; guests have no coins and developer mode has everything.
-        void IHudData.Unlock(ItemKind kind)
+        // Members buy on the server and take its balance and unlocked items; guests have no coins and developer mode has everything.
+        void IHudData.Unlock(ItemKind kind, System.Action<bool, string> done)
         {
-            if (!Account.IsMember || userSettings.DeveloperMode) return;
+            if (!Account.IsMember || userSettings.DeveloperMode) { done?.Invoke(false, "회원가입하면 코인을 모아 아이템을 해금할 수 있어요"); return; }
             string id = Account.Id;
-            gateway.Buy(Account.Token, kind, reply => { if (reply.HasProfile && reply.profile.id == id) Account.Apply(reply.profile); });
+            gateway.Buy(Account.Token, kind, reply =>
+            {
+                if (reply != null && reply.HasProfile && reply.profile.id == id && Account.Apply(reply.profile)) { done?.Invoke(true, ""); return; }
+                NoteServer(reply);
+                string reason = reply == null || !string.IsNullOrEmpty(reply.message) || reply.status == 0 ? ServerReason(reply)
+                    : reply.status == 409 ? "이미 해금한 아이템입니다." : "코인이 부족합니다.";
+                done?.Invoke(false, reason);
+            });
         }
         // The member's nickname stays the server's; a guest's name lives in session memory only.
         void IHudData.SaveProfile(PlayerProfile profile)
