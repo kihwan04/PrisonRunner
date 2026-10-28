@@ -156,6 +156,18 @@ namespace Muhanok.Presentation.Map
             }
         }
 
+        // Tutorial: one pooled lane block at a fixed spot of a chunk that was already decorated.
+        public ObstacleController PlaceLaneBlock(MuhanokMapChunk chunk, int lane, float z)
+        {
+            if (!placed.TryGetValue(chunk, out var list)) return null;
+            int theme = chunk.RouteType == 12 ? 2 : chunk.RouteType <= 3 ? 0 : 1;
+            var block = blockers[theme].Count > 0 ? blockers[theme].Pop() : BuildBlock(theme);
+            block.transform.position = LanePoint(lane, z, 0); block.transform.SetParent(chunk.transform, true);
+            block.Hazard.ResetPass(); block.gameObject.SetActive(true);
+            chunk.DynamicObstacles.Add(block.Hazard); list.Add(block);
+            return block.Hazard;
+        }
+
         public void Release(MuhanokMapChunk chunk)
         {
             chunk.GetComponent<GroundSurfaceOwner>()?.Restore();
