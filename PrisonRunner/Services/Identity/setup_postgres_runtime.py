@@ -1,4 +1,4 @@
-"""Optional Windows PostgreSQL driver, downloaded from PyPI and checked against wheel SHA-256."""
+"""Windows PostgreSQL driver for the local face server and tests, downloaded from PyPI and checked against wheel SHA-256."""
 import hashlib
 import io
 import json
