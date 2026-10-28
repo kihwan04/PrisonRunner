@@ -253,7 +253,8 @@ namespace Muhanok.Bootstrap
             // Menus use the upper-body camera for hand pointing; the login gate, sign-up and face capture always do.
             if(!automated&&Session.Flow.State==GameFlowState.TitleIdle&&(hud.AccountPageOpen?Pose.Style!=PlayStyle.UpperBody:!Pose.UsesCamera&&!hud.SetupOpen))Pose.SetStyle(PlayStyle.UpperBody);
             bool menu=Session.Flow.State!=GameFlowState.Running || Session.Paused;
-            GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking,now);
+            // The calibration panel takes no hand pointing: the player stands still and it closes by itself.
+            GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking&&!hud.CalibrationOpen,now);
             OperatorKeys();
             TickInput();
             if (Session.Flow.State == GameFlowState.Caught && Time.timeScale < 1 && Time.realtimeSinceStartup - caughtAt > .7f) Time.timeScale = 1;

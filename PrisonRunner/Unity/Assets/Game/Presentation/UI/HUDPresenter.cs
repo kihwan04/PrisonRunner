@@ -59,6 +59,7 @@ namespace Muhanok.Presentation
         private ProfileScreen profile;
         private ShopScreen shop;
         private LeaderboardScreen board;
+        private CalibrationPanel calibration;
         private LoadingScreen loading;
         private RunHud runHud;
         private PauseScreen pause;
@@ -69,6 +70,7 @@ namespace Muhanok.Presentation
             overlaySkin = new OverlaySkin(Resources.Load<Font>("MuhanokUI/BlackHanSans-Regular"), null);
             title = new TitleScreen(skin); setup = new SetupScreen(skin); loading = new LoadingScreen(skin); identity=new IdentityScreen(skin); signUp=new SignUpScreen(skin,identity);
             menu = new MainMenuScreen(overlaySkin); gate = new LoginGateScreen(overlaySkin); profile = new ProfileScreen(overlaySkin); shop = new ShopScreen(overlaySkin); board = new LeaderboardScreen(overlaySkin, Ranking);
+            calibration = new CalibrationPanel(overlaySkin, skin);
             runHud = new RunHud(skin, new ProgressHud(overlaySkin)); pause = new PauseScreen(skin);
         }
         public void ShowPage(MenuPage page)
@@ -118,6 +120,11 @@ namespace Muhanok.Presentation
         public void DeleteAccount() => Profile.RequestDelete(() => { if (Page == MenuPage.Profile) OpenLogin(); });
         // Result screen: a guest is asked for a name for the run just recorded as "게스트" on this PC's ranking.
         public bool AsksGuestName => board.AsksGuestName;
+        // Result screen 웹캠 보정: only after a camera run; the panel blocks the result buttons and hand pointing while open.
+        public bool CalibrationAvailable => session != null && session.Flow.State == GameFlowState.Result && Data?.Player != null && PlayStyleInfo.UsesCamera(Data.Player.Style);
+        public bool CalibrationOpen => calibration != null && calibration.Open;
+        public void OpenCalibration() { if (CalibrationAvailable) calibration.Show(Data); }
+        public void CloseCalibration() => calibration?.Close();
         public void CloseSetup() { ShowPage(MenuPage.None); Loading = false; revealRemaining = 0; }
         public void BeginLoading() { ShowPage(MenuPage.None); Loading = true; }
         public void EndLoading() { Loading = false; revealRemaining = .85f; }
@@ -125,6 +132,7 @@ namespace Muhanok.Presentation
         private void Update()
         {
             revealRemaining = Mathf.Max(0, revealRemaining - Time.unscaledDeltaTime);
+            if (!CalibrationAvailable) calibration?.Close(); else calibration.Tick(Data, Time.realtimeSinceStartup);
             if (session == null || runHud == null || Hidden || Loading || Revealing) return;
             if (session.Flow.State == GameFlowState.Running || session.Flow.State == GameFlowState.Caught)
                 runHud.Model.Tick(session, Map, Data?.Player?.Style ?? PlayStyle.Keyboard, Data?.PoseStatus ?? PoseStatus.Off, PoliceAlert?.Invoke() ?? false, Time.unscaledTime);
@@ -146,8 +154,13 @@ namespace Muhanok.Presentation
             else if (state == GameFlowState.Result)
             {
                 if (!resultOpen) { resultOpen = true; board.OpenResult(Data, Account, session); if (board.AsksGuestName) TextInput?.Invoke(true); }
-                bool perRun = Data != null && Data.DeveloperMode;
-                board.Draw(Data, session, retry, "다시 하기", perRun ? NextPlayer : ToMenu, perRun ? "다음 플레이어" : "메인으로");
+                bool perRun = Data != null && Data.DeveloperMode, calibrating = calibration.Open;
+                // The open calibration panel takes the keys first and leaves the result screen underneath inert.
+                calibration.Keys();
+                GUI.enabled = !calibrating;
+                board.Draw(Data, session, retry, "다시 하기", perRun ? NextPlayer : ToMenu, perRun ? "다음 플레이어" : "메인으로", CalibrationAvailable ? OpenCalibration : (Action)null, "웹캠 보정");
+                GUI.enabled = true;
+                if (calibrating) calibration.Draw(Data);
             }
             GesturePointer.Draw();
             GUI.color = Color.white; GUI.matrix = old;
