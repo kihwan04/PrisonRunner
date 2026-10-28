@@ -7,7 +7,7 @@ from unittest import mock
 BASE=Path(__file__).resolve().parent
 sys.path.insert(0,str(BASE/'.runtime'))
 from server import App,Store,Faces,ApiError,kst_midnight
-from storage import ConfigError,SchemaError
+from storage import SCHEMA_VERSION,ConfigError,SchemaError
 from prepare_secrets import prepare
 import migrate_account
 URL=os.getenv('MONGSCAPE_TEST_POSTGRES_URL')
@@ -184,6 +184,8 @@ class IdentityTests(PostgresCase):
  def test_fresh_db_is_v2_and_newer_schema_refused(self):
   self.assertEqual(self.store.version(),2);self.assertTrue({'profiles_name_key','runs_mode_score'}<=self.store.indexes())
   self.assertEqual(migrate_account.migrate(database_url=self.url),[])
+  self.store.db.close();self.store=self.make_store() # a restart keeps the single version row
+  self.assertEqual(self.store.db.execute('SELECT version FROM schema_version').fetchall(),[(SCHEMA_VERSION,)])
   with self.store.db:self.store.db.execute('UPDATE schema_version SET version=3')
   self.store.db.close()
   with self.assertRaisesRegex(SchemaError,'newer'):self.store=self.make_store()

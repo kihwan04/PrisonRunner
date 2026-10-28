@@ -103,7 +103,10 @@ class Store:
                 raise SchemaError(f'Old identity schema (v{version}). Back up the DB, run migrate_account.py, then restart.')
             if version is not None and version>SCHEMA_VERSION:
                 raise SchemaError(f'Identity schema v{version} is newer than this server (v{SCHEMA_VERSION}).')
-            with self.db:self.db.execute((BASE/'schema.postgres.sql').read_text(encoding='utf-8'))
+            with self.db:
+                self.db.execute((BASE/'schema.postgres.sql').read_text(encoding='utf-8'))
+                # A fresh DB is stamped with this server's version; an existing one keeps its row.
+                self.db.execute('INSERT INTO schema_version (version) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM schema_version)',(SCHEMA_VERSION,))
         except Exception:self.db.close();raise
 
     def columns(self,table):

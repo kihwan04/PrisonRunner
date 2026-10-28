@@ -41,4 +41,3 @@ CREATE INDEX IF NOT EXISTS runs_profile_created ON runs (profile_id, created_at 
 CREATE INDEX IF NOT EXISTS runs_mode_score ON runs (mode, score DESC);
 CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions (expires_at);
 CREATE INDEX IF NOT EXISTS sessions_profile ON sessions (profile_id);
-INSERT INTO schema_version (version) SELECT 2 WHERE NOT EXISTS (SELECT 1 FROM schema_version);
