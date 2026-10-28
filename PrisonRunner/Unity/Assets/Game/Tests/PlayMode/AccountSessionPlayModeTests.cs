@@ -106,6 +106,44 @@ namespace Muhanok.Tests
             game.TogglePause();game.ExitToMenu();
         }
 
+        // A 401 on the menu (here the shop) signs the member out at once and opens the login gate with the notice; no /logout is sent.
+        [UnityTest]
+        public IEnumerator ExpiredSessionOnTheMenuReturnsToTheLoginGate()
+        {
+            yield return Open();
+            var hud=game.GetComponent<HUDPresenter>();
+            game.Account.SignInMember(new AccountProfile{id="member-4",name="만료",coins=500},"token-4");
+            hud.OpenMainMenu();Assert.AreEqual(MenuPage.Main,hud.Page);
+            fake.Expired=true;bool? bought=null;
+            ((IHudData)game).Unlock(ItemKind.Magnet,(ok,why)=>bought=ok);
+            Assert.AreEqual(false,bought);Assert.IsFalse(game.SignedIn);Assert.AreEqual(0,fake.Logouts,"The token is already gone on the server");
+            Assert.AreEqual(MenuPage.Login,hud.Page);Assert.AreEqual(GameBootstrap.ExpiredNotice,((IIdentityData)game).LoginNotice);
+            yield return null;Assert.AreEqual(MenuPage.Login,hud.Page);
+            // Signing in again clears the notice.
+            fake.Expired=false;bool? back=null;game.UseAccountServices(null,null,done=>done(new[]{"face"}));game.FaceLogin(ok=>back=ok);
+            Assert.AreEqual(true,back);Assert.IsTrue(game.SignedIn);Assert.AreEqual("",((IIdentityData)game).LoginNotice);
+            game.FaceLogout(false);
+        }
+
+        // During a run the member stays until the run is left; then the login gate opens. The refused upload is not resent in a loop.
+        [UnityTest]
+        public IEnumerator ExpiredSessionDuringARunWaitsForTheMenu()
+        {
+            yield return Open();
+            var hud=game.GetComponent<HUDPresenter>();
+            game.Account.SignInMember(new AccountProfile{id="member-5",name="달리기"},"token-5");
+            yield return RunKeyboard();
+            fake.Expired=true;game.RecordFinishedRun();
+            Assert.IsTrue(game.SignedIn,"Not signed out in the middle of a run");Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
+            Assert.IsTrue(((IHudData)game).RunSaveFailed);Assert.AreEqual(1,fake.Calls.FindAll(c=>c=="runs").Count);
+            yield return null;yield return null;
+            Assert.AreEqual(1,fake.Calls.FindAll(c=>c=="runs").Count,"No automatic resend");
+            game.TogglePause();game.ExitToMenu();
+            yield return null;
+            Assert.IsFalse(game.SignedIn);Assert.AreEqual(MenuPage.Login,hud.Page);Assert.AreEqual(GameBootstrap.ExpiredNotice,((IIdentityData)game).LoginNotice);
+            Assert.AreEqual(0,fake.Logouts);Assert.AreEqual("member-5",game.Store.Board.All[0].AccountId,"The run stays on this PC's ranking");
+        }
+
         [UnityTest]
         public IEnumerator DeveloperModeOpensEveryItemAndLogoutReturnsToGuest()
         {

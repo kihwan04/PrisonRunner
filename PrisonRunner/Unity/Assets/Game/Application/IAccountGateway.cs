@@ -25,6 +25,33 @@ namespace Muhanok.Application
         void Delete(string token, Action<AccountReply> done);
     }
 
+    // Passes every call through; a 401 answer to a call made with a member token (expired or revoked on the server)
+    // reports that token through Expired before the caller's callback runs.
+    public sealed class ExpiryWatchingGateway : IAccountGateway
+    {
+        private readonly IAccountGateway inner;
+        private readonly Action<string> expired;
+        public ExpiryWatchingGateway(IAccountGateway gateway, Action<string> onExpired) { inner = gateway; expired = onExpired; }
+        private Action<T> Watch<T>(string token, Action<T> done) where T : AccountResult => reply =>
+        {
+            if (reply != null && !reply.ok && reply.status == 401 && !string.IsNullOrEmpty(token)) expired?.Invoke(token);
+            done?.Invoke(reply);
+        };
+        public void Health(Action<AccountResult> done) => inner.Health(done);
+        public void NameCheck(string name, Action<AccountReply> done) => inner.NameCheck(name, done);
+        public void Enroll(AccountEnrollment enrollment, Action<AccountReply> done) => inner.Enroll(enrollment, done);
+        public void Login(string[] images, Action<AccountReply> done) => inner.Login(images, done);
+        public void FetchProfile(string token, Action<AccountReply> done) => inner.FetchProfile(token, Watch(token, done));
+        public void UpdateProfile(string token, AccountProfileUpdate update, Action<AccountReply> done) => inner.UpdateProfile(token, update, Watch(token, done));
+        public void SaveRun(string token, AccountRun run, Action<AccountReply> done) => inner.SaveRun(token, run, Watch(token, done));
+        public void Buy(string token, ItemKind item, Action<AccountReply> done) => inner.Buy(token, item, Watch(token, done));
+        public void Leaderboard(string token, PlayStyle mode, bool today, Action<LeaderboardReply> done) => inner.Leaderboard(token, mode, today, Watch(token, done));
+        public void Stats(string token, Action<StatsReply> done) => inner.Stats(token, Watch(token, done));
+        // Signing out needs no notice.
+        public void Logout(string token, Action<AccountReply> done) => inner.Logout(token, done);
+        public void Delete(string token, Action<AccountReply> done) => inner.Delete(token, Watch(token, done));
+    }
+
     [Serializable]
     public class AccountResult
     {

@@ -30,7 +30,10 @@ namespace Muhanok.Presentation
             string problem = identity?.ServerProblem ?? "";
             bool server = !checking && string.IsNullOrEmpty(problem);
             skin.Text(new Rect(760, 80, 440, 44), "어떻게 시작할까요?", 34, Palette.Cream, TextAnchor.MiddleLeft);
-            skin.Text(new Rect(760, 126, 440, 26), "회원은 코인을 모아 아이템을 해금하고 통합 랭킹에 오릅니다.", 15, Palette.Sand, TextAnchor.MiddleLeft, false, true);
+            // An expired session's notice takes the place of the member line.
+            string notice = identity?.LoginNotice ?? "";
+            if (notice.Length > 0) skin.Text(new Rect(760, 126, 440, 26), notice, 17, new Color(1, .6f, .4f), TextAnchor.MiddleLeft, false, true);
+            else skin.Text(new Rect(760, 126, 440, 26), "회원은 코인을 모아 아이템을 해금하고 통합 랭킹에 오릅니다.", 15, Palette.Sand, TextAnchor.MiddleLeft, false, true);
 
             var action = LoginAction.None;
             var e = Event.current;

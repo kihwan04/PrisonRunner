@@ -13,6 +13,8 @@ namespace Muhanok.Presentation
         // Account server check for the login gate: ServerProblem is empty when it answered, otherwise the reason.
         bool ServerChecking {get;}
         string ServerProblem {get;}
+        // Shown on the login gate after an expired member session; empty otherwise.
+        string LoginNotice {get;}
         void CheckServer();
         // done(available, reason) once the server answered.
         void CheckNickname(string name,Action<bool,string> done);

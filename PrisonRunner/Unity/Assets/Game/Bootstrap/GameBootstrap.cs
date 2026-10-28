@@ -54,6 +54,10 @@ namespace Muhanok.Bootstrap
         private int serverTicket;
         private bool serverChecking;
         private System.Action<System.Action<string[]>> captureFaces;
+        // A member call answered 401: that token expired on the server. The member is signed out here (no /logout) and the
+        // login gate opens with the notice; during a run (and its result) this waits until the menu is back.
+        public const string ExpiredNotice = "로그인이 만료되었어요. 다시 로그인해 주세요.";
+        private string expiredToken, loginNotice = "";
         private bool playerRun, bannerSounded, goSounded, lastNewBest;
         private RankingEntry lastEntry;
         private int lastBestScore = -1;
@@ -94,7 +98,7 @@ namespace Muhanok.Bootstrap
             Capture=gameObject.AddComponent<PoliceCaptureSequence>();Capture.Configure(Hero,guard);
             PursuitCue=gameObject.AddComponent<PolicePursuitCue>();PursuitCue.Configure(Session);
             identity=gameObject.AddComponent<LocalProfileClient>(); faceAvatar=Hero.gameObject.AddComponent<FaceAvatarView>();
-            gateway=identity; runs=new AccountRunUploader(Account,gateway);
+            gateway=new ExpiryWatchingGateway(identity,SessionExpired); runs=new AccountRunUploader(Account,gateway);
             captureFaces=done=>identity.CaptureFaces(Pose.CameraTexture,done);
             Account.Changed+=AccountChanged;
             gameObject.AddComponent<CartRideView>().Configure(Session,Hero,CartRidePrefab);
@@ -201,7 +205,7 @@ namespace Muhanok.Bootstrap
         public void OpenLogin()
         {
             if(Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
-            hud.OpenLogin();
+            loginNotice=""; hud.OpenLogin();
         }
         // Straight to the run setup (tests, "다음 플레이어").
         public void OpenStartSetup()
@@ -300,6 +304,7 @@ namespace Muhanok.Bootstrap
             // The calibration panel takes no hand pointing: the player stands still and it closes by itself.
             GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking&&!hud.CalibrationOpen,now);
             OperatorKeys();
+            if (ExpiryPending && Session.Flow.State == GameFlowState.TitleIdle && !hud.Loading) ApplyExpiry();
             TickInput();
             if (Session.Flow.State == GameFlowState.Caught && Time.timeScale < 1 && Time.realtimeSinceStartup - caughtAt > .7f) Time.timeScale = 1;
             if(Session.Paused||hud.Loading||hud.Revealing) return;
@@ -484,7 +489,8 @@ namespace Muhanok.Bootstrap
         {
             bool again = playerRun; var profile = player;
             Retry();
-            if (again) StartPlayerRun(profile);
+            // An expired member goes to the login gate (next frame) instead of another run.
+            if (again && !ExpiryPending) StartPlayerRun(profile);
         }
         // "다음 플레이어" (developer mode): the member is signed out and the next person starts at the login gate.
         public void NextPlayer()
@@ -519,7 +525,7 @@ namespace Muhanok.Bootstrap
         // Tests and tools: another account server (or a fake), another PC store and a face capture without a webcam. Call on the title screen.
         public void UseAccountServices(IAccountGateway accountGateway, PlayerProgressStore store = null, System.Action<System.Action<string[]>> faces = null)
         {
-            if (accountGateway != null) { gateway = accountGateway; runs.Gateway = accountGateway; serverTicket++; serverChecking = false; serverProblem = ""; }
+            if (accountGateway != null) { gateway = new ExpiryWatchingGateway(accountGateway, SessionExpired); runs.Gateway = gateway; serverTicket++; serverChecking = false; serverProblem = ""; }
             if (store != null) Store = store;
             if (faces != null) captureFaces = faces;
         }
@@ -626,7 +632,7 @@ namespace Muhanok.Bootstrap
                 portrait = new Texture2D(2, 2, TextureFormat.RGB24, false);
                 try { if (!portrait.LoadImage(System.Convert.FromBase64String(reply.avatar))) ClearPortrait(); } catch { ClearPortrait(); }
             }
-            shownAccount = "";
+            shownAccount = ""; loginNotice = ""; expiredToken = null;
             Account.SignInMember(reply.profile, reply.token);
         }
         private void ClearPortrait() { if (portrait != null) Destroy(portrait); portrait = null; }
@@ -638,6 +644,22 @@ namespace Muhanok.Bootstrap
             Account.SignOut();
             if (!string.IsNullOrEmpty(token)) gateway.Logout(token, null);
         }
+        // Only the signed-in member's own token counts; a late 401 for an earlier member is ignored.
+        private void SessionExpired(string token)
+        {
+            if (!Account.IsMember || token != Account.Token) return;
+            expiredToken = token;
+            if (Session.Flow.State == GameFlowState.TitleIdle && !hud.Loading) ApplyExpiry();
+        }
+        private bool ExpiryPending => expiredToken != null && Account.IsMember && expiredToken == Account.Token;
+        private void ApplyExpiry()
+        {
+            bool expired = ExpiryPending; expiredToken = null;
+            if (!expired) return;
+            Account.SignOut(); loginNotice = ExpiredNotice;
+            if (settingsWindow != null && settingsWindow.IsOpen) settingsWindow.Close(true);
+            hud.OpenLogin();
+        }
 
         // Local or central voluntary identity UI
         public bool IdentityBusy=>identity.Busy;
@@ -646,6 +668,7 @@ namespace Muhanok.Bootstrap
         public Texture Portrait=>portrait;
         public bool ServerChecking=>serverChecking;
         public string ServerProblem=>serverProblem;
+        public string LoginNotice=>loginNotice;
         // Asked each time the login gate opens; until the server answers, face login and sign-up wait. Only the latest answer counts.
         public void CheckServer()
         {
@@ -680,6 +703,7 @@ namespace Muhanok.Bootstrap
             done?.Invoke(reply != null && reply.HasProfile && Account.IsMember);
         }
         // A request that could not reach the server disables face login and sign-up on the gate until the next check.
+        // An expired member token (401) is handled for every call by ExpiryWatchingGateway (SessionExpired).
         private void NoteServer(AccountResult reply) { if (reply != null && !reply.ok && reply.status == 0) serverProblem = ServerReason(reply); }
         private static string ServerReason(AccountResult reply) => reply != null && !string.IsNullOrEmpty(reply.message) ? reply.message : "얼굴 서버에 연결할 수 없습니다.";
         public void FaceLogout(bool delete)
