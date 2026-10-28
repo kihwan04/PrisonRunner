@@ -32,7 +32,7 @@ namespace Muhanok.Tests
             {
                 InputSystem.Update();
                 InputState.Change(mouse, new MouseState().WithButton(MouseButton.Left)); game.TickInput();
-                Assert.IsTrue(game.MenuOpen, "Clicking the title opens the main menu"); Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);
+                Assert.IsTrue(game.MenuOpen, "Clicking the title opens the login gate"); Assert.AreEqual(Muhanok.Presentation.MenuPage.Login, game.GetComponent<Muhanok.Presentation.HUDPresenter>().Page); Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);
                 InputState.Change(mouse, new MouseState());
                 game.Session.Config.ExtendedRoutes=false;game.BeginRun(""); yield return new WaitForSecondsRealtime(1.1f);
                 Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);

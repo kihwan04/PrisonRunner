@@ -62,6 +62,7 @@ namespace Muhanok.Tests
         public void NewMenuKeepsTheFaceLoginEntryAndDataContract()
         {
             Assert.IsTrue(Enum.IsDefined(typeof(MenuPage),"Identity"));
+            Assert.IsTrue(Enum.IsDefined(typeof(MenuPage),"Login"));Assert.IsTrue(Enum.IsDefined(typeof(MenuPage),"SignUp"));
             Assert.IsTrue(Enum.IsDefined(typeof(MenuAction),"Identity"));
             Assert.IsNotNull(typeof(IIdentityData).GetProperty("SignedIn"));
             Assert.IsNotNull(typeof(HUDPresenter).GetMethod("ShowIdentity"));
