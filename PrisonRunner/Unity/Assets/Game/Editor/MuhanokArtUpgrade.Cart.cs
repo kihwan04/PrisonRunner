@@ -58,34 +58,20 @@ namespace Muhanok.Editor
                     Lantern(env,new Vector3(side*1.2f,2.65f,z),false,side<0);
                 }
             }
+            // Both rails are left out of the baked bridge around each gap window; AddRailGaps bakes switchable rail pieces there.
             for(int station=0;station<48;station++)
             {
-                float z=station*.5f+.25f;int missing=RouteSurface.CartMissingSide(type,z);
+                float z=station*.5f+.25f;bool window=ObstacleLayout.RailGapAt(z)>=0;
                 for(int side=-1;side<=1;side+=2)
                 {
-                    if(side==missing)continue;
-                    Shape("SingleRail",env,new Vector3(side*.70f,.11f,z),new Vector3(.095f,.14f,.502f),iron);
-                    Shape("RailFastener",env,new Vector3(side*.70f,.05f,z),new Vector3(.18f,.045f,.13f),pale);
-                }
-                Shape("BridgeSleeper",env,new Vector3(missing==0?0:-missing*.49f,-.035f,z),new Vector3(missing==0?2.04f:1.0f,.09f,.22f),wood);
-                for(int side=-1;side<=1;side+=2)if(side!=missing)
+                    if(!window)
+                    {
+                        Shape("SingleRail",env,new Vector3(side*.70f,.11f,z),new Vector3(.095f,.14f,.502f),iron);
+                        Shape("RailFastener",env,new Vector3(side*.70f,.05f,z),new Vector3(.18f,.045f,.13f),pale);
+                    }
                     Shape("DeckEdge",env,new Vector3(side*1.02f,-.10f,z),new Vector3(.09f,.18f,.502f),iron);
-            }
-            foreach(float z in new[]{8f,18f})
-            {
-                int missing=RouteSurface.CartMissingSide(type,z),safe=-missing;
-                var broken=Shape("HangingBrokenRail",env,new Vector3(missing*.7f,-.75f,z-.5f),new Vector3(.10f,.14f,1.7f),iron);
-                broken.transform.localRotation=Quaternion.Euler(50,0,missing*22);
-                for(int i=0;i<3;i++)
-                {
-                    var plank=Shape("SplinteredSleeper",env,new Vector3(missing*(.5f+i*.12f),-.2f-i*.32f,z-1+i),new Vector3(.65f,.10f,.24f),wood);
-                    plank.transform.localRotation=Quaternion.Euler(i*27,15,missing*35);
                 }
-                var sign=Node("TrackWarningSign",env,new Vector3(missing*1.5f,1.4f,z-3.1f));
-                Shape("ArrowBoard",sign,Vector3.zero,new Vector3(1.04f,.65f,.10f),iron);
-                Beam("ArrowShaft",sign,new Vector3(-safe*.32f,0,-.075f),new Vector3(safe*.32f,0,-.075f),.08f,brass);
-                for(int wing=-1;wing<=1;wing+=2)Beam("ArrowHead",sign,new Vector3(safe*.32f,0,-.075f),new Vector3(safe*.07f,wing*.22f,-.075f),.08f,brass);
-                for(int i=0;i<3;i++)Shape("SafeSideGoldMarker",env,new Vector3(safe*.92f,.12f,z-2.7f+i*.65f),new Vector3(.12f,.06f,.32f),brass);
+                Shape("BridgeSleeper",env,new Vector3(0,-.035f,z),new Vector3(2.04f,.09f,.22f),wood);
             }
             for(int z=5;z<24;z+=12)Prop("blender","CaveArch",env,new Vector3(0,7,z),4.3f);
             AmbientMotes(env,new Vector3(0,2,12),24,true);
@@ -108,11 +94,64 @@ namespace Muhanok.Editor
             var chunk=root.GetComponent<MuhanokMapChunk>();chunk.RailGaps=new CartRailGap[type==1||type==2?2:0];
             if(chunk.RailGaps.Length==0)return;
             var group=Node("CartRailGaps",root.transform,Vector3.zero);
-            for(int i=0;i<2;i++)
+            for(int i=0;i<ObstacleLayout.RailGapZ.Length;i++)
             {
-                float z=i==0?8:18;var gap=Node("BrokenRail_"+i,group,new Vector3(0,0,z)).gameObject.AddComponent<CartRailGap>();
-                gap.RequiredLean=-RouteSurface.CartMissingSide(type,z);chunk.RailGaps[i]=gap;
+                float z=ObstacleLayout.RailGapZ[i];var gap=Node("BrokenRail_"+i,group,new Vector3(0,0,z)).gameObject.AddComponent<CartRailGap>();
+                // Authored default only; every run sets the side from its seeded layout.
+                gap.RequiredLean=(i+type)%2==0?-1:1;chunk.RailGaps[i]=gap;
+                gap.Pieces=Node("RailWindow_"+i,group,Vector3.zero);
+                gap.LeftRail=WindowRail(gap.Pieces,"LeftRail",-1,z,type);gap.RightRail=WindowRail(gap.Pieces,"RightRail",1,z,type);
+                gap.LeftBreak=BrokenRailDressing(gap.Pieces,"LeftBreak",-1,z,type);gap.RightBreak=BrokenRailDressing(gap.Pieces,"RightBreak",1,z,type);
+                gap.Configure(-gap.RequiredLean);
             }
+        }
+        // The same rail and fastener boxes as the baked bridge, one per 0.5m station, following the curved route.
+        private static GameObject WindowRail(Transform parent,string name,int side,float gapZ,int type)
+        {
+            var rail=Node(name,parent,Vector3.zero);
+            for(int station=0;station<48;station++)
+            {
+                float z=station*.5f+.25f;if(ObstacleLayout.RailGapAt(z)<0||Mathf.Abs(z-gapZ)>ObstacleLayout.RailGapHalfLength)continue;
+                float slope=(RouteSurface.LocalX(type,z+.01f)-RouteSurface.LocalX(type,z-.01f))/.02f;
+                var turn=Quaternion.Euler(0,Mathf.Atan(slope)*Mathf.Rad2Deg,0);
+                Shape("SingleRail",rail,RoutePoint(new Vector3(side*.70f,.11f,z),type),new Vector3(.095f,.14f,.502f*Mathf.Sqrt(1+slope*slope)),iron).transform.localRotation=turn;
+                Shape("RailFastener",rail,RoutePoint(new Vector3(side*.70f,.05f,z),type),new Vector3(.18f,.045f,.13f),pale).transform.localRotation=turn;
+            }
+            return rail.gameObject;
+        }
+        // Hanging rail and splinters under the missing side, and a warning sign that points to the side to lean.
+        private static GameObject BrokenRailDressing(Transform parent,string name,int missing,float z,int type)
+        {
+            var dressing=Node(name,parent,Vector3.zero);int safe=-missing;
+            var broken=Shape("HangingBrokenRail",dressing,RoutePoint(new Vector3(missing*.7f,-.75f,z-.5f),type),new Vector3(.10f,.14f,1.7f),iron);
+            broken.transform.localRotation=Quaternion.Euler(50,0,missing*22);
+            for(int i=0;i<3;i++)
+            {
+                var plank=Shape("SplinteredSleeper",dressing,RoutePoint(new Vector3(missing*(.5f+i*.12f),-.2f-i*.32f,z-1+i),type),new Vector3(.65f,.10f,.24f),wood);
+                plank.transform.localRotation=Quaternion.Euler(i*27,15,missing*35);
+            }
+            var sign=Node("TrackWarningSign",dressing,RoutePoint(new Vector3(missing*1.5f,1.4f,z-3.1f),type));
+            Shape("ArrowBoard",sign,Vector3.zero,new Vector3(1.04f,.65f,.10f),iron);
+            Beam("ArrowShaft",sign,new Vector3(-safe*.32f,0,-.075f),new Vector3(safe*.32f,0,-.075f),.08f,brass);
+            for(int wing=-1;wing<=1;wing+=2)Beam("ArrowHead",sign,new Vector3(safe*.32f,0,-.075f),new Vector3(safe*.07f,wing*.22f,-.075f),.08f,brass);
+            for(int i=0;i<3;i++)Shape("SafeSideGoldMarker",dressing,RoutePoint(new Vector3(safe*.92f,.12f,z-2.7f+i*.65f),type),new Vector3(.12f,.06f,.32f),brass);
+            return dressing.gameObject;
+        }
+        // Rebuilds only the two cart chunks and their editable route floors, e.g. after changing the rail windows.
+        [MenuItem("Mongscape/Rebuild Cart Chunks")]
+        public static void RebuildCartChunks()
+        {
+            Prepare(); IndexModels(); BuildEditableRoutes(true);
+            foreach(int type in new[]{1,2})
+            {
+                UpgradeChunk(type);
+                // Keep the shadow budget that the later material pass applies to every chunk.
+                string path=Root+"/Prefabs/"+MuhanokContentBuilder.ChunkIds[type]+".prefab";
+                var chunk=PrefabUtility.LoadPrefabContents(path);MuhanokVisualPolish.ConfigureShadows(chunk);
+                PrefabUtility.SaveAsPrefabAsset(chunk,path);PrefabUtility.UnloadPrefabContents(chunk);
+            }
+            AssetDatabase.SaveAssets(); AssetDatabase.Refresh();
+            Debug.Log("MUHANOK_CART_CHUNKS_PASS: open rail windows with switchable rail pieces");
         }
         private static void MatchWalkingMotions(GameObject root,int type)
         {

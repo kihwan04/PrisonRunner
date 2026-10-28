@@ -11,6 +11,8 @@ namespace Muhanok.Presentation
         private readonly ProgressHud progress;
         public readonly RunHudModel Model = new RunHudModel();
         private static readonly Rect NoticeArea = new Rect(400, 588, 480, 48);
+        // Bottom-right webcam: small while tracking, larger with status once recognition is lost. Both stay right of the notice and below the counters.
+        private static readonly Rect CameraArea = new Rect(1056, 514, 200, 150), RecoveryCameraArea = new Rect(1020, 490, 236, 174);
         public RunHud(HudSkin hudSkin, ProgressHud progressHud) { skin = hudSkin; progress = progressHud; }
         public void Draw(RunSession session, float fade, IHudData data, Action pause)
         {
@@ -19,9 +21,15 @@ namespace Muhanok.Presentation
             if (skin.FlatButton(new Rect(1190, 24, 64, 56), "Ⅱ", false)) pause?.Invoke();
             if (Event.current.type != EventType.Repaint) { GUI.color = Color.white; return; }
             progress.Draw(session, data?.BestDistance ?? 0);
-            skin.Card(new Rect(24, 24, 128, 48), Palette.A(Palette.Ground, .82f));
+            skin.Card(new Rect(24, 24, Model.CoinBoost ? 176 : 128, 48), Palette.A(Palette.Ground, .82f));
             GUI.DrawTexture(new Rect(35, 33, 29, 29), skin.CoinIcon);
             GUI.Label(new Rect(75, 30, 75, 36), Model.Coins, skin.Style(26, FontStyle.Bold));
+            if (Model.CoinBoost)
+            {
+                GUI.color = new Color(Palette.Gold.r, Palette.Gold.g, Palette.Gold.b, fade);
+                GUI.Label(new Rect(150, 30, 46, 36), "×2", skin.Style(26, FontStyle.Bold));
+                GUI.color = new Color(1, 1, 1, fade);
+            }
             if (Model.ShowWorkout)
             {
                 skin.Card(new Rect(870, 120, 300, 48), Palette.A(Palette.Ground, .82f));
@@ -40,8 +48,8 @@ namespace Muhanok.Presentation
             }
             if (session.Flow.State == GameFlowState.Running)
             {
-                if (Model.ShowPoseRecovery && data?.CameraTexture != null)
-                    PosePreview.Draw(skin, new Rect(1020, 490, 236, 174), data, true);
+                if (Model.ShowCamera && data?.CameraTexture != null)
+                    PosePreview.Draw(skin, Model.ShowPoseRecovery ? RecoveryCameraArea : CameraArea, data, Model.ShowPoseRecovery);
                 if (data == null || data.StartBanner <= 0) DrawNotice();
             }
             if (data != null) DrawBanners(data, session.Flow.State);

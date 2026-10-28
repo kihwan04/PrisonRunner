@@ -29,7 +29,7 @@
 - 화면: `quality-preset`, `render-scale`, `frame-cap`, `vsync`, `shadow-quality`, `ambient-occlusion`, `detail-distance`, `gpu-resident-drawer`, `fullscreen`
 - 소리: `music-volume`, `effects-volume`
 - 몸동작: `camera-device`, `lite-model`, `lane-sensitivity`, `camera-preview`(웹캠 영상이 들어가는 칸), `pose-status`, `recalibrate-button`
-- 표시: `performance-overlay`, `pose-diagnostics`
+- 표시: `performance-overlay`, `pose-diagnostics`, `ingame-camera`(플레이 중 우측 하단 웹캠 화면)
 
 요소가 없으면 Console에 경고만 나오고 나머지는 동작합니다. 선택된 탭에는 코드가 `settings-tab--selected` 클래스를 붙입니다.
 
@@ -59,6 +59,7 @@
 | 소품·조명 표시 거리 | 맵의 작은 소품과 점광원이 켜져 있는 거리 배율(50~100%) |
 | GPU 대량 렌더링 | URP GPU Resident Drawer (반복되는 메시를 인스턴싱으로 묶어 그림) |
 | 웹캠 / 가벼운 모델 / 좌우 민감도 | 포즈 추정기를 해당 장치·모델로 다시 시작, 레인 판정 기준을 민감도로 나눔 |
+| 플레이 중 웹캠 화면 | 전신·상체 모드에서 우측 하단 웹캠 화면 표시 (끄면 인식이 끊겨도 영상은 숨기고 안내만 표시) |
 
 그래픽 설정은 실행 중 URP 에셋의 **복사본**에 적용하므로 에디터에서 플레이해도 프로젝트 에셋은 바뀌지 않습니다. 게임이 끝나면 원래대로 돌립니다.
 

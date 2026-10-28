@@ -37,6 +37,8 @@ namespace Muhanok.Tests
                 game.Session.Config.ExtendedRoutes=false;game.BeginRun(""); yield return new WaitForSecondsRealtime(1.1f);
                 Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
                 yield return new WaitUntil(()=>!game.IsRevealing);
+                // Layout seed 2 opens with the duck row, which the crouch below passes while the run keeps going.
+                game.Map.Reset(2);
                 Assert.AreEqual(0,game.Intro.Elapsed,"Loading image is the intro; a second timeline must not run");
                 InputState.Change(keys, new KeyboardState(Key.A)); game.TickInput();
                 Assert.AreEqual(-1, game.Session.Runner.Lane);
@@ -125,6 +127,104 @@ namespace Muhanok.Tests
                 game.Retry(); Assert.AreEqual(0,game.Session.Score.Coins);
             }
             finally { Object.Destroy(node); }
+        }
+        [UnityTest] public IEnumerator MagnetPullsFarLaneCoinsOnlyWhileActive()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();
+            game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
+            Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
+            game.enabled=false;
+            var run=game.Session; var node=new GameObject("Magnet coin"); var coin=node.AddComponent<CoinController>();
+            try
+            {
+                run.Runner.SetStartZ(4); run.Runner.Command(MotionCommand.Left); run.Tick(.25f); Assert.AreEqual(-1,run.Runner.Lane);
+                for(int pass=0;pass<2;pass++)
+                {
+                    bool magnet=pass==1;
+                    if(magnet) run.Items.Activate(ItemKind.Magnet);
+                    // The coin waits on the opposite outer lane, 4.4m to the side of the runner.
+                    run.Runner.SetStartZ(4); coin.ResetCoin(); node.SetActive(true);
+                    RouteSurface.Sample(10,out float x,out float y); node.transform.position=new Vector3(x+2.2f,y+1,10);
+                    float deadline=Time.realtimeSinceStartup+6;
+                    while(run.Score.Coins==0&&run.Runner.Z<14&&Time.realtimeSinceStartup<deadline)
+                    {
+                        yield return null;
+                        float prior=run.Runner.Z; run.Tick(Mathf.Min(Time.deltaTime,.05f)); coin.Evaluate(run,prior);
+                    }
+                    Assert.AreEqual(GameFlowState.Running,run.Flow.State);
+                    if(magnet) { Assert.AreEqual(1,run.Score.Coins,"The magnet pulls a coin from the far lane"); Assert.IsFalse(node.activeSelf); }
+                    else { Assert.AreEqual(0,run.Score.Coins,"Without the magnet a far-lane coin stays"); Assert.IsFalse(coin.Pulled); }
+                }
+            }
+            finally { Object.Destroy(node); }
+        }
+        [UnityTest] public IEnumerator ItemAurasShowWhileActiveAndShieldBreaksOnHit()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();
+            game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
+            game.enabled=false;
+            var aura=game.GetComponent<Muhanok.Presentation.PowerUpAuraView>(); Assert.IsNotNull(aura);
+            yield return null; Assert.IsFalse(aura.ShieldVisible||aura.MagnetVisible);
+            game.Session.Items.Activate(ItemKind.Shield); game.Session.Items.Activate(ItemKind.Magnet); yield return null;
+            Assert.IsTrue(aura.ShieldVisible,"Shield bubble"); Assert.IsTrue(aura.MagnetVisible,"Magnet sparks");
+            Assert.IsFalse(game.Session.Hit(true)); Assert.IsFalse(game.Session.Items.IsActive(ItemKind.Shield)); yield return null;
+            Assert.IsTrue(aura.ShieldVisible,"The used shield bursts visibly before disappearing");
+            yield return new WaitForSecondsRealtime(Muhanok.Presentation.PowerUpAuraView.BurstSeconds+.3f);
+            Assert.IsFalse(aura.ShieldVisible); Assert.IsTrue(aura.MagnetVisible);
+        }
+        [UnityTest] public IEnumerator MagnetPulledChunkCoinReturnsToItsSpotWhenPooled()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();
+            game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
+            game.enabled=false;
+            CoinController coin=null; MuhanokMapChunk owner=null;
+            foreach(var active in game.Map.Active)
+            {
+                if(coin!=null||active.Chunk.Sequence==0||active.Chunk.Coins==null||active.Type==1||active.Type==2) continue;
+                foreach(var candidate in active.Chunk.Coins) if(candidate.gameObject.activeSelf) { coin=candidate; owner=active.Chunk; break; }
+            }
+            Assert.IsNotNull(coin,"A walking chunk with coins is spawned ahead");
+            var run=game.Session; var spot=coin.transform.localPosition;
+            run.Items.Activate(ItemKind.Magnet); run.Runner.SetStartZ(coin.transform.position.z-5);
+            for(int i=0;i<3&&coin.gameObject.activeSelf;i++) { yield return null; coin.Evaluate(run,run.Runner.Z); }
+            Assert.IsTrue(coin.Pulled); Assert.AreNotEqual(spot.z,coin.transform.localPosition.z,"The magnet moved the coin");
+            // Reusing the chunk from the pool prepares it again: the pulled height and depth must not leak.
+            owner.Prepare(owner.Sequence,0,new System.Random(5));
+            Assert.AreEqual(spot.y,coin.transform.localPosition.y,.0001f); Assert.AreEqual(spot.z,coin.transform.localPosition.z,.0001f);
+            Assert.IsFalse(coin.Pulled); Assert.IsTrue(coin.gameObject.activeSelf);
+        }
+        [UnityTest] public IEnumerator OnlyUnlockedItemsSpawnAwayFromBananaRows()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>(); var wallet=game.Store.Wallet;
+            int coins=wallet.Coins; bool all=wallet.UnlockAll; var unlocked=new System.Collections.Generic.List<ItemKind>(wallet.Unlocked);
+            try
+            {
+                game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
+                game.enabled=false;
+                foreach(var allowed in new[]{new ItemKind[0],new[]{ItemKind.Shield}})
+                {
+                    // In memory only: the saved wallet file is never written by this test.
+                    wallet.UnlockAll=false; wallet.Restore(coins,allowed);
+                    game.Map.Reset(); int found=0;
+                    for(int n=0;n<80;n++)
+                    {
+                        game.Map.Tick(n*24f+2);
+                        foreach(var active in game.Map.Active) foreach(var pickup in active.Chunk.Pickups)
+                        {
+                            found++; CollectionAssert.Contains(allowed,pickup.Kind);
+                            float z=pickup.transform.position.z;
+                            foreach(var peel in active.Chunk.DynamicFloorItems) Assert.GreaterOrEqual(Mathf.Abs(peel.transform.position.z-z),2.99f,"Items stay clear of banana rows");
+                        }
+                    }
+                    if(allowed.Length==0) Assert.AreEqual(0,found,"Nothing unlocked: no items appear");
+                    else Assert.Greater(found,0,"Unlocked items appear on the map");
+                }
+            }
+            finally { wallet.UnlockAll=all; wallet.Restore(coins,unlocked); }
         }
         [UnityTest] public IEnumerator AuthoredCoinsAndRunnerFollowCurvesAndStairElevation()
         {

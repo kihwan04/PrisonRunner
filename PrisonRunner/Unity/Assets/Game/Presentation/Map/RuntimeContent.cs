@@ -87,61 +87,38 @@ namespace Muhanok.Presentation.Map
                 { var junction = RailForkView.Attach(chunk, sequence); list.Add(junction); }
                 return;
             }
+            // The chunk's seeded layout already switched the authored rows; add its blockers, animal and banana rows.
             float start = chunk.Entry.position.z;
-            bool walking=type==0||type==4||type==5||type==12;
-            int safeLane=random.Next(3)-1;
-            bool blocked=expanded&&walking&&random.NextDouble()<(type==12?.52:.72);
-            if(expanded&&walking&&chunk.FloorItems!=null)foreach(var h in chunk.FloorItems)h.gameObject.SetActive(false);
-            if(blocked)
+            var layout=chunk.Layout;
+            if(layout.Blocked)
             {
-                foreach(var h in chunk.Obstacles)h.gameObject.SetActive(false);
-                foreach(var h in chunk.ExerciseObstacles)h.gameObject.SetActive(false);
                 int theme=type==12?2:type==0?0:1;
-                bool doubleBlock=random.NextDouble()<.85;
-                int firstBlocked=(safeLane+2)%3-1;
-                for(int lane=-1;lane<=1;lane++)
+                foreach(var placement in layout.Blockers)
                 {
-                    if(lane==safeLane||(!doubleBlock&&lane!=firstBlocked))continue;
                     var block=blockers[theme].Count>0?blockers[theme].Pop():BuildBlock(theme);
-                    block.transform.position=LanePoint(lane,start+12,0);block.transform.SetParent(chunk.transform,true);
+                    block.transform.position=LanePoint(placement.Lane,start+placement.Z,0);block.transform.SetParent(chunk.transform,true);
                     block.Hazard.ResetPass();block.gameObject.SetActive(true);
                     chunk.DynamicObstacles.Add(block.Hazard);list.Add(block);
                 }
                 if(chunk.Coins!=null)foreach(var coin in chunk.Coins)
                 {
-                    var p=coin.transform.position;p.x=LanePoint(safeLane,p.z,0).x;coin.transform.position=p;
+                    var p=coin.transform.position;p.x=LanePoint(layout.SafeLane,p.z,0).x;coin.transform.position=p;
                 }
             }
-            // Zoo animals: one per zoo chunk, in a stretch with no authored hazard nearby.
-            if (type == 12 && !blocked)
+            // Zoo animals: one per zoo chunk, across the middle of an otherwise empty chunk.
+            if (layout.Animal)
             {
-                foreach (var h in chunk.Obstacles) h.gameObject.SetActive(false);
-                foreach (var h in chunk.ExerciseObstacles) h.gameObject.SetActive(false);
-                if (chunk.FloorItems != null) foreach (var h in chunk.FloorItems) h.gameObject.SetActive(false);
-                float z = start + 12f;
-                if (!float.IsNaN(z))
-                {
-                    var animal = sequence % 2 == 0 ? Giraffe(z) : Elephant(z, -1);
-                    animal.transform.SetParent(chunk.transform, true);
-                    chunk.DynamicObstacles.AddRange(animal.Hazards); chunk.Animated.Add(animal); list.Add(animal);
-                }
+                var animal = sequence % 2 == 0 ? Giraffe(start + ObstacleLayout.CentreZ) : Elephant(start + ObstacleLayout.CentreZ, -1);
+                animal.transform.SetParent(chunk.transform, true);
+                chunk.DynamicObstacles.AddRange(animal.Hazards); chunk.Animated.Add(animal); list.Add(animal);
             }
-            if(expanded&&walking)
+            // Banana rows at the seam clearance; each spares the chunk's safe lane.
+            foreach(var placement in layout.Bananas)
             {
-                // A reserved lane stays clear of all peels and lane blockers in this chunk.
-                // Rows are well away from the central animal/blocker, with four metres at chunk seams.
-                for(int row=0;row<2;row++)
-                {
-                    float z=start+(row==0?4:20);
-                    if(!Clear(chunk.Obstacles,z,4)||!Clear(chunk.ExerciseObstacles,z,4)||!Clear(chunk.DynamicObstacles,z,4))continue;
-                    for(int lane=-1;lane<=1;lane++)if(lane!=safeLane&&random.NextDouble()<.82)
-                    {
-                        var peel=bananas.Count>0?bananas.Pop():BuildBanana();
-                        peel.transform.position=LanePoint(lane,z,.045f);peel.transform.rotation=Quaternion.Euler(0,random.Next(360),0);
-                        peel.transform.SetParent(chunk.transform,true);peel.ResetItem();peel.gameObject.SetActive(true);
-                        chunk.DynamicFloorItems.Add(peel);list.Add(peel);
-                    }
-                }
+                var peel=bananas.Count>0?bananas.Pop():BuildBanana();
+                peel.transform.position=LanePoint(placement.Lane,start+placement.Z,.045f);peel.transform.rotation=Quaternion.Euler(0,random.Next(360),0);
+                peel.transform.SetParent(chunk.transform,true);peel.ResetItem();peel.gameObject.SetActive(true);
+                chunk.DynamicFloorItems.Add(peel);list.Add(peel);
             }
             var kinds = availableItems();
             if (kinds.Count > 0 && random.NextDouble() < itemChance)
@@ -149,7 +126,7 @@ namespace Muhanok.Presentation.Map
                 float z = FreeZ(chunk, start, random, 3f);
                 if (!float.IsNaN(z))
                 {
-                    var pickup = Item(kinds[random.Next(kinds.Count)], z, random.Next(3) - 1);
+                    var pickup = Item(kinds[random.Next(kinds.Count)], z, ItemLane(chunk, random.Next(3) - 1));
                     pickup.transform.SetParent(chunk.transform, true);
                     chunk.Pickups.Add(pickup); list.Add(pickup);
                 }
@@ -182,9 +159,30 @@ namespace Muhanok.Presentation.Map
             {
                 float z = start + 4f + (float)random.NextDouble() * 16f;
                 if (Clear(chunk.Obstacles, z, clearance) && Clear(chunk.ExerciseObstacles, z, clearance) && Clear(chunk.DynamicObstacles, z, clearance)
-                    && ClearItems(chunk.FloorItems, z, clearance) && ClearGates(chunk, z, clearance)) return z;
+                    && ClearItems(chunk.FloorItems, z, clearance) && ClearItems(chunk.DynamicFloorItems, z, clearance) && ClearGates(chunk, z, clearance)) return z;
             }
             return float.NaN;
+        }
+        // Starting from the random lane, the first lane with no single-lane hazard anywhere in the chunk.
+        private static int ItemLane(MuhanokMapChunk chunk, int preferred)
+        {
+            for (int step = 0; step < 3; step++)
+            {
+                int lane = (preferred + 1 + step) % 3 - 1;
+                if (LaneClear(chunk.Obstacles, lane) && LaneClear(chunk.DynamicObstacles, lane)) return lane;
+            }
+            return preferred;
+        }
+        private static bool LaneClear(IEnumerable<ObstacleController> hazards, int lane)
+        {
+            if (hazards == null) return true;
+            foreach (var hazard in hazards)
+            {
+                if (hazard == null || !hazard.gameObject.activeSelf || hazard.FullExerciseRow) continue;
+                var p = hazard.transform.position; RouteSurface.Sample(p.z, out float x, out _);
+                if (Mathf.RoundToInt((p.x - x) / 2.2f) == lane) return false;
+            }
+            return true;
         }
         private static bool Clear(IEnumerable<ObstacleController> hazards, float z, float clearance)
         {
@@ -192,7 +190,7 @@ namespace Muhanok.Presentation.Map
             foreach (var hazard in hazards) if (hazard != null && hazard.gameObject.activeSelf && Mathf.Abs(hazard.transform.position.z - z) < clearance) return false;
             return true;
         }
-        private static bool ClearItems(FloorItemController[] items, float z, float clearance)
+        private static bool ClearItems(IEnumerable<FloorItemController> items, float z, float clearance)
         {
             if (items == null) return true;
             foreach (var item in items) if (item != null && item.gameObject.activeSelf && Mathf.Abs(item.transform.position.z - z) < clearance) return false;

@@ -187,16 +187,37 @@ namespace Muhanok.Tests
             }
             finally { RouteSurface.UsePlan(null); }
         }
-        [Test] public void ItemsDoubleScoreShieldOneHitAndExpire()
+        [Test] public void ItemsDoubleCoinsShieldOneHitAndExpire()
         {
             var run = new RunSession(new RunConfig());
             run.Flow.Transition(GameFlowState.TitleIdle); run.Flow.Transition(GameFlowState.LoadingIntro); run.Flow.Transition(GameFlowState.Running);
-            run.Items.Activate(ItemKind.DoubleScore); run.Tick(.01f); int before = run.Score.Score; run.Score.CollectCoin();
-            Assert.AreEqual(before + 20, run.Score.Score);
+            Assert.AreEqual("코인 2배", ItemCatalog.Get(ItemKind.DoubleScore).Name);
+            run.CollectCoin(); Assert.AreEqual(1, run.Score.Coins);
+            // Picked up in the same frame as the item, before the next tick, already doubles.
+            run.Items.Activate(ItemKind.DoubleScore); run.CollectCoin(); Assert.AreEqual(3, run.Score.Coins);
+            run.Tick(.01f); run.Score.CollectCoin(); Assert.AreEqual(5, run.Score.Coins);
+            run.Tick(ItemCatalog.Get(ItemKind.DoubleScore).Seconds); run.CollectCoin(); Assert.AreEqual(6, run.Score.Coins);
             run.Items.Activate(ItemKind.Shield);
             Assert.IsFalse(run.Hit(true)); Assert.AreEqual(GameFlowState.Running, run.Flow.State); Assert.AreEqual(1, run.ShieldSaves);
             Assert.IsTrue(run.Hit(true)); Assert.AreEqual(GameFlowState.Caught, run.Flow.State);
             var items = new PowerUpState(); items.Activate(ItemKind.Magnet); items.Tick(100); Assert.IsFalse(items.IsActive(ItemKind.Magnet));
+        }
+        [Test] public void ShieldBlocksOneSlipButNotABrokenRail()
+        {
+            var run = new RunSession(new RunConfig());
+            run.Flow.Transition(GameFlowState.TitleIdle); run.Flow.Transition(GameFlowState.LoadingIntro); run.Flow.Transition(GameFlowState.Running);
+            run.Items.Activate(ItemKind.Shield);
+            Assert.IsFalse(run.Slip(true)); Assert.AreEqual(1, run.ShieldSaves); Assert.IsFalse(run.Items.IsActive(ItemKind.Shield));
+            Assert.IsFalse(run.Runner.Slowing); Assert.AreEqual(0, run.BananaHits); Assert.AreEqual(0, run.Chase.Pressure);
+            // Without the shield the next two peels count, and the second starts the pursuit as before.
+            Assert.IsTrue(run.Slip(true)); Assert.IsTrue(run.Runner.Slowing); Assert.AreEqual(1, run.BananaHits);
+            Assert.IsTrue(run.Slip(true)); Assert.IsTrue(run.BananaPursuit);
+            run.Reset(); Assert.AreEqual(GameFlowState.Running, run.Flow.State);
+            run.Items.Activate(ItemKind.Shield);
+            run.Slip(true); run.Slip(true); Assert.AreEqual(1, run.BananaHits); Assert.IsFalse(run.BananaPursuit, "The shielded first peel must not count towards the pursuit.");
+            run.Items.Activate(ItemKind.Shield);
+            Assert.IsTrue(run.Fail(CaptureReason.BrokenRail)); Assert.AreEqual(GameFlowState.Caught, run.Flow.State); Assert.AreEqual(CaptureReason.BrokenRail, run.Reason);
+            Assert.IsTrue(run.Items.IsActive(ItemKind.Shield), "A broken rail ignores the shield and leaves it unused.");
         }
         [Test] public void WalletUnlocksItemsAndDeveloperModeOpensEverything()
         {
