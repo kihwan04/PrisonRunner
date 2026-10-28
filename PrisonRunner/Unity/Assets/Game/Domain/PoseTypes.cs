@@ -68,10 +68,12 @@ namespace Muhanok.Domain
         public int CalibrationFrames = 20;
         public float CalibrationStillness = .12f;
         public float LaneEnter = .30f, LaneExit = .17f;
-        public float CrouchDrop = .26f, CrouchConfirmSeconds = .12f, LandingGraceSeconds = .3f;
+        public float CrouchDrop = .40f, CrouchConfirmSeconds = .20f, LandingGraceSeconds = .3f;
+        // A take-off this soon after a crouch confirms cancels it; a rise this fast (body units/s) is a jump attempt that earns the landing grace.
+        public float CrouchJumpCancelSeconds = .35f, JumpAttemptSpeed = .8f;
         public float JumpRise = .15f;
         public float HighKneeLift = .22f, HighKneeHoldSeconds = .35f, StepLift = .06f;
-        public float UpperLaneEnter = .38f, UpperLaneExit = .22f, UpperCrouchDrop = .35f, UpperHandsAboveNose = .2f;
+        public float UpperLaneEnter = .38f, UpperLaneExit = .22f, UpperCrouchDrop = .35f, UpperCrouchConfirmSeconds = .12f, UpperHandsAboveNose = .2f;
         public float ArmPumpAmplitude = .6f, ArmSwingAmplitude = .3f;
         public float LostSeconds = 2.5f, BaselineDrift = .01f;
     }
