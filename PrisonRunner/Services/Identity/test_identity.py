@@ -1,22 +1,34 @@
-import base64,json,sys,tempfile,time,unittest,urllib.request,uuid
+"""Identity server tests against a real PostgreSQL. Each test runs in its own generated schema of the
+MONGSCAPE_TEST_POSTGRES_URL database (a non-admin app role, as in Docker); run_tests.ps1 provides one."""
+import base64,os,sys,tempfile,time,unittest,urllib.request,uuid
 from datetime import datetime,timezone
 from pathlib import Path
 from unittest import mock
 BASE=Path(__file__).resolve().parent
 sys.path.insert(0,str(BASE/'.runtime'))
 from server import App,Store,Faces,ApiError,kst_midnight
-from storage import SchemaError
+from storage import ConfigError,SchemaError
+from prepare_secrets import prepare
 import migrate_account
+URL=os.getenv('MONGSCAPE_TEST_POSTGRES_URL')
+NO_URL='MONGSCAPE_TEST_POSTGRES_URL is not set; run run_tests.ps1, or point it at an isolated test database'
+PROFILE_INSERT='INSERT INTO profiles (id,name,name_key,created_at,consent_version) VALUES(?,?,?,?,?)'
+@unittest.skipUnless(URL,NO_URL)
+class PostgresCase(unittest.TestCase):
+ """Creates a mongscape_test_<hex> schema per test and drops it afterwards; nothing else in the DB is touched."""
+ def setUp(self):
+  import psycopg
+  self.psycopg=psycopg;self.admin=psycopg.connect(URL,autocommit=True);self.addCleanup(self.admin.close)
+  self.schema='mongscape_test_'+uuid.uuid4().hex
+  self.admin.execute(psycopg.sql.SQL('CREATE SCHEMA {}').format(psycopg.sql.Identifier(self.schema)))
+  self.addCleanup(self.drop_schema) # cleanups run after tearDown has closed the store
+  self.url=psycopg.conninfo.make_conninfo(URL,options='-c search_path='+self.schema)
+ def drop_schema(self):
+  assert self.schema.startswith('mongscape_test_') and len(self.schema)==47
+  self.admin.execute(self.psycopg.sql.SQL('DROP SCHEMA {} CASCADE').format(self.psycopg.sql.Identifier(self.schema)))
+ def make_store(self):return Store(database_url=self.url)
 # Schema v1 before accounts, still holding stored photos (profiles.avatar); used to test the upgrade.
-V1={'sqlite':'''CREATE TABLE profiles (id TEXT PRIMARY KEY, name TEXT NOT NULL, avatar BLOB NOT NULL, created_at INTEGER NOT NULL, consent_version TEXT NOT NULL);
-CREATE TABLE face_samples (profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, embedding BLOB NOT NULL, PRIMARY KEY(profile_id, embedding));
-CREATE TABLE sessions (token_hash TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, expires_at INTEGER NOT NULL);
-CREATE TABLE runs (id TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, distance REAL NOT NULL CHECK(distance >= 0),
- score INTEGER NOT NULL CHECK(score >= 0), kcal REAL NOT NULL CHECK(kcal >= 0), goal REAL NOT NULL CHECK(goal > 0), activities TEXT NOT NULL, created_at INTEGER NOT NULL);
-CREATE INDEX runs_profile_created ON runs(profile_id, created_at DESC);
-CREATE INDEX sessions_expiry ON sessions(expires_at);
-PRAGMA user_version=1;''',
-'postgres':'''CREATE TABLE profiles (id TEXT PRIMARY KEY, name TEXT NOT NULL, avatar BYTEA NOT NULL, created_at BIGINT NOT NULL, consent_version TEXT NOT NULL);
+V1='''CREATE TABLE profiles (id TEXT PRIMARY KEY, name TEXT NOT NULL, avatar BYTEA NOT NULL, created_at BIGINT NOT NULL, consent_version TEXT NOT NULL);
 CREATE TABLE face_samples (profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, embedding BYTEA NOT NULL, PRIMARY KEY (profile_id, embedding));
 CREATE TABLE sessions (token_hash TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, expires_at BIGINT NOT NULL);
 CREATE TABLE runs (id TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, distance DOUBLE PRECISION NOT NULL CHECK (distance >= 0),
@@ -24,10 +36,9 @@ CREATE TABLE runs (id TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES prof
  activities JSONB NOT NULL CHECK (jsonb_typeof(activities) = 'array' AND jsonb_array_length(activities) = 5), created_at BIGINT NOT NULL);
 CREATE INDEX runs_profile_created ON runs (profile_id, created_at DESC);
 CREATE INDEX sessions_expiry ON sessions (expires_at);
-CREATE INDEX sessions_profile ON sessions (profile_id);'''}
-def legacy_schema(backend):return V1[backend]
+CREATE INDEX sessions_profile ON sessions (profile_id);'''
 def run(**fields):return dict(dict(id=str(uuid.uuid4()),distance=100,score=100,kcal=1,goal=50,activities=[1,0,0,0,0],mode=0,coins=0,play_seconds=60,score_version=2),**fields)
-class IdentityTests(unittest.TestCase):
+class IdentityTests(PostgresCase):
  @classmethod
  def setUpClass(cls):
   import cv2,numpy as np
@@ -38,11 +49,9 @@ class IdentityTests(unittest.TestCase):
   for degree in (0,3,-3):
    m=cv2.getRotationMatrix2D((256,256),degree,1);image=cv2.warpAffine(cls.image,m,(512,512));_,jpg=cv2.imencode('.jpg',image)
    cls.images.append(base64.b64encode(jpg).decode())
- def make_store(self):return Store(Path(self.tmp.name)/'test.sqlite3')
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory();self.store=self.make_store();self.app=App(self.store,self.faces)
- def tearDown(self): self.store.db.close();self.tmp.cleanup()
- def migrate_target(self):return dict(path=Path(self.tmp.name)/'test.sqlite3')
+  super().setUp();self.store=self.make_store();self.app=App(self.store,self.faces)
+ def tearDown(self):self.store.db.close()
  def enroll(self,**fields):return self.app.handle('/enroll',dict(dict(name='Tester',consent=True,images=self.images),**fields))
  def member(self,name,coins=0,created=1):
   """Account without face samples, for routes that only need a session."""
@@ -174,17 +183,15 @@ class IdentityTests(unittest.TestCase):
   with self.assertRaises(ApiError):self.faces.samples(dict(images=[]))
  def test_fresh_db_is_v2_and_newer_schema_refused(self):
   self.assertEqual(self.store.version(),2);self.assertTrue({'profiles_name_key','runs_mode_score'}<=self.store.indexes())
-  self.assertEqual(migrate_account.migrate(**self.migrate_target()),[])
+  self.assertEqual(migrate_account.migrate(database_url=self.url),[])
   with self.store.db:self.store.db.execute('UPDATE schema_version SET version=3')
   self.store.db.close()
   with self.assertRaisesRegex(SchemaError,'newer'):self.store=self.make_store()
- def legacy_roundtrip(self):
-  backend=self.store.backend;features,_=self.faces.samples(dict(images=self.images))
+ def test_v1_db_refused_until_migrated(self):
+  features,_=self.faces.samples(dict(images=self.images))
   with self.store.db:
    for table in ('runs','sessions','face_samples','profiles','schema_version'):self.store.db.execute('DROP TABLE '+table)
-  if backend=='sqlite':self.store.db.executescript(legacy_schema(backend))
-  else:
-   with self.store.db:self.store.db.execute(legacy_schema(backend))
+   self.store.db.execute(V1)
   # Nicknames were free text: case/space duplicates, an existing "kim2", a created_at tie and a long name.
   people=[('legacy','Legacy explorer',0),('c','Kim',1),('b','kim',2),('a','kim2',3),('e','Twin',5),('d','T win',5),('f','  ',6)]
   with self.store.db:
@@ -193,8 +200,12 @@ class IdentityTests(unittest.TestCase):
    self.store.db.execute('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?)',(str(uuid.uuid4()),'legacy',10,5,1,50,'[1,0,0,0,0]',1))
   self.store.db.close()
   with self.assertRaisesRegex(SchemaError,'migrate_account'):self.store=self.make_store()
-  self.assertEqual(migrate_account.migrate(**self.migrate_target()),[name for name,_ in migrate_account.STEPS])
-  self.assertEqual(migrate_account.migrate(**self.migrate_target()),[])
+  def fail(store):raise RuntimeError('step failed')
+  with mock.patch.object(migrate_account,'STEPS',migrate_account.STEPS+(('fail',fail),)),self.assertRaises(RuntimeError):
+   migrate_account.migrate(database_url=self.url)
+  with self.assertRaisesRegex(SchemaError,'v1'):self.store=self.make_store() # every DDL step was rolled back
+  self.assertEqual(migrate_account.migrate(database_url=self.url),[name for name,_ in migrate_account.STEPS])
+  self.assertEqual(migrate_account.migrate(database_url=self.url),[])
   self.store=self.make_store();self.app=App(self.store,self.faces)
   self.assertEqual(self.store.version(),2);self.assertNotIn('avatar',self.store.columns('profiles'))
   names=dict(self.store.db.execute('SELECT id,name FROM profiles').fetchall())
@@ -207,12 +218,46 @@ class IdentityTests(unittest.TestCase):
   self.assertEqual(self.app.handle('/stats',{},login['token'])['best_score'],[0,0,0]) # old records keep score_version 1
   self.assertEqual(self.status('/profile/update',dict(name='KIM'),login['token']),409)
   self.assertEqual(self.app.handle('/runs',run(coins=4),login['token'])['coins'],4)
- def test_v1_db_refused_until_migrated(self):self.legacy_roundtrip()
- def test_v1_db_migrates_by_table_rebuild(self):
-  # Path used when SQLite is older than 3.35; PostgreSQL always drops the column directly.
-  with mock.patch.object(migrate_account,'SQLITE_DROP_COLUMN',False):self.legacy_roundtrip()
  def test_invalid_and_unauthorized_records_rejected(self):
   _,token=self.member('Records')
   with self.assertRaises(ApiError):self.app.handle('/runs',{},token)
   with self.assertRaises(ApiError):self.app.handle('/delete',{},'bad')
+class StorageTests(PostgresCase):
+ def setUp(self):super().setUp();self.store=self.make_store();self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+ def tearDown(self):self.store.db.close()
+ def profile(self):return ('visitor',"Test ' v",'test\'v',1,'test-consent')
+ def test_transactions_rollback_and_leave_connection_open(self):
+  with self.assertRaises(self.psycopg.errors.UniqueViolation):
+   with self.store.db:self.store.db.execute(PROFILE_INSERT,self.profile());self.store.db.execute(PROFILE_INSERT,self.profile())
+  self.assertEqual(self.store.db.execute('SELECT COUNT(*) FROM profiles').fetchone()[0],0)
+  with self.store.db:self.store.db.execute(PROFILE_INSERT,self.profile())
+  self.assertEqual(self.store.db.execute('SELECT name FROM profiles').fetchone()[0],self.profile()[1])
+ def test_application_role_has_no_administrator_privileges(self):
+  self.assertEqual(self.store.db.execute('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=current_user').fetchone(),(False,False,False))
+  with self.assertRaises(self.psycopg.errors.InsufficientPrivilege):self.store.db.execute('CREATE ROLE forbidden_test_role')
+ def test_jsonb_binary_types_and_foreign_key_indexes(self):
+  types=lambda table:dict(self.store.db.execute('SELECT column_name,data_type FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=?',(table,)).fetchall())
+  self.assertEqual(types('runs')['activities'],'jsonb')
+  profiles=types('profiles');self.assertEqual((profiles['unlocked'],profiles['tutorial_done'],profiles['weight']),('jsonb','boolean','double precision'))
+  self.assertTrue({'runs_profile_created','runs_mode_score','profiles_name_key','sessions_expiry','sessions_profile','face_samples_pkey'}<=self.store.indexes())
+ def test_closed_transport_reconnects(self):
+  self.store.db.raw.close();self.assertEqual(self.store.db.execute('SELECT 1').fetchone(),(1,))
+ def test_docker_environment_uses_application_password_file(self):
+  fields=self.psycopg.conninfo.conninfo_to_dict(URL);secret=Path(self.temp.name)/'app-password'
+  secret.write_text(fields['password'],encoding='utf-8')
+  env={'PGHOST':fields['host'],'PGPORT':str(fields['port']),'PGDATABASE':fields['dbname'],'PGUSER':fields['user'],
+       'PGPASSWORD_FILE':str(secret),'PGOPTIONS':'-c search_path='+self.schema}
+  with mock.patch.dict(os.environ,env):other=Store() # same PG* settings as compose.yaml
+  try:self.assertEqual(other.db.execute('SELECT current_user,current_schema()').fetchone(),(fields['user'],self.schema))
+  finally:other.db.close()
+class ConfigTests(unittest.TestCase):
+ def test_store_requires_postgres_settings(self):
+  with mock.patch.dict(os.environ,{}),self.assertRaisesRegex(ConfigError,'IDENTITY_DATABASE_URL'):
+   for name in ('PGHOST','PGSERVICE'):os.environ.pop(name,None)
+   Store()
+ def test_secret_generation_preserves_existing_values(self):
+  with tempfile.TemporaryDirectory() as temp:
+   folder=Path(temp)/'secrets';prepare(folder);before={file.name:file.read_bytes() for file in folder.iterdir()}
+   prepare(folder);self.assertEqual(before,{file.name:file.read_bytes() for file in folder.iterdir()})
+   self.assertNotEqual(before['db_app_password'],before['db_admin_password'])
 if __name__=='__main__':unittest.main(verbosity=2)

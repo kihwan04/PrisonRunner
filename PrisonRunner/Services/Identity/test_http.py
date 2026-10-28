@@ -1,20 +1,17 @@
-"""HTTP boundary and persistent multi-client records, without a webcam or private DB."""
+"""HTTP boundary and persistent multi-client records on PostgreSQL, without a webcam or private DB."""
 import http.client
 import json
 import queue
-import tempfile
 import threading
 import unittest
 import uuid
-from pathlib import Path
-from server import Store, create_server
+from server import create_server
+from test_identity import PostgresCase
 
 
-class HttpTests(unittest.TestCase):
-    def make_store(self):return Store(self.database)
+class HttpTests(PostgresCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory()
-        self.database=Path(self.temp.name)/'profiles.sqlite3'
+        super().setUp()
         self.start_server()
 
     def start_server(self):
@@ -39,7 +36,7 @@ class HttpTests(unittest.TestCase):
         self.assertFalse(self.thread.is_alive())
 
     def tearDown(self):
-        self.stop_server(); self.temp.cleanup()
+        self.stop_server()
 
     def request(self,path,body=None,host='faces.test',headers=None,token=None):
         connection=http.client.HTTPConnection('127.0.0.1',self.server.server_port,timeout=5)
@@ -54,7 +51,7 @@ class HttpTests(unittest.TestCase):
 
     def test_health_and_unrecognized_routes(self):
         status,headers,data=self.request('/health')
-        self.assertEqual(status,200);self.assertTrue(data['ok'])
+        self.assertEqual(status,200);self.assertTrue(data['ok']);self.assertEqual(data['storage'],'postgres')
         self.assertEqual(headers['Cache-Control'],'no-store')
         self.assertNotIn('database',data)
         self.assertEqual(self.request('/missing')[0],404)
