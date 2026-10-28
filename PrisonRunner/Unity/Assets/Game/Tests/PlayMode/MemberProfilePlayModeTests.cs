@@ -30,7 +30,7 @@ namespace Muhanok.Tests
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
             game=Object.FindFirstObjectByType<GameBootstrap>();hud=game.GetComponent<HUDPresenter>();fake=new FakeAccountGateway();
             game.UseAccountServices(fake,new PlayerProgressStore(root));
-            game.SetDeveloperMode(false,false);
+            LogAssert.Expect(LogType.Log,"Developer mode off");game.SetDeveloperMode(false,false);
         }
         private void SignIn(int coins=0) { fake.Profile.coins=coins;game.Account.SignInMember(fake.Profile,"fake-token");Assert.IsTrue(game.SignedIn); }
 
