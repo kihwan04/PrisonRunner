@@ -43,7 +43,10 @@ namespace Muhanok.Tests
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             var mine=game.Map.Active[0].Chunk;game.Session.Runner.Command(MotionCommand.Right);game.Session.Runner.Tick(.10f,0);
             Assert.AreEqual(1.1f,game.Session.Runner.X,.001f);
-            game.Session.Runner.SetStartZ(mine.ExerciseObstacles[3].transform.position.z);
+            // The first chunk keeps either its jump row or its duck row for this seed; cross whichever is there.
+            ObstacleController row=null;foreach(var obstacle in mine.ExerciseObstacles)if(obstacle.gameObject.activeSelf)row=obstacle;
+            Assert.IsNotNull(row,"The first chunk opens with one full exercise row");
+            game.Session.Runner.SetStartZ(row.transform.position.z);
             foreach(var obstacle in mine.ExerciseObstacles)if(obstacle.FullExerciseRow)obstacle.Evaluate(game.Session,game.Session.Runner.Z-1);
             Assert.AreEqual(GameFlowState.Caught,game.Session.Flow.State);
         }
@@ -60,6 +63,7 @@ namespace Muhanok.Tests
                 foreach(var walking in active.Chunk.Obstacles)Assert.IsFalse(walking.gameObject.activeSelf);
                 foreach(var gap in active.Chunk.RailGaps)
                 {
+                    if(!gap.gameObject.activeSelf)continue;
                     game.Session.Reset();game.Session.Runner.SetStartZ(gap.transform.position.z-1);
                     game.Session.Runner.Command(gap.RequiredLean<0?MotionCommand.Left:MotionCommand.Right);
                     game.Session.Runner.Tick(.25f,0);game.Session.Runner.SetStartZ(gap.transform.position.z);
@@ -170,7 +174,7 @@ namespace Muhanok.Tests
             game.Session.Tick(3);item.ResetItem();game.Session.Runner.SetStartZ(target-1);
             game.Session.Runner.Command(MotionCommand.Jump);game.Session.Tick(.15f);game.Session.Runner.SetStartZ(target);
             item.Evaluate(game.Session,target-1);Assert.IsTrue(item.Passed);Assert.IsFalse(game.Session.Runner.Slowing,"A jump must avoid a floor item");
-            zoo.Prepare(9,1,new System.Random(1));Assert.IsFalse(item.Passed);Assert.IsTrue(item.gameObject.activeSelf);
+            zoo.Prepare(9,1,new System.Random(1));Assert.IsFalse(item.Passed);Assert.AreEqual(zoo.Layout.FloorItems[0],item.gameObject.activeSelf,"Reuse follows the new layout");
         }
         [UnityTest] public IEnumerator ActualCartVisualBanksAndSolidObstacleEndsRunOnFirstContact()
         {

@@ -49,54 +49,56 @@ namespace Muhanok.Presentation.Map
         public readonly System.Collections.Generic.List<FloorItemController> DynamicFloorItems = new System.Collections.Generic.List<FloorItemController>();
         public readonly System.Collections.Generic.List<ItemPickup> Pickups = new System.Collections.Generic.List<ItemPickup>();
         public readonly System.Collections.Generic.List<IRunnerAnimated> Animated = new System.Collections.Generic.List<IRunnerAnimated>();
+        // This run's hazard plan for the chunk; kept with the pooled chunk so the decorator reads the same result.
+        public readonly ObstacleLayout Layout = new ObstacleLayout();
+        private System.Collections.Generic.List<ObstacleSlot> slots;
+        private System.Collections.Generic.List<LanePlacement> floorSlots;
+        // Authored hazards as Domain slots: lane obstacles, then the full exercise rows. Measured once per pooled chunk.
+        private void DescribeSlots()
+        {
+            if(slots!=null)return;
+            slots=new System.Collections.Generic.List<ObstacleSlot>(12);floorSlots=new System.Collections.Generic.List<LanePlacement>(2);
+            for(int i=0;i<Obstacles.Length;i++)
+                slots.Add(new ObstacleSlot(Obstacles[i].Kind,i%3-1,LocalZ(Obstacles[i].transform),false,RouteType==7));
+            if(ExerciseObstacles!=null)for(int i=0;i<ExerciseObstacles.Length;i++)
+                slots.Add(new ObstacleSlot(ExerciseObstacles[i].Kind,i%3-1,LocalZ(ExerciseObstacles[i].transform),true));
+            if(FloorItems!=null)foreach(var item in FloorItems)
+            {
+                var p=transform.InverseTransformPoint(item.transform.position);
+                floorSlots.Add(new LanePlacement(Mathf.Clamp(Mathf.RoundToInt((p.x-RouteSurface.LocalX(RouteType,p.z))/2.2f),-1,1),p.z));
+            }
+        }
+        private float LocalZ(Transform item)=>transform.InverseTransformPoint(item.position).z;
         public void Prepare(int sequence, float chance, System.Random random)
         {
+            DescribeSlots();
+            var plan=RouteSurface.ActivePlan;
+            bool fork=plan!=null&&(plan.IsForkChunk(sequence)||plan.IsForkTrackChunk(sequence));
+            Layout.Plan(random,RouteType,sequence,slots,floorSlots,chance,plan!=null&&plan.Extended,fork);
             if(Gates!=null) foreach(var gate in Gates) gate.ResetGate();
             if(SlideGates!=null)foreach(var gate in SlideGates)gate.ResetGate();
-            if(FloorItems!=null)foreach(var item in FloorItems){item.ResetItem();item.gameObject.SetActive(sequence>0);}
-            if(RailGaps!=null)foreach(var gap in RailGaps){gap.ResetGap();gap.gameObject.SetActive(true);}
-            for (int i = 0; i < Obstacles.Length; i++) { Obstacles[i].gameObject.SetActive(false); Obstacles[i].ResetPass();Obstacles[i].FullExerciseRow=false; }
-            if (Coins != null) foreach(var coin in Coins) { coin.ResetCoin(); coin.gameObject.SetActive(sequence>0); }
-            bool cart=RouteType==1||RouteType==2;
-            if(ExerciseObstacles!=null)foreach(var obstacle in ExerciseObstacles)
+            if(FloorItems!=null)for(int i=0;i<FloorItems.Length;i++){FloorItems[i].ResetItem();FloorItems[i].gameObject.SetActive(Layout.FloorItems[i]);}
+            // Fork tracks hide the bridge for the three-way junction; their rail pieces go with it.
+            bool junction=plan!=null&&plan.IsForkTrackChunk(sequence);
+            if(RailGaps!=null)for(int i=0;i<RailGaps.Length;i++)
             {
-                obstacle.ResetPass();obstacle.FullExerciseRow=true;
-                // The first run opens with a clear warm-up; later mine visits include the jump row.
-                bool warmup=sequence==0&&obstacle.Kind==ObstacleKind.Crate;
-                obstacle.gameObject.SetActive(!cart&&!warmup);
+                RailGaps[i].Configure(i<Layout.RailGaps.Length?Layout.RailGaps[i]:0);
+                if(RailGaps[i].Pieces!=null)RailGaps[i].Pieces.gameObject.SetActive(!junction);
             }
-            if(cart)
+            for (int i = 0; i < Obstacles.Length; i++)
+            {
+                Obstacles[i].ResetPass();Obstacles[i].FullExerciseRow=slots[i].FullRow;Obstacles[i].gameObject.SetActive(Layout.Slots[i]);
+            }
+            if(ExerciseObstacles!=null)for(int i=0;i<ExerciseObstacles.Length;i++)
+            {
+                var obstacle=ExerciseObstacles[i];
+                obstacle.ResetPass();obstacle.FullExerciseRow=true;obstacle.gameObject.SetActive(Layout.Slots[Obstacles.Length+i]);
+            }
+            if (Coins != null) foreach(var coin in Coins) { coin.ResetCoin(); coin.gameObject.SetActive(sequence>0); }
+            if(RouteType==1||RouteType==2)
             {
                 UpdateCartRoute();
                 return;
-            }
-            for (int row = 0; row < 2; row++)
-            {
-                // Authored exercise rows supply jump/slide; keep stairs and lane-blocking doors separately.
-                if(ExerciseObstacles!=null&&ExerciseObstacles.Length>0)
-                {
-                    if(RouteType==7)
-                    {
-                        for(int lane=0;lane<3;lane++){Obstacles[row*3+lane].FullExerciseRow=true;Obstacles[row*3+lane].gameObject.SetActive(true);}
-                    }
-                    else if(RouteType>=4&&RouteType<=6&&row==0)
-                        Obstacles[random.Next(3)].gameObject.SetActive(true);
-                    continue;
-                }
-                if(sequence==0&&row==0)continue;
-                bool exercise=RouteType==3||RouteType==7||(RouteType==0&&row==1)||(RouteType==6&&row==1);
-                if(exercise)
-                {
-                    var kind=Obstacles[row*3].Kind;
-                    if(!SafePatternValidator.IsActionRowSafe(7,kind))throw new System.InvalidOperationException("Unsafe full-width exercise row");
-                    for(int lane=0;lane<3;lane++){Obstacles[row*3+lane].FullExerciseRow=true;Obstacles[row*3+lane].gameObject.SetActive(true);}
-                    continue;
-                }
-                if (random.NextDouble() > chance && !(Gates!=null&&Gates.Length>0&&row==0) && !((RouteType==1||RouteType==2)&&row==0)) continue;
-                int laneIndex = random.Next(3);
-                // One hazard per row leaves two clear lanes.
-                if (!SafePatternValidator.IsSafe(1 << laneIndex)) continue;
-                Obstacles[row * 3 + laneIndex].gameObject.SetActive(true);
             }
             if (Coins != null) for(int i=0;i<Coins.Length;i++)
             {

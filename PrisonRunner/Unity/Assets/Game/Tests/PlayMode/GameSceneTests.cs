@@ -37,6 +37,8 @@ namespace Muhanok.Tests
                 game.Session.Config.ExtendedRoutes=false;game.BeginRun(""); yield return new WaitForSecondsRealtime(1.1f);
                 Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
                 yield return new WaitUntil(()=>!game.IsRevealing);
+                // Layout seed 2 opens with the duck row, which the crouch below passes while the run keeps going.
+                game.Map.Reset(2);
                 Assert.AreEqual(0,game.Intro.Elapsed,"Loading image is the intro; a second timeline must not run");
                 InputState.Change(keys, new KeyboardState(Key.A)); game.TickInput();
                 Assert.AreEqual(-1, game.Session.Runner.Lane);

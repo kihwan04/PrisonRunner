@@ -66,7 +66,7 @@ namespace Muhanok.Bootstrap
             {
                 Muhanok.Presentation.Map.CartRailGap closest=null;
                 foreach(var active in game.Map.Active)foreach(var gap in active.Chunk.RailGaps)
-                    if(!gap.Passed&&gap.transform.position.z>z&&(closest==null||gap.transform.position.z<closest.transform.position.z))closest=gap;
+                    if(gap.gameObject.activeInHierarchy&&!gap.Passed&&gap.transform.position.z>z&&(closest==null||gap.transform.position.z<closest.transform.position.z))closest=gap;
                 if(closest!=null)game.Session.Runner.Command(closest.RequiredLean<0?MotionCommand.Left:MotionCommand.Right);
                 return;
             }
@@ -143,7 +143,7 @@ namespace Muhanok.Bootstrap
             game.Retry();game.BeginRun("");yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             game.Map.Tick(30);game.Session.Runner.SetStartZ(30);
             Muhanok.Presentation.Map.CartRailGap target=null;
-            foreach(var active in game.Map.Active)if(active.Type==1)target=active.Chunk.RailGaps[0];
+            foreach(var active in game.Map.Active)if(active.Type==1)foreach(var gap in active.Chunk.RailGaps)if(gap.gameObject.activeSelf)target=gap;
             game.Session.Runner.Command(target.RequiredLean<0?MotionCommand.Right:MotionCommand.Left);game.Session.Runner.Tick(.25f,0);
             game.Session.Runner.SetStartZ(target.transform.position.z);target.Evaluate(game.Session,target.transform.position.z-1);
             if(game.Session.Reason!=CaptureReason.BrokenRail)throw new InvalidOperationException("Wrong cart lean did not cause rail fall");

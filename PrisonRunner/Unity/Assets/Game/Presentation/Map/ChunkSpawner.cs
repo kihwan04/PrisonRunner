@@ -115,8 +115,6 @@ namespace Muhanok.Presentation.Map
                 var chunk = pool.Rent(type);
                 chunk.PlaceOnRoute(sequence);
                 chunk.Prepare(sequence, session.Difficulty.ObstacleChance(session.Score.Distance), random);
-                if (plan != null && (plan.IsForkChunk(sequence) || plan.IsForkTrackChunk(sequence)))
-                    foreach (var gap in chunk.RailGaps) gap.gameObject.SetActive(false);
                 chunk.gameObject.SetActive(true); active.Add(new ActiveChunk(type, chunk));
                 Decorator?.Decorate(chunk, sequence, type, random);
                 nextPosition = chunk.Exit.position; sequence++;
