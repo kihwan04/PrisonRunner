@@ -115,8 +115,9 @@ namespace Muhanok.Editor
                 for(int segment=0;segment<48;segment++)
                 {
                     float a=segment*.5f,b=(segment+1)*.5f; int n=vertices.Count;
-                    bool cart=type==1||type==2;int missing=RouteSurface.CartMissingSide(type,(a+b)*.5f);
-                    float left=cart?(missing<0?0:-1.05f):-4.9f,right=cart?(missing>0?0:1.05f):4.9f;
+                    // The cart deck stays whole; a missing rail is chosen per run and shown by the rail pieces.
+                    bool cart=type==1||type==2;
+                    float left=cart?-1.05f:-4.9f,right=cart?1.05f:4.9f;
                     vertices.Add(RoutePoint(new Vector3(left,0,a),type)); vertices.Add(RoutePoint(new Vector3(left,0,b),type));
                     vertices.Add(RoutePoint(new Vector3(right,0,b),type)); vertices.Add(RoutePoint(new Vector3(right,0,a),type));
                     faces.Add(new Face(new[]{n,n+1,n+2,n,n+2,n+3}));

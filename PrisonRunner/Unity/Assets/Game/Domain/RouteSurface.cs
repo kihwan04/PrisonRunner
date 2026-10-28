@@ -33,13 +33,6 @@ namespace Muhanok.Domain
             while(end-sequence<64&&CartType(TypeAt(end+1))==cart)end++;
             return Math.Max(0,(end+1)*Length-z);
         }
-        // Negative is a missing left rail, positive is a missing right rail.
-        public static int CartMissingSide(int type,float localZ)
-        {
-            if(type!=1&&type!=2)return 0;
-            int row=Math.Abs(localZ-8)<=1.5f?0:Math.Abs(localZ-18)<=1.5f?1:-1;
-            return row<0?0:((row+type)%2==0?1:-1);
-        }
         public static float EntryHeight(int type)=>type>=4&&type<=6||type>=8&&type<=11?3f:0f;
         public static string AreaAt(float distance)
         {
