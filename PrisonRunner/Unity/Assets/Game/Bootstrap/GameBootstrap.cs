@@ -44,6 +44,7 @@ namespace Muhanok.Bootstrap
         private PlayerProfile player = new PlayerProfile();
         private bool playerRun, bannerSounded, goSounded, lastNewBest;
         private RankingEntry lastEntry;
+        private int lastBestScore;
         private int lastTodayRank;
         private UserSettings userSettings, settingsDefaults;
         private GraphicsSettingsApplier graphics;
@@ -344,7 +345,7 @@ namespace Muhanok.Bootstrap
                 bool tooling=System.Array.IndexOf(args,"--muhanok-capture")>=0||System.Array.IndexOf(args,"--muhanok-smoke")>=0
                     ||System.Array.IndexOf(args,"--mongscape-review")>=0||System.Array.IndexOf(args,"--mongscape-tests")>=0
                     ||System.Array.IndexOf(args,"--muhanok-uicapture")>=0;
-                lastEntry=null; lastRank=lastTodayRank=0; lastNewBest=false;
+                lastEntry=null; lastRank=lastTodayRank=lastBestScore=0; lastNewBest=false;
                 if(!tooling&&playerRun)
                 {
                     identity.SaveRun(Session);
@@ -353,7 +354,9 @@ namespace Muhanok.Bootstrap
                         :player.HasName?player.Name.Trim():"플레이어 "+(Store.Board.Day(Leaderboard.DayKey(now)).Count+1);
                     lastEntry=new RankingEntry{Name=name,Score=Session.Score.Score,Distance=Session.Score.Distance,Coins=Session.Score.Coins,
                         Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks,ScoreVersion=RunScore.Version};
-                    lastNewBest=Session.Score.Distance>Store.Stats.BestDistance;
+                    // Personal best per play style; in developer mode every run has its own name.
+                    int previousBest=Store.Board.BestScore(lastEntry.Style,userSettings.DeveloperMode?name:null);
+                    lastNewBest=lastEntry.Score>previousBest; lastBestScore=Mathf.Max(previousBest,lastEntry.Score);
                     lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
                     lastTodayRank=Store.Board.RankOf(lastEntry,true);
                     // Exhibition runs do not fill this PC's wallet.
@@ -429,6 +432,7 @@ namespace Muhanok.Bootstrap
         int IHudData.LastRank => lastRank;
         int IHudData.LastTodayRank => lastTodayRank;
         bool IHudData.LastNewBest => lastNewBest;
+        int IHudData.LastBestScore => lastBestScore;
         float IHudData.BestDistance => Store.Stats.BestDistance;
         public float StartBanner => Session.Flow.State == GameFlowState.Running ? Mathf.Max(0, 2.2f - (Time.realtimeSinceStartup - runStartedAt)) : 0;
         float IHudData.CaughtFlash => Session.Flow.State == GameFlowState.Caught ? Mathf.Clamp01(1 - (Time.realtimeSinceStartup - caughtAt) / .6f) : 0;
