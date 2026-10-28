@@ -145,6 +145,7 @@ namespace Muhanok.Bootstrap
             audioPlayer?.SetVolumes(userSettings.MusicVolume, userSettings.EffectsVolume);
             Pose.Configure(userSettings.CameraDevice, userSettings.LiteLandmarkModel, userSettings.LaneSensitivity);
             if (overlay != null) overlay.Visible = userSettings.PerformanceOverlay;
+            if (hud != null && hud.RunModel != null) hud.RunModel.CameraEnabled = userSettings.InGameCamera;
             Store.Wallet.UnlockAll = userSettings.DeveloperMode;
             if (save) UserSettingsStore.Save(userSettings);
         }
