@@ -17,7 +17,7 @@ Keep third-party source assets private and follow THIRD_PARTY_NOTICES.md before 
 source=DEST/'Mongscape-Unity-Source.zip'
 with zipfile.ZipFile(source,'w',zipfile.ZIP_DEFLATED,compresslevel=5) as z:
  z.writestr('READ_ME_FIRST.txt',notes)
- for folder in ('Unity/Assets','Unity/Packages','Unity/ProjectSettings','Services/Identity','Tools/QA','Tools/Distribution','docs/previews/Polish20261025'):
+ for folder in ('Unity/Assets','Unity/Packages','Unity/ProjectSettings','Services/Identity','Tools/QA','Tools/Distribution'):
   for file in sorted((PROJECT/folder).rglob('*')):
    if not file.is_file():continue
    rel=file.relative_to(PROJECT)

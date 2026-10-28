@@ -15,7 +15,7 @@
 
 | 날짜 | 확인한 범위 | 결과·근거 |
 | --- | --- | --- |
-| 2026-10-26 | 공개 소스 추가 검증 | Mixamo 원본 제외, 자체 Humanoid 연결 18개 유효·PlayMode 37/37. [근거](previews/PublicRelease20261026/review.json) |
+| 2026-10-26 | 공개 소스 추가 검증 | Mixamo 원본 제외, 자체 Humanoid 연결 18개 유효·PlayMode 37/37. 근거 `docs/previews/PublicRelease20261026/review.json`(삭제, Git 기록에 있음) |
 | 2026-10-26 | 세 갈래 철로 단축 | EditMode 115/115, PlayMode 37/37. 새 Windows 빌드·3방향 진입·스모크 종료 코드 0. [보고서](reports/FORK_SHORT_2026_10_26.md) |
 | 2026-10-26 | HUD 정리 후 Unity 검증 | EditMode 113/113, PlayMode 37/37. 고정값 HUD 모델 3,600회 관리 메모리 할당 0바이트 |
 | 2026-10-26 | HUD 정리 후 실제 EXE | 16개 화면·스모크 검수. GTX 1060/720p 키보드, 보통·높음 약60fps/저사양 약30fps 유지. [보고서](reports/HUD_POLISH_2026_10_26.md) |

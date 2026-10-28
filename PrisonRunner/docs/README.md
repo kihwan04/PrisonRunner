@@ -32,8 +32,7 @@
 | [UI 저장소 통합 보고서](reports/MUHANOK_TEST_MERGE_2026_10_26.md) | lilohdong/muhanok-test main b2215ef와 기존 게임의 로컬 통합 |
 | [PostgreSQL 중앙 서버 보고서](reports/POSTGRES_IDENTITY_2026_10_26.md) | 최신 PostgreSQL 18개·SQLite 9개 테스트, 이전과 DB 권한 |
 | [초기 중앙 서버 준비 보고서](reports/DOCKER_IDENTITY_2026_10_26.md) | PostgreSQL 전환 전 서버 주소 설정과 Windows 빌드 검증 |
-| [최종 게임 검수 자료](previews/Polish20261025/review.json) | 원시 측정값. 같은 폴더에 화면과 테스트 XML 보관 |
 
-2026-10-27에 대체된 문서·V10~V12 기획서·이전 버전 캡처를 삭제했습니다. 필요하면 Git 기록에서 복원합니다. 이전 안내의 Python PoseServer·UDP·WebSocket은 현재 몸동작 처리 방식이 아닙니다.
+2026-10-27에 대체된 문서·V10~V12 기획서·이전 버전 캡처를 삭제했습니다. 2026-10-28에는 검수 캡처 폴더 `docs/previews/`도 삭제했습니다(이후 캡처 도구가 만드는 파일은 커밋하지 않음). 필요하면 Git 기록에서 복원합니다. 이전 안내의 Python PoseServer·UDP·WebSocket은 현재 몸동작 처리 방식이 아닙니다.
 
 현재 다운로드는 [공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)를 기준으로 합니다. `reports/`의 업로드 보류·로컬 전달 경로는 각 기록을 작성한 시점의 상태이며 현재 게시 상태와 구분합니다.
