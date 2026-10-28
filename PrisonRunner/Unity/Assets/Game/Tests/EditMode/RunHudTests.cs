@@ -25,11 +25,13 @@ namespace Muhanok.Tests
             Assert.AreEqual(expected, model.ShowWorkout);
             if (expected) StringAssert.Contains("180 kcal", model.Workout);
         }
-        [Test] public void MissingWeightHidesExerciseCounter()
+        [TestCase(0f, "플레이 0:00")] [TestCase(192.7f, "플레이 3:12")] [TestCase(-3f, "플레이 0:00")] [TestCase(3600f, "플레이 60:00")]
+        public void PlayTimeIsMinutesAndSeconds(float seconds, string expected) { Assert.AreEqual(expected, RunHudModel.PlayTime(seconds)); }
+        [Test] public void MissingWeightStillShowsExerciseCounter()
         {
             var run = Running(); run.Workout.SetWeight("");
             var model = new RunHudModel(); model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 1);
-            Assert.IsFalse(model.ShowWorkout);
+            Assert.IsTrue(model.ShowWorkout, "An empty weight uses the default weight");
         }
         [TestCase(true, true, true, true, true, true, HudNoticeKind.Tracking)]
         [TestCase(false, true, true, true, true, true, HudNoticeKind.Obstacle)]

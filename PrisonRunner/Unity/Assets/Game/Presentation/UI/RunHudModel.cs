@@ -32,6 +32,14 @@ namespace Muhanok.Presentation
         private string actionCue, comboText;
         private int previousLane;
 
+        // Play time without pauses as "플레이 3:12"; display only, not part of the score.
+        public static string PlayTime(float seconds)
+        {
+            int total = float.IsNaN(seconds) || float.IsInfinity(seconds) ? 0 : (int)Math.Max(0, Math.Floor(seconds));
+            return "플레이 " + total / 60 + ":" + (total % 60).ToString("00");
+        }
+        public static string Points(int score) => score.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) + "점";
+
         public void Tick(RunSession session, ChunkSpawner map, PlayStyle style, PoseStatus pose, bool police, float now)
         {
             bool running = session.Flow.State == GameFlowState.Running && !session.Paused;
@@ -43,7 +51,8 @@ namespace Muhanok.Presentation
             lastZ = session.Runner.Z; lastTime = now;
             if (session.Score.Coins != coins) { coins = session.Score.Coins; Coins = coins.ToString(); }
             CoinBoost = session.Items.IsActive(ItemKind.DoubleScore);
-            ShowWorkout = PlayStyleInfo.UsesCamera(style) && session.Workout.WeightKg.HasValue;
+            // Camera styles always estimate calories (an empty weight uses the default); keyboard play does not.
+            ShowWorkout = PlayStyleInfo.UsesCamera(style);
             GoalProgress = (float)session.Workout.GoalProgress;
             if (ShowWorkout)
             {

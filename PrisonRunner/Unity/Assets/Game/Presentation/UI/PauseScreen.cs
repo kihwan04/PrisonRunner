@@ -18,8 +18,8 @@ namespace Muhanok.Presentation
             GUI.Label(new Rect(325, 240, 340, 35), "거리  " + session.Score.Distance.ToString("N0") + " m", skin.Label);
             GUI.Label(new Rect(325, 283, 340, 30), "코인  " + session.Score.Coins + "   ·   최고 " + (data?.BestDistance ?? 0).ToString("N0") + " m", skin.Small);
             GUI.Label(new Rect(325, 325, 350, 30), "기준 속도 " + session.TargetSpeed.ToString("F1") + " m/s · " + RouteSurface.AreaAt(session.Runner.Z), skin.Style(18, FontStyle.Normal));
-            bool workout = PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard) && session.Workout.WeightKg.HasValue;
-            GUI.Label(new Rect(325, 367, 355, 30), workout ? "예상 " + session.Workout.EstimatedKcal.ToString("F1") + " / " + session.Workout.GoalKcal.ToString("F0") + " kcal" : "키보드/몸무게 미입력 · 칼로리 계산 제외", skin.Style(17, FontStyle.Normal));
+            bool workout = PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard);
+            GUI.Label(new Rect(325, 367, 355, 30), workout ? "예상 " + session.Workout.EstimatedKcal.ToString("F1") + " / " + session.Workout.GoalKcal.ToString("F0") + " kcal" : "키보드 · 칼로리 계산 제외", skin.Style(17, FontStyle.Normal));
             GUI.Label(new Rect(325, 409, 350, 30), session.Config.IntervalMode ? "구간 전환까지 " + session.PhaseRemainingSeconds.ToString("F0") + "초" : "최고 콤보 " + session.BestDodgeStreak, skin.Small);
             if (skin.PrimaryButton(new Rect(710, 247, 240, 58), "계속하기", 26)) resume?.Invoke();
             if (skin.FlatButton(new Rect(710, 325, 240, 48), "설정", false)) settings?.Invoke();

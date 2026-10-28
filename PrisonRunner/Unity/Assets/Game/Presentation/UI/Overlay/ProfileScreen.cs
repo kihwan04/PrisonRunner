@@ -43,7 +43,7 @@ namespace Muhanok.Presentation
             bool enabled=GUI.enabled;GUI.enabled=enabled&&!faceName;
             name = skin.Input(new Rect(x,162,400,52),name,10);GUI.enabled=enabled;
             if(faceName)skin.Text(new Rect(x+420,162,370,52),"얼굴 이름은 서버 프로필을 사용합니다.",13,Palette.Sand,TextAnchor.MiddleLeft,false,true);
-            skin.Text(new Rect(x, 232, 300, 28), "몸무게 (선택, 칼로리 계산용)", 18, Palette.Sand, TextAnchor.MiddleLeft, false, true);
+            skin.Text(new Rect(x, 232, 420, 28), "몸무게 (선택, 미입력 시 65kg으로 계산)", 18, Palette.Sand, TextAnchor.MiddleLeft, false, true);
             GUI.SetNextControlName("MuhanokProfileWeight");
             weight = skin.Input(new Rect(x, 264, 300, 52), weight, 7);
             skin.Text(new Rect(x + 312, 264, 60, 52), "kg", 20, Palette.Sand, TextAnchor.MiddleLeft);

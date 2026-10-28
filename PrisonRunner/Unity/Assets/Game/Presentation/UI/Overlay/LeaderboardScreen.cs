@@ -38,7 +38,7 @@ namespace Muhanok.Presentation
             if (data != null && data.LastTodayRank > 0) parts.Add("오늘 " + data.LastTodayRank + "위");
             if (data != null && data.LastRank > 0) parts.Add("전체 " + data.LastRank + "위");
             parts.Add("코인 +" + session.Score.Coins);
-            if (PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard) && session.Workout.WeightKg.HasValue) parts.Add(session.Workout.EstimatedKcal.ToString("F1", Num) + " kcal");
+            if (PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard)) parts.Add(session.Workout.EstimatedKcal.ToString("F1", Num) + " kcal");
             summary = string.Join("  ·  ", parts);
             Reload(data);
         }
@@ -87,9 +87,9 @@ namespace Muhanok.Presentation
             skin.BorderBox(new Rect(24,140,190,380),Palette.A(Palette.Panel,.95f),Palette.Wood,2);
             skin.Text(new Rect(38,152,164,30),"운동 기록",22,Palette.Gold,TextAnchor.MiddleLeft);
             skin.Text(new Rect(38,190,164,26),"최고 콤보 "+session.BestDodgeStreak,16,Palette.Cream,TextAnchor.MiddleLeft,false,true);
-            if (!PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard) || !session.Workout.WeightKg.HasValue)
+            if (!PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard))
             {
-                skin.Text(new Rect(38,235,164,30),"칼로리 계산 제외",16,Palette.Sand,TextAnchor.MiddleLeft,false,true);
+                skin.Text(new Rect(38,235,164,30),"키보드 · 칼로리 계산 제외",16,Palette.Sand,TextAnchor.MiddleLeft,false,true);
                 return;
             }
             skin.Text(new Rect(38,220,164,26),"목표 "+session.Workout.GoalKcal.ToString("F0")+" kcal",14,Palette.Sand,TextAnchor.MiddleLeft,false,true);

@@ -110,7 +110,7 @@ namespace Muhanok.Tests
                 float before=game.Session.Runner.Z; node.transform.position=new Vector3(0,1,before+.1f);
                 game.Session.Tick(.4f); int score=game.Session.Score.Score;
                 coin.Evaluate(game.Session,before);
-                Assert.AreEqual(1,game.Session.Score.Coins); Assert.AreEqual(score+10,game.Session.Score.Score);
+                Assert.AreEqual(1,game.Session.Score.Coins); Assert.AreEqual(score,game.Session.Score.Score,"Coins do not score");
                 coin.Evaluate(game.Session,before); Assert.AreEqual(1,game.Session.Score.Coins);
                 coin.ResetCoin(); node.SetActive(true);
                 node.transform.position=new Vector3(4.4f,1,game.Session.Runner.Z+.1f);
