@@ -1,6 +1,6 @@
 # 2026-10-28 기능 구현 계획
 
-이 문서는 작업 명세서다. 작업(T1~T12)마다 브랜치, 선행 작업, 현재 코드, 바꿀 내용, 완료 조건을 적었다. 작업 하나를 맡은 사람은 **0장 공통 규칙**, **1장 확정 결정**, 그리고 자기 작업 절을 읽으면 바로 시작할 수 있다. 서버 API는 **4장**에만 정의하고, 각 작업은 4장을 참조한다.
+이 문서는 작업 명세서다. 작업(T1~T15)마다 브랜치, 선행 작업, 현재 코드, 바꿀 내용, 완료 조건을 적었다. 작업 하나를 맡은 사람은 **0장 공통 규칙**, **1장 확정 결정**, 그리고 자기 작업 절을 읽으면 바로 시작할 수 있다. 서버 API는 **4장**에만 정의하고, 각 작업은 4장을 참조한다.
 
 - 코드 경로는 `Unity/Assets/Game/` 기준, 서버 경로는 `Services/Identity/` 기준이다(둘 다 저장소의 `PrisonRunner/` 아래).
 - 줄 번호는 `develop` `4c4f6d2` 기준이다. 작업 전에 해당 위치를 다시 확인한다.
@@ -65,6 +65,7 @@
 | 몸무게 | 입력하지 않으면 **65kg**으로 계산한다. 몸무게 미입력으로 칼로리 계산을 빼는 경우는 없앤다 |
 | 점수 | **점수 = 거리(m) + 소모 칼로리 × 100**. 코인·장애물 통과는 점수에 넣지 않는다. 모든 랭킹은 점수로 정렬한다(키보드는 칼로리가 0이라 점수 = 거리)(T13) |
 | 결과 화면 | 점수, 플레이 시간(표시만), 거리, **내 최고 기록**(회원, 모드별)과 신기록 여부를 보여 준다 |
+| 얼굴 서버 DB | **PostgreSQL만 쓴다.** SQLite 경로와 SQLite 가져오기 도구를 없앤다. 로컬 SQLite 서버를 쓰는 PC와 배포된 SQLite 데이터는 없다(T15) |
 | 장애물 배치 | 판마다 씨드로 **모든 구간의 장애물을 랜덤 배치**한다(광산 철로의 끊어진 레일 포함). 첫 구간은 점프 줄과 숙이기 줄 중 하나를 랜덤으로 고른다. 구간 순서(경로)는 지금처럼 고정한다(T14) |
 
 **하지 않기로 한 것**
@@ -86,6 +87,7 @@
 | T14 | `feature/random-obstacles` | 장애물 랜덤 배치(첫 구간·광산 철로 포함) | T3 | `MuhanokMapChunk.cs`, `RuntimeContent.cs`(T3), 광산 구간 프리팹 |
 | T4 | `feature/identity-transient-avatar` | 얼굴 사진 서버 저장 제거 | - | `server.py`, `storage.py`(T5) |
 | T5 | `feature/account-server-api` | 계정 스키마·API·마이그레이션 | T4 | - |
+| T15 | `feature/identity-postgres-only` | 얼굴 서버 PostgreSQL 단일화(SQLite 제거) | T5 | `storage.py`, `server.py`, 서버 테스트 |
 | T6 | `feature/identity-face-guide` | 로그인 캠 골격 제거 + 얼굴 가이드 틀 | - | `HudData.cs`(T1) |
 | T7 | `feature/account-session` | 클라이언트 계정 구조(화면 변경 없음) | T5 | `GameBootstrap.cs` |
 | T8 | `feature/login-gate-signup` | 로그인 선택·회원가입 화면 | T6, T7 | `HUDPresenter.cs` |
@@ -350,6 +352,21 @@
 - 같은 기록 ID로 `/runs`를 두 번 보내도 코인은 한 번만 적립된다.
 - `/leaderboard`가 사람당 최고 거리 1개만 순위에 넣고, 오늘 필터가 KST 기준으로 자른다.
 - v1 DB(이름 중복 포함)를 마이그레이션하면 v2가 되고 기존 회원이 로그인된다.
+
+---
+
+### T15. 얼굴 서버 PostgreSQL 단일화 (서버)
+
+**배경**: `Store`가 PostgreSQL(중앙 Docker)과 SQLite(로컬 `StartIdentity`) 두 저장소를 지원해서, 서버를 고칠 때마다 SQL·마이그레이션·테스트를 두 벌로 맞춰야 했다. 기본 테스트도 SQLite로 돌아 운영 환경(PostgreSQL)과 달랐다. 로컬 SQLite 서버를 쓰는 PC와 배포된 SQLite 데이터는 없다(2026-10-28 확인).
+
+**변경**
+1. `storage.py`, `server.py`에서 SQLite 분기와 `--database` 옵션을 없앤다. PostgreSQL 설정이 없으면 분명한 오류로 멈춘다.
+2. `schema.sql`, `migrate_sqlite.py`를 삭제하고, `migrate_account.py`의 SQLite 분기를 없앤다.
+3. 로컬 실행 스크립트(`StartIdentity`, `SetupIdentity`)는 SQLite로 기본 실행하지 않고 PostgreSQL 설정을 요구한다. 기본 경로는 Docker(`compose.yaml`)다.
+4. 테스트를 PostgreSQL 하나로 합친다. `run_tests.ps1`이 휴대용 PostgreSQL 17을 임시로 띄워(관리자 아닌 앱 계정 `mongscape`) 테스트를 돌리고 끈다.
+5. `README_DOCKER.md`와 SQLite를 언급한 문서를 갱신한다.
+
+**완료 조건**: 저장소에서 SQLite 런타임 경로가 사라지고, `run_tests.ps1`로 전체 서버 테스트가 PostgreSQL에서 통과한다.
 
 ---
 
