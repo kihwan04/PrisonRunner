@@ -11,9 +11,11 @@ import test_identity as identity_tests
 import test_http as http_tests
 from storage import ApiError,Store
 from migrate_sqlite import migrate
+import migrate_account
 from prepare_secrets import prepare
 
 URL=os.getenv('MONGSCAPE_TEST_POSTGRES_URL')
+PROFILE_INSERT='INSERT INTO profiles (id,name,name_key,created_at,consent_version) VALUES(?,?,?,?,?)'
 
 class IsolatedSchema:
     def setUp(self):
@@ -47,24 +49,25 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
     def tearDown(self):
         self.store.db.close();self.temp.cleanup();super().tearDown()
     def profile(self):
-        return ('visitor',"Test ' visitor",1,'test-consent')
+        return ('visitor',"Test ' v",'test\'v',1,'test-consent')
     def source(self,invalid=False):
         path=Path(self.temp.name)/'source.sqlite3'
         source=Store(path)
         with source.db:
-            source.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
+            source.db.execute(PROFILE_INSERT,self.profile())
             source.db.execute('INSERT INTO face_samples VALUES(?,?)',('visitor',b'\0'*512))
-            source.db.execute('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?)',
-                              ('run','visitor',100.5,23,2.5,50,'{}' if invalid else '[1,1,0.5,0,0]',2))
+            source.db.execute("UPDATE profiles SET coins=40,unlocked='[2]',tutorial_done=1")
+            source.db.execute('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+                              ('run','visitor',100.5,23,2.5,50,'{}' if invalid else '[1,1,0.5,0,0]',2,1,7,2,61.5))
         token=source.issue('visitor');source.db.close()
         return path,token
     def test_transactions_rollback_and_leave_connection_open(self):
         with self.assertRaises(self.psycopg.errors.UniqueViolation):
             with self.store.db:
-                self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
-                self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
+                self.store.db.execute(PROFILE_INSERT,self.profile())
+                self.store.db.execute(PROFILE_INSERT,self.profile())
         self.assertEqual(self.store.db.execute('SELECT COUNT(*) FROM profiles').fetchone()[0],0)
-        with self.store.db:self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
+        with self.store.db:self.store.db.execute(PROFILE_INSERT,self.profile())
         self.assertEqual(self.store.db.execute('SELECT name FROM profiles').fetchone()[0],self.profile()[1])
     def test_application_role_has_no_administrator_privileges(self):
         privileges=self.store.db.execute('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=current_user').fetchone()
@@ -73,8 +76,9 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
     def test_jsonb_binary_types_and_foreign_key_indexes(self):
         types=dict(self.store.db.execute("SELECT column_name,data_type FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='runs'").fetchall())
         self.assertEqual(types['activities'],'jsonb')
-        indexes={row[0] for row in self.store.db.execute('SELECT indexname FROM pg_indexes WHERE schemaname=current_schema()')}
-        self.assertTrue({'runs_profile_created','sessions_expiry','sessions_profile','face_samples_pkey'}<=indexes)
+        types=dict(self.store.db.execute("SELECT column_name,data_type FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='profiles'").fetchall())
+        self.assertEqual((types['unlocked'],types['tutorial_done'],types['weight']),('jsonb','boolean','double precision'))
+        self.assertTrue({'runs_profile_created','runs_mode_score','profiles_name_key','sessions_expiry','sessions_profile','face_samples_pkey'}<=self.store.indexes())
     def test_closed_transport_reconnects(self):
         self.store.db.raw.close()
         self.assertEqual(self.store.db.execute('SELECT 1').fetchone(),(1,))
@@ -103,7 +107,8 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
         self.assertEqual(hashlib.sha256(path.read_bytes()).digest(),before)
         self.assertEqual(self.store.db.execute('SELECT name FROM profiles').fetchone()[0],self.profile()[1])
         self.assertNotIn('avatar',self.store.columns('profiles'))
-        self.assertEqual(self.store.db.execute('SELECT activities FROM runs').fetchone()[0],[1,1,.5,0,0])
+        self.assertEqual(self.store.db.execute('SELECT activities,mode,coins,score_version,play_seconds FROM runs').fetchone(),([1,1,.5,0,0],1,7,2,61.5))
+        self.assertEqual(self.store.account('visitor'),dict(id='visitor',name=self.profile()[1],weight=65.0,style=0,goal=50.0,coins=40,unlocked=[2],tutorial_done=True))
         with self.assertRaises(ApiError):self.store.authorize(token)
     def test_import_from_legacy_sqlite_with_photos_drops_them(self):
         path=Path(self.temp.name)/'legacy.sqlite3'
@@ -113,8 +118,12 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
             source.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',('visitor','Legacy visitor',b'old-photo',1,'test-consent'))
             source.execute('INSERT INTO face_samples VALUES(?,?)',('visitor',b'\0'*512))
         source.close()
+        # A v1 copy is refused until migrate_account.py upgrades it (unique nicknames, account columns).
+        with self.assertRaises(ValueError):migrate(path,database_url=self.url)
+        self.assertEqual(self.store.db.execute('SELECT COUNT(*) FROM profiles').fetchone()[0],0)
+        migrate_account.migrate(path)
         self.assertEqual(migrate(path,database_url=self.url),dict(profiles=1,face_samples=1,runs=0,sessions=0))
-        self.assertEqual(self.store.db.execute('SELECT id,name FROM profiles').fetchone(),('visitor','Legacy visitor'))
+        self.assertEqual(self.store.db.execute('SELECT id,name,name_key FROM profiles').fetchone(),('visitor','Legacy vis','legacyvis'))
     def test_migration_refuses_nonempty_target(self):
         path,_=self.source();migrate(path,database_url=self.url)
         with self.assertRaises(ValueError):migrate(path,database_url=self.url)
