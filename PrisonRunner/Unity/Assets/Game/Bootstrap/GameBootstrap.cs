@@ -40,10 +40,27 @@ namespace Muhanok.Bootstrap
         private float caughtTime, runFade, runStartedAt = -10, caughtAt = -10;
         private ParticleSystem dust, hit;
         private bool previousStumble;
-        // Who is playing (or about to). Runs started from the setup screen are recorded on the leaderboard.
+        // The account (member or guest) is the only source of the current player.
+        public AccountSession Account { get; } = new AccountSession();
+        // Run settings of the current or next run, taken from the account; developer mode names each run instead.
+        // Runs started from the setup screen are recorded on the leaderboard.
         private PlayerProfile player = new PlayerProfile();
+        private IAccountGateway gateway;
+        private AccountRunUploader runs;
+        private Texture2D portrait;
+        private string shownAccount = "";
+        // Account server state for the login gate, and the face capture (the webcam, or a fake in tests).
+        private string serverProblem = "";
+        private int serverTicket;
+        private bool serverChecking;
+        private System.Action<System.Action<string[]>> captureFaces;
         private bool playerRun, bannerSounded, goSounded, lastNewBest;
         private RankingEntry lastEntry;
+        private int lastBestScore = -1;
+        // The member's /stats (best score per play style) and the totals read after the last run was saved.
+        private StatsReply memberStats, lastStats;
+        private string memberStatsId = "";
+        private bool lastStatsFailed;
         private int lastTodayRank;
         private UserSettings userSettings, settingsDefaults;
         private GraphicsSettingsApplier graphics;
@@ -68,19 +85,21 @@ namespace Muhanok.Bootstrap
             keyboard = new KeyboardGameInput(); poseInput = new PoseGameInput(); router = new InputRouter(Session, keyboard, poseInput);
             Pose = new PoseTracker(poseInput, Settings != null ? Settings.Camera : null, Settings != null ? Settings.Motion : null, () => Session.Runner.Lane, () => Session.Runner.Riding&&!(RouteSurface.ActivePlan?.ForkWindow(Session.Runner.Z)??false));
             Store = new PlayerProgressStore(DataRoot());
-            player = Store.Profile.Clone();
+            player = Account.Profile.Clone();
             Hero = CreateActor("CHR_Monkey_Prisoner", MonkeyPrefab);
             guard = CreateActor("CHR_Police_Officer", PolicePrefab);
             Capture=gameObject.AddComponent<PoliceCaptureSequence>();Capture.Configure(Hero,guard);
             PursuitCue=gameObject.AddComponent<PolicePursuitCue>();PursuitCue.Configure(Session);
             identity=gameObject.AddComponent<LocalProfileClient>(); faceAvatar=Hero.gameObject.AddComponent<FaceAvatarView>();
-            identity.Changed+=IdentityChanged;
+            gateway=identity; runs=new AccountRunUploader(Account,gateway);
+            captureFaces=done=>identity.CaptureFaces(Pose.CameraTexture,done);
+            Account.Changed+=AccountChanged;
             gameObject.AddComponent<CartRideView>().Configure(Session,Hero,CartRidePrefab);
             gameObject.AddComponent<PowerUpAuraView>().Configure(Session,Hero);
             OutputCamera.GetComponent<CinematicFocus>()?.Configure(Session,Hero);
             var mapRoot = new GameObject("ChunkPool"); mapRoot.transform.SetParent(transform, false);
             Map = new ChunkSpawner(ChunkPrefabs, mapRoot.transform, Session, Settings != null ? Settings.Render : new RenderBudget());
-            Map.Decorator = new RuntimeContent(mapRoot.transform, () => Store.Wallet.Available(), Settings != null ? Settings.ItemChancePerChunk : .35f);
+            Map.Decorator = new RuntimeContent(mapRoot.transform, RunItems, Settings != null ? Settings.ItemChancePerChunk : .35f);
             CameraRig.Configure(OutputCamera);
             if(OutputCamera.GetComponent<GameViewport>()==null) OutputCamera.gameObject.AddComponent<GameViewport>();
             if (HandsPrefab != null)
@@ -108,7 +127,7 @@ namespace Muhanok.Bootstrap
             audioPlayer = gameObject.AddComponent<GameAudio>();
             audioPlayer.Configure(Session, Settings != null ? Settings.MusicVolume : .35f, Settings != null ? Settings.EffectsVolume : .7f);
             SetupSettings();
-            if (userSettings.DeveloperMode) player = new PlayerProfile { Style = Store.Profile.Style };
+            if (userSettings.DeveloperMode) player = new PlayerProfile { Style = Account.Settings.Style };
             if(automated)player.Style=PlayStyle.Keyboard;
             Session.Flow.Changed += StateChanged;
             Session.Flow.Transition(GameFlowState.TitleIdle);
@@ -130,7 +149,6 @@ namespace Muhanok.Bootstrap
             settingsWindow.Configure(this);
             settingsWindow.Closed += () => hud.Hidden = false;
             hud.OpenSettings = OpenSettings;
-            hud.OpenIdentity=()=>{Pose.SetStyle(PlayStyle.UpperBody);hud.ShowIdentity();};
             ApplySettings(false);
         }
         public void OpenSettings()
@@ -147,7 +165,6 @@ namespace Muhanok.Bootstrap
             Pose.Configure(userSettings.CameraDevice, userSettings.LiteLandmarkModel, userSettings.LaneSensitivity);
             if (overlay != null) overlay.Visible = userSettings.PerformanceOverlay;
             if (hud != null && hud.RunModel != null) hud.RunModel.CameraEnabled = userSettings.InGameCamera;
-            Store.Wallet.UnlockAll = userSettings.DeveloperMode;
             if (save) UserSettingsStore.Save(userSettings);
         }
         private RunnerView CreateActor(string id, GameObject prefab)
@@ -173,6 +190,12 @@ namespace Muhanok.Bootstrap
             if(Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
             hud.OpenMainMenu();
         }
+        // After the title: face login, sign-up or guest play.
+        public void OpenLogin()
+        {
+            if(Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
+            hud.OpenLogin();
+        }
         // Straight to the run setup (tests, "다음 플레이어").
         public void OpenStartSetup()
         {
@@ -187,12 +210,14 @@ namespace Muhanok.Bootstrap
             StartCoroutine(PrepareRun(723));
         }
         // Start from the setup screen: the run is recorded on the leaderboard. Outside developer mode
-        // the chosen play style becomes the profile's default.
+        // the chosen play style becomes the account's default.
         public void StartPlayerRun(PlayerProfile profile)
         {
             if(profile==null||Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading||!Session.Workout.SetWeight(profile.Weight)) return;
-            if(!userSettings.DeveloperMode&&profile.Style!=Store.Profile.Style){var saved=Store.Profile.Clone();saved.Style=profile.Style;Store.SaveProfile(saved);}
+            if(!userSettings.DeveloperMode&&profile.Style!=Account.Settings.Style){var saved=Account.Settings;saved.Style=profile.Style;SaveSettings(saved);}
             player=profile; playerRun=true; KeyboardGameInput.SetTextInput(false);
+            // The best to beat is read before the run (and before its save).
+            RefreshMemberStats();
             Session.Workout.Met=PlayStyleInfo.Met(profile.Style);
             Session.Workout.SetGoal(profile.CalorieGoal);
             Pose.SetStyle(profile.Style);
@@ -202,8 +227,8 @@ namespace Muhanok.Bootstrap
         {
             Session.Flow.Transition(GameFlowState.LoadingIntro);
             hud.BeginLoading(); hud.LoadingProgress=.12f;
-            // The player stands still during loading; that is the calibration pose.
-            Pose.Recalibrate();
+            // The player stands still during loading; that is the calibration pose. A fresh result-screen calibration is kept.
+            if (!Pose.CalibrationFresh(Time.realtimeSinceStartupAsDouble)) Pose.Recalibrate();
             yield return new WaitForSecondsRealtime(.25f);
             RouteSurface.UsePlan(new RoutePlan(Session.Config, seed));
             Session.Reset(); keyboard.Clear(); poseInput.Clear(); hud.LoadingProgress=.42f;
@@ -225,9 +250,11 @@ namespace Muhanok.Bootstrap
             double now = Time.realtimeSinceStartupAsDouble;
             bool live = Session.Flow.State == GameFlowState.Running && !Session.Paused && !hud.Loading;
             Pose.Tick(now, live);
-            if(!automated&&Session.Flow.State==GameFlowState.TitleIdle && !Pose.UsesCamera && !hud.SetupOpen && !hud.IdentityOpen)Pose.SetStyle(PlayStyle.UpperBody);
+            // Menus use the upper-body camera for hand pointing; the login gate, sign-up and face capture always do.
+            if(!automated&&Session.Flow.State==GameFlowState.TitleIdle&&(hud.AccountPageOpen?Pose.Style!=PlayStyle.UpperBody:!Pose.UsesCamera&&!hud.SetupOpen))Pose.SetStyle(PlayStyle.UpperBody);
             bool menu=Session.Flow.State!=GameFlowState.Running || Session.Paused;
-            GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking,now);
+            // The calibration panel takes no hand pointing: the player stands still and it closes by itself.
+            GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking&&!hud.CalibrationOpen,now);
             OperatorKeys();
             TickInput();
             if (Session.Flow.State == GameFlowState.Caught && Time.timeScale < 1 && Time.realtimeSinceStartup - caughtAt > .7f) Time.timeScale = 1;
@@ -298,13 +325,13 @@ namespace Muhanok.Bootstrap
             return null;
         }
         // Developer (exhibition) mode: per-run names and every item unlocked. Switching it starts from a clean player.
-        internal void SetDeveloperMode(bool on, bool save = true)
+        public void SetDeveloperMode(bool on, bool save = true)
         {
-            userSettings.DeveloperMode = on; Store.Wallet.UnlockAll = on;
+            userSettings.DeveloperMode = on;
             if (save) UserSettingsStore.Save(userSettings);
-            player = on ? new PlayerProfile { Style = Store.Profile.Style } : Store.Profile.Clone();
-            if(identity.Profile!=null)player.Name=identity.Profile.name;
-            if (hud.MenuOpen) hud.OpenMainMenu();
+            player = on ? new PlayerProfile { Style = Account.Settings.Style } : Account.Profile.Clone();
+            if(on&&Account.IsMember)player.Name=Account.Nickname;
+            if (hud.MenuOpen && !hud.AccountPageOpen) hud.OpenMainMenu();
             Debug.Log("Developer mode " + (on ? "on" : "off"));
         }
         public void TickInput()
@@ -312,7 +339,7 @@ namespace Muhanok.Bootstrap
             keyboard.Poll();
             if(hud.Loading||hud.Revealing||(settingsWindow!=null&&settingsWindow.IsOpen)){keyboard.Clear();poseInput.Clear();return;}
             router.Tick();
-            if (Session.Flow.State == GameFlowState.TitleIdle && !hud.BlocksStart && KeyboardGameInput.StartPressed) OpenMainMenu();
+            if (Session.Flow.State == GameFlowState.TitleIdle && !hud.BlocksStart && KeyboardGameInput.StartPressed) OpenLogin();
         }
         private void LateUpdate()
         {
@@ -344,22 +371,53 @@ namespace Muhanok.Bootstrap
                 bool tooling=System.Array.IndexOf(args,"--muhanok-capture")>=0||System.Array.IndexOf(args,"--muhanok-smoke")>=0
                     ||System.Array.IndexOf(args,"--mongscape-review")>=0||System.Array.IndexOf(args,"--mongscape-tests")>=0
                     ||System.Array.IndexOf(args,"--muhanok-uicapture")>=0;
-                lastEntry=null; lastRank=lastTodayRank=0; lastNewBest=false;
-                if(!tooling&&playerRun)
-                {
-                    identity.SaveRun(Session);
-                    var now=System.DateTime.Now;
-                    string name=identity.Profile!=null?identity.Profile.name:!userSettings.DeveloperMode?Store.Profile.DisplayName
-                        :player.HasName?player.Name.Trim():"플레이어 "+(Store.Board.Day(Leaderboard.DayKey(now)).Count+1);
-                    lastEntry=new RankingEntry{Name=name,Score=Session.Score.Score,Distance=Session.Score.Distance,Coins=Session.Score.Coins,
-                        Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks};
-                    lastNewBest=Session.Score.Distance>Store.Stats.BestDistance;
-                    lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
-                    lastTodayRank=Store.Board.RankOf(lastEntry,true);
-                    // Exhibition runs do not fill this PC's wallet.
-                    if(!userSettings.DeveloperMode) Store.DepositCoins(Session.Score.Coins);
-                }
+                lastEntry=null; lastRank=lastTodayRank=0; lastBestScore=-1; lastNewBest=false; lastStats=null; lastStatsFailed=false;
+                if(!tooling&&playerRun) RecordFinishedRun();
             }
+        }
+        // The run that just ended goes on this PC's ranking; a member's run is also saved on the account server,
+        // which credits the coins (none in developer mode). Guests collect no coins.
+        public void RecordFinishedRun()
+        {
+            bool developer=userSettings.DeveloperMode;
+            var now=System.DateTime.Now;
+            string name=Account.IsMember||!developer?Account.Nickname
+                :player.HasName?player.Name.Trim():"플레이어 "+(Store.Board.Day(Leaderboard.DayKey(now)).Count+1);
+            var mode=player.Style;
+            lastEntry=new RankingEntry{Name=name,Score=Session.Score.Score,Distance=Session.Score.Distance,Coins=Session.Score.Coins,
+                Style=PlayStyleInfo.Label(mode),Mode=(int)mode,Kcal=PlayStyleInfo.UsesCamera(mode)?Session.Workout.EstimatedKcal:0,
+                Ticks=now.Ticks,AccountId=Account.IsMember?Account.Id:"",ScoreVersion=RunScore.Version};
+            lastStats=null; lastStatsFailed=false;
+            // Personal best per play style: a member's from /stats read before this save; an exhibition run's from this PC by its name; none for guests.
+            int previousBest=Account.IsMember?MemberBest(mode):developer?Store.Board.BestScore(lastEntry.Style,name):-1;
+            lastNewBest=previousBest>=0&&lastEntry.Score>previousBest; lastBestScore=previousBest>0?previousBest:-1;
+            lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
+            lastTodayRank=Store.Board.RankOf(lastEntry,true,mode);
+            if(!Account.IsMember) return;
+            // The result screen shows the member's totals once the server has this run.
+            string id=Account.Id;
+            runs.Save(AccountRun.Create(Session,mode,developer?0:Session.Score.Coins),saved=>
+            {
+                if(!saved){if(Account.Id==id)lastStatsFailed=true;return;}
+                RefreshMemberStats(reply=>{if(Account.Id!=id)return;lastStats=reply!=null&&reply.ok?reply:null;lastStatsFailed=lastStats==null;});
+            });
+        }
+        // The member's best score for one play style from the last /stats; -1 when it is not known.
+        private int MemberBest(PlayStyle mode)
+        {
+            var stats=memberStats;
+            return Account.IsMember&&stats!=null&&memberStatsId==Account.Id&&stats.best_score!=null&&stats.best_score.Length>(int)mode?stats.best_score[(int)mode]:-1;
+        }
+        // Reads /stats for the signed-in member and keeps it for the HUD best and the next result.
+        private void RefreshMemberStats(System.Action<StatsReply> done=null)
+        {
+            if(!Account.IsMember||string.IsNullOrEmpty(Account.Token)){done?.Invoke(null);return;}
+            string id=Account.Id;
+            gateway.Stats(Account.Token,reply=>
+            {
+                if(reply!=null&&reply.ok&&Account.IsMember&&Account.Id==id){memberStats=reply;memberStatsId=id;}
+                done?.Invoke(reply);
+            });
         }
         public void Retry()
         {
@@ -380,14 +438,14 @@ namespace Muhanok.Bootstrap
             Retry();
             if (again) StartPlayerRun(profile);
         }
-        // "다음 플레이어" (developer mode): back to an empty setup screen for the next person.
+        // "다음 플레이어" (developer mode): the member is signed out and the next person starts at the login gate.
         public void NextPlayer()
         {
             var style = player.Style;
             Retry();
-            identity.SignOut(); faceAvatar.Apply(null);
+            SignOutMember();
             player = new PlayerProfile { Style = style == PlayStyle.Keyboard ? PlayStyle.FullBody : style };
-            playerRun = false; OpenStartSetup();
+            playerRun = false; OpenLogin();
         }
         // "메인으로" from the result or pause screen; a paused run ends without a record.
         public void ExitToMenu()
@@ -395,7 +453,7 @@ namespace Muhanok.Bootstrap
             if (Session.Paused) { Session.Paused = false; Time.timeScale = 1; }
             playerRun = false;
             Retry();
-            if (!userSettings.DeveloperMode) player = Store.Profile.Clone();
+            if (!userSettings.DeveloperMode) player = Account.Profile.Clone();
             OpenMainMenu();
         }
         private void QuitGame()
@@ -406,11 +464,40 @@ namespace Muhanok.Bootstrap
             UnityEngine.Application.Quit();
 #endif
         }
-        private void OnDestroy() { Time.timeScale=1; graphics?.Dispose(); Pose?.Dispose(); RouteSurface.UsePlan(null); KeyboardGameInput.SetTextInput(false); }
+        // Members are signed out when the game closes; the request is not awaited.
+        private void OnApplicationQuit() { if(Account.IsMember&&!string.IsNullOrEmpty(Account.Token)) gateway?.Logout(Account.Token,null); }
+        private void OnDestroy() { Time.timeScale=1; graphics?.Dispose(); Pose?.Dispose(); RouteSurface.UsePlan(null); KeyboardGameInput.SetTextInput(false); ClearPortrait(); }
+
+        // Tests and tools: another account server (or a fake), another PC store and a face capture without a webcam. Call on the title screen.
+        public void UseAccountServices(IAccountGateway accountGateway, PlayerProgressStore store = null, System.Action<System.Action<string[]>> faces = null)
+        {
+            if (accountGateway != null) { gateway = accountGateway; runs.Gateway = accountGateway; serverTicket++; serverChecking = false; serverProblem = ""; }
+            if (store != null) Store = store;
+            if (faces != null) captureFaces = faces;
+        }
+        // Items placed on the map: every item in developer mode, otherwise what the member unlocked (none for guests).
+        public System.Collections.Generic.List<ItemKind> RunItems()
+        {
+            if (userSettings != null && userSettings.DeveloperMode)
+            {
+                var all = new System.Collections.Generic.List<ItemKind>();
+                foreach (var item in ItemCatalog.All) all.Add(item.Kind);
+                return all;
+            }
+            return Account.RunItems();
+        }
+        // Guests keep settings in session memory; a member's settings also go to the server.
+        private void SaveSettings(AccountSettings settings)
+        {
+            Account.UpdateSettings(settings);
+            if (!Account.IsMember) return;
+            string id = Account.Id;
+            gateway.UpdateProfile(Account.Token, AccountProfileUpdate.From(Account.Settings), reply => { if (reply.HasProfile && reply.profile.id == id) Account.Apply(reply.profile); });
+        }
 
         // IHudData
         PlayerProfile IHudData.Player => player;
-        PlayerProfile IHudData.SavedProfile => SignedIn?player:Store.Profile;
+        PlayerProfile IHudData.SavedProfile => Account.Profile;
         bool IHudData.DeveloperMode => userSettings != null && userSettings.DeveloperMode;
         Texture IHudData.CameraTexture => Pose.CameraTexture;
         PoseFrame IHudData.PoseFrame => Pose.LastFrame;
@@ -422,41 +509,181 @@ namespace Muhanok.Bootstrap
         float IHudData.CalibrationProgress => Pose.CalibrationProgress;
         float IHudData.StepsPerMinute => Pose.StepsPerMinute;
         bool IHudData.BodyActive => Pose.Tracking && Pose.Reading.Active;
-        PlayerWallet IHudData.Wallet => Store.Wallet;
+        // Developer mode keeps this PC's exhibition wallet with every item open; players see their account.
+        PlayerWallet IHudData.Wallet { get { if (userSettings == null || !userSettings.DeveloperMode) return Account.Wallet; Store.Wallet.UnlockAll = true; return Store.Wallet; } }
         Leaderboard IHudData.Board => Store.Board;
         PlayerStats IHudData.Stats => Store.Stats;
         RankingEntry IHudData.LastEntry => lastEntry;
+        // A guest's run (not in developer mode) was recorded as "게스트" and can still be named on the result screen.
+        bool IHudData.CanNameLastRun => lastEntry != null && !Account.IsMember && string.IsNullOrEmpty(lastEntry.AccountId) && userSettings != null && !userSettings.DeveloperMode;
+        bool IHudData.NameLastRun(string name) => ((IHudData)this).CanNameLastRun && AccountSession.NicknameProblem(name) == null && Store.Rename(lastEntry, name);
         int IHudData.LastRank => lastRank;
         int IHudData.LastTodayRank => lastTodayRank;
         bool IHudData.LastNewBest => lastNewBest;
-        float IHudData.BestDistance => Store.Stats.BestDistance;
+        int IHudData.LastBestScore => lastBestScore;
+        StatsReply IHudData.LastStats => lastStats;
+        bool IHudData.LastStatsFailed => lastStatsFailed;
+        int IHudData.BestScore => MemberBest(player.Style);
+        bool IHudData.RunSaveFailed => runs != null && runs.LastFailed;
         public float StartBanner => Session.Flow.State == GameFlowState.Running ? Mathf.Max(0, 2.2f - (Time.realtimeSinceStartup - runStartedAt)) : 0;
         float IHudData.CaughtFlash => Session.Flow.State == GameFlowState.Caught ? Mathf.Clamp01(1 - (Time.realtimeSinceStartup - caughtAt) / .6f) : 0;
         void IHudData.PreviewStyle(PlayStyle style) { player.Style = style; Pose.SetStyle(style); }
-        void IHudData.Unlock(ItemKind kind) => Store.Unlock(kind);
+        // Members buy on the server and take its balance and unlocked items; guests have no coins and developer mode has everything.
+        void IHudData.Unlock(ItemKind kind, System.Action<bool, string> done)
+        {
+            if (!Account.IsMember || userSettings.DeveloperMode) { done?.Invoke(false, "회원가입하면 코인을 모아 아이템을 해금할 수 있어요"); return; }
+            string id = Account.Id;
+            gateway.Buy(Account.Token, kind, reply =>
+            {
+                if (reply != null && reply.HasProfile && reply.profile.id == id && Account.Apply(reply.profile)) { done?.Invoke(true, ""); return; }
+                NoteServer(reply);
+                string reason = reply == null || !string.IsNullOrEmpty(reply.message) || reply.status == 0 ? ServerReason(reply)
+                    : reply.status == 409 ? "이미 해금한 아이템입니다." : "코인이 부족합니다.";
+                done?.Invoke(false, reason);
+            });
+        }
+        // The member's nickname stays the server's; a guest's name lives in session memory only.
         void IHudData.SaveProfile(PlayerProfile profile)
         {
-            var saved=profile.Clone();
-            if(SignedIn)saved.Name=Store.Profile.Name;
-            Store.SaveProfile(saved);
-            if(!userSettings.DeveloperMode){player=profile.Clone();if(SignedIn)player.Name=identity.Profile.name;}
+            if (profile == null) return;
+            if (!Account.IsMember) Account.SetNickname(profile.Name);
+            SaveSettings(AccountSession.SettingsOf(profile));
+            if(!userSettings.DeveloperMode)player=Account.Profile.Clone();
         }
         void IHudData.Recalibrate() => Pose.Recalibrate();
 
-        private void IdentityChanged()
+        // A new member (or back to a guest) replaces the player and the face badge; coin or setting updates do not.
+        private void AccountChanged()
         {
-            faceAvatar.Apply(identity.Avatar);
-            if(identity.Profile!=null)player.Name=identity.Profile.name;
-            else if(userSettings!=null&&!userSettings.DeveloperMode)player=Store.Profile.Clone();
+            string id = Account.IsMember ? Account.Id : "";
+            if (id == shownAccount) return;
+            shownAccount = id;
+            if (!Account.IsMember) ClearPortrait();
+            faceAvatar.Apply(portrait);
+            // The HUD best and the next result compare with this member's /stats.
+            memberStats = null; memberStatsId = "";
+            if (Account.IsMember && gateway != null) RefreshMemberStats();
+            if (userSettings == null) return;
+            if (!userSettings.DeveloperMode) player = Account.Profile.Clone();
+            else if (Account.IsMember) player.Name = Account.Nickname;
+        }
+        private void SignedInReply(AccountReply reply)
+        {
+            if (reply == null || !reply.HasProfile) return;
+            ClearPortrait();
+            // The face crop only exists in this reply; it becomes the badge and is never stored.
+            if (!string.IsNullOrEmpty(reply.avatar))
+            {
+                portrait = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                try { if (!portrait.LoadImage(System.Convert.FromBase64String(reply.avatar))) ClearPortrait(); } catch { ClearPortrait(); }
+            }
+            shownAccount = "";
+            Account.SignInMember(reply.profile, reply.token);
+        }
+        private void ClearPortrait() { if (portrait != null) Destroy(portrait); portrait = null; }
+        // Back to a guest at once; /logout is sent without waiting.
+        private void SignOutMember()
+        {
+            if (!Account.IsMember) return;
+            string token = Account.Token;
+            Account.SignOut();
+            if (!string.IsNullOrEmpty(token)) gateway.Logout(token, null);
         }
 
         // Local or central voluntary identity UI
         public bool IdentityBusy=>identity.Busy;
-        public bool SignedIn=>identity.Profile!=null;
+        public bool SignedIn=>Account.IsMember;
         public string IdentityMessage=>identity.Message;
-        public Texture Portrait=>identity.Avatar;
-        public void FaceLogin(bool enroll)=>identity.Authenticate(Pose.CameraTexture,enroll,player.Name);
-        public void FaceLogout(bool delete)=>identity.SignOut(delete);
+        public Texture Portrait=>portrait;
+        public bool ServerChecking=>serverChecking;
+        public string ServerProblem=>serverProblem;
+        // Asked each time the login gate opens; until the server answers, face login and sign-up wait. Only the latest answer counts.
+        public void CheckServer()
+        {
+            int mine=++serverTicket; serverChecking=true;
+            gateway.Health(reply=>{ if(mine!=serverTicket)return; serverChecking=false; serverProblem=reply!=null&&reply.ok?"":ServerReason(reply); });
+        }
+        public void CheckNickname(string name,System.Action<bool,string> done)
+        {
+            string problem=AccountSession.NicknameProblem(name);
+            if(problem!=null){done?.Invoke(false,problem);return;}
+            gateway.NameCheck(name.Trim(),reply=>
+            {
+                if(reply==null||!reply.ok){NoteServer(reply);done?.Invoke(false,ServerReason(reply));return;}
+                done?.Invoke(reply.available,reply.available?"":string.IsNullOrEmpty(reply.message)?"사용할 수 없는 닉네임입니다.":reply.message);
+            });
+        }
+        public void FaceLogin(System.Action<bool> done)
+        {
+            if (IdentityBusy || Account.IsMember) return;
+            captureFaces(images => gateway.Login(images, reply => FaceReply(reply, done)));
+        }
+        // Sign-up: the nickname and settings chosen in the sign-up steps, not the guest's.
+        public void FaceEnroll(string nickname, AccountSettings settings, System.Action<bool> done)
+        {
+            if (IdentityBusy || Account.IsMember || AccountSession.NicknameProblem(nickname) != null) return;
+            settings ??= new AccountSettings();
+            captureFaces(images => gateway.Enroll(new AccountEnrollment { name = nickname.Trim(), consent = true, images = images, weight = settings.Weight, style = (int)settings.Style, goal = settings.Goal }, reply => FaceReply(reply, done)));
+        }
+        private void FaceReply(AccountReply reply, System.Action<bool> done)
+        {
+            NoteServer(reply); SignedInReply(reply);
+            done?.Invoke(reply != null && reply.HasProfile && Account.IsMember);
+        }
+        // A request that could not reach the server disables face login and sign-up on the gate until the next check.
+        private void NoteServer(AccountResult reply) { if (reply != null && !reply.ok && reply.status == 0) serverProblem = ServerReason(reply); }
+        private static string ServerReason(AccountResult reply) => reply != null && !string.IsNullOrEmpty(reply.message) ? reply.message : "얼굴 서버에 연결할 수 없습니다.";
+        public void FaceLogout(bool delete)
+        {
+            if (IdentityBusy || !Account.IsMember) return;
+            if (!delete) { SignOutMember(); return; }
+            DeleteAccount(null);
+        }
+        // 내 정보: nickname and settings in one /profile/update; the session changes only after the server accepted them.
+        public void SaveMemberProfile(string nickname, AccountSettings settings, System.Action<bool,string> done)
+        {
+            if (!Account.IsMember) { done?.Invoke(false, "회원만 저장할 수 있습니다."); return; }
+            string problem = AccountSession.NicknameProblem(nickname);
+            if (problem != null) { done?.Invoke(false, problem); return; }
+            var update = AccountProfileUpdate.From(settings ?? Account.Settings);
+            string name = nickname.Trim(), id = Account.Id;
+            if (name != Account.Nickname) update.Name = name;
+            gateway.UpdateProfile(Account.Token, update, reply =>
+            {
+                if (reply != null && reply.HasProfile && reply.profile.id == id && Account.Apply(reply.profile))
+                {
+                    if (!userSettings.DeveloperMode) player = Account.Profile.Clone(); else player.Name = Account.Nickname;
+                    done?.Invoke(true, ""); return;
+                }
+                NoteServer(reply);
+                done?.Invoke(false, reply != null && reply.status == 409 && string.IsNullOrEmpty(reply.message) ? "이미 사용 중인 닉네임입니다." : ServerReason(reply));
+            });
+        }
+        // Server totals for 내 정보; null when there is no member or no token.
+        public void MemberStats(System.Action<StatsReply> done)
+        {
+            if (!Account.IsMember || string.IsNullOrEmpty(Account.Token)) { done?.Invoke(null); return; }
+            gateway.Stats(Account.Token, done);
+        }
+        // 회원 랭킹 for anyone; a member's token adds their own row ("me").
+        public void MemberLeaderboard(PlayStyle mode, bool today, System.Action<LeaderboardReply> done)
+        {
+            if (gateway == null) { done?.Invoke(new LeaderboardReply { message = "서버에 연결할 수 없어요" }); return; }
+            gateway.Leaderboard(Account.IsMember ? Account.Token : "", mode, today, done);
+        }
+        // Account deletion (face, profile and runs on the server, and the member's rows on this PC's ranking); the player becomes a guest.
+        public void DeleteAccount(System.Action<bool,string> done)
+        {
+            if (IdentityBusy || !Account.IsMember) { done?.Invoke(false, "회원만 탈퇴할 수 있습니다."); return; }
+            string id = Account.Id;
+            gateway.Delete(Account.Token, reply =>
+            {
+                bool ok = reply != null && reply.ok;
+                if (ok) { Store.RemoveAccount(id); if (Account.IsMember && Account.Id == id) Account.SignOut(); }
+                else NoteServer(reply);
+                done?.Invoke(ok, ok ? "" : ServerReason(reply));
+            });
+        }
 
         // ISettingsHost
         UserSettings ISettingsHost.Settings => userSettings;

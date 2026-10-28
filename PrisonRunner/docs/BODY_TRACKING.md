@@ -16,6 +16,8 @@
 
 탈출 준비에서 방식을 고르고 카메라 미리보기와 관절선을 확인합니다. 시작하기를 누른 뒤 로딩 중 가운데에 가만히 서면 자동 보정합니다. 움직이면 보정을 다시 시도합니다. 사람이 오래 사라지면 다시 보정하며 R로도 재보정할 수 있습니다.
 
+결과 화면의 [웹캠 보정](전신·상체 판만)은 큰 미리보기를 띄우고 바로 재보정합니다. `PoseTracker`는 보정이 끝난 시각(`CalibratedAt`)과 그 뒤 인식이 끊겼는지(`LostSinceCalibration`: 유예 시간을 넘긴 추적 손실, 방식·카메라 변경, 새 보정 시작)를 기록합니다. R·자동 재보정도 끝나면 새 완료 시각이 됩니다. 다음 판의 로딩(`GameBootstrap.PrepareRun`)은 보정이 60초 이내에 끝났고 그 뒤 인식이 끊기지 않았으면 재보정을 건너뛰고 그 기준 자세를 그대로 씁니다. 판단은 `Domain/PoseTypes.cs`의 `CalibrationReuse.Keep(now, calibratedAt, lostSince)`입니다.
+
 짧은 추적 손실, 숙이기 직전/직후의 동작 충돌, 반복 점프를 처리하는 유지 시간과 신뢰도 조건이 있습니다. 값은 `Unity/Assets/Game/Content/Data/GameSettings.asset`의 **Camera / Motion**에서 조정합니다. 기본 카메라 요청은 640×480, 30fps이며 실제 지원 해상도는 장치에 따라 달라집니다.
 
 ## 코드와 모델
@@ -33,7 +35,7 @@ WebCamTexture → PoseImageSampler.compute → BlazePose 검출/랜드마크
 
 몸무게가 있고 실제 활동이 인식된 시간에 전신 4 MET, 상체 2.5 MET 가정으로 예상 칼로리를 계산합니다. 키보드 입력, 추적 손실과 일시정지 시간을 운동 칼로리로 적립하지 않습니다. 목표는 1~5000 kcal로 직접 입력하며 달성 후에도 플레이는 계속됩니다. 의료 측정값이 아닙니다.
 
-얼굴 로그인은 선택 사항입니다. 얼굴 프로필과 운동 기록은 연결된 서버 DB를 사용하며 서버 주소·배포는 [Docker 안내](../Services/Identity/README_DOCKER.md), 저장 위치는 [아키텍처](ARCHITECTURE.md)를 확인하세요. 거리 랭킹·지갑·화면 설정은 각 게임 PC에 남습니다. Ctrl+F10은 개발자/전시 모드에서만 오늘 기록을 초기화합니다. 메뉴 화면은 [UI 안내](GAME_FLOW_UI.md)를 확인하세요.
+얼굴 로그인은 선택 사항입니다. 얼굴 프로필과 운동 기록은 연결된 서버 DB를 사용하며 서버 주소·배포는 [Docker 안내](../Services/Identity/README_DOCKER.md), 저장 위치는 [아키텍처](ARCHITECTURE.md)를 확인하세요. 코인·해금은 회원 계정에 쌓이고, 거리 랭킹·화면 설정은 각 게임 PC에 남습니다. Ctrl+F10은 개발자/전시 모드에서만 오늘 기록을 초기화합니다. 메뉴 화면은 [UI 안내](GAME_FLOW_UI.md)를 확인하세요.
 
 ## 실물 확인 순서
 

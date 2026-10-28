@@ -1,3 +1,4 @@
+using Muhanok.Application;
 using Muhanok.Domain;
 using UnityEngine;
 
@@ -24,25 +25,38 @@ namespace Muhanok.Presentation
         PlayerWallet Wallet { get; }
         Leaderboard Board { get; }
         PlayerStats Stats { get; }
-        // The run that just finished: its entry, rank among all runs and today, and whether it beat the best distance.
+        // The run that just finished: its entry, rank among all runs and today, whether it beat the best score for its play style, and that best.
         RankingEntry LastEntry { get; }
+        // A guest's last run (outside developer mode) can still be renamed from "게스트" on this PC's ranking.
+        bool CanNameLastRun { get; }
+        bool NameLastRun(string name);
         int LastRank { get; }
         int LastTodayRank { get; }
+        // A member's run is compared with the member's best for its play style from /stats, taken before this run was saved;
+        // LastBestScore is that earlier best, -1 when there is none to show (guests, or the server did not answer).
         bool LastNewBest { get; }
-        float BestDistance { get; }
+        int LastBestScore { get; }
+        // The member's totals from /stats after this run was saved: null while waiting (or for a guest); LastStatsFailed when it could not be read.
+        StatsReply LastStats { get; }
+        bool LastStatsFailed { get; }
+        // The member's best score for the current play style, shown on the HUD and pause screen; -1 for a guest.
+        int BestScore { get; }
+        // The member's last run could not be saved on the account server (kept in memory and retried with the next run).
+        bool RunSaveFailed { get; }
         float StartBanner { get; }
         float CaughtFlash { get; }
         void PreviewStyle(PlayStyle style);
-        void Unlock(ItemKind kind);
+        // done(ok, reason): members buy on the account server; guests and developer mode cannot buy.
+        void Unlock(ItemKind kind, System.Action<bool, string> done);
         void SaveProfile(PlayerProfile profile);
         void Recalibrate();
     }
 
-    // Draws the mirrored webcam image with the detected skeleton.
+    // Draws the mirrored webcam image with the detected skeleton; returns the video rect for overlays.
     internal static class PosePreview
     {
         private static readonly Color Bone = new Color(.3f, 1f, .55f), Joint = new Color(1f, .85f, .2f);
-        public static void Draw(HudSkin skin, Rect area, IHudData data, bool showStatus)
+        public static Rect Draw(HudSkin skin, Rect area, IHudData data, bool showStatus, bool drawSkeleton = true)
         {
             skin.Panel(area, .9f);
             var inner = new Rect(area.x + 6, area.y + 6, area.width - 12, area.height - 12);
@@ -58,7 +72,7 @@ namespace Muhanok.Presentation
                 // Mirror horizontally so the player sees themselves like a mirror.
                 GUI.DrawTextureWithTexCoords(view, texture, new Rect(1, 0, -1, 1));
             }
-            if (frame != null && frame.HasPose)
+            if (drawSkeleton && frame != null && frame.HasPose)
             {
                 for (int b = 0; b < PoseJoint.Bones.GetLength(0); b++)
                 {
@@ -76,7 +90,7 @@ namespace Muhanok.Presentation
                 if (frame.Points[0].Visibility >= .5f) Dot(view, frame.Points[0].X, frame.Points[0].Y, 10);
             }
             GUI.color = Color.white;
-            if (!showStatus) return;
+            if (!showStatus) return view;
             var status = data.PoseStatus;
             if ((status == PoseStatus.NoCamera || status == PoseStatus.NoModel) && !string.IsNullOrEmpty(data.PoseMessage))
                 GUI.Label(new Rect(area.x + 16, area.y + 16, area.width - 32, area.height - 70), data.PoseMessage, skin.Style(16, FontStyle.Normal));
@@ -97,6 +111,7 @@ namespace Muhanok.Presentation
                 GUI.color = new Color(.3f, 1f, .55f); GUI.DrawTexture(new Rect(area.x + 20, area.yMax - 44, (area.width - 40) * data.CalibrationProgress, 6), Texture2D.whiteTexture);
                 GUI.color = Color.white;
             }
+            return view;
         }
         // Live feedback: which lane zone the body is in and which action is being recognised.
         private static void DrawMotion(HudSkin skin, Rect area, IHudData data)

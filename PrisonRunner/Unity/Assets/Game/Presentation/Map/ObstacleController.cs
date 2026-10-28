@@ -19,7 +19,7 @@ namespace Muhanok.Presentation.Map
             RouteSurface.Sample(runner.Z,out float offsetX,out _);
             bool sameLane = Mathf.Abs(runner.X+offsetX-transform.position.x) < (FullExerciseRow?1.101f:CollisionHalfWidth);
             bool clean = !sameLane || SafePatternValidator.Avoided(Kind, runner.Y, runner.Crouching, runner.HighKnee);
-            if (clean) { session.Score.CleanPass(session.Config.CleanBonus); if(sameLane)session.RecordDodge(); }
+            if (clean) { session.Score.CleanPass(); if(sameLane)session.RecordDodge(); }
             else session.Hit(Kind == ObstacleKind.Barrier || Kind == ObstacleKind.Laser || Kind == ObstacleKind.Cart);
         }
     }

@@ -133,6 +133,51 @@ namespace Muhanok.Tests
             classifier.Update(new PoseFrame { HasPose = false, Time = 6 });
             classifier.Update(Frame(new Body(), 6.1)); Assert.AreEqual(PoseStatus.Calibrating, classifier.Status);
         }
+        // Camera stand-in for PoseTracker: one scripted frame per Tick time.
+        private sealed class FakeEstimator : IPoseEstimator
+        {
+            public Func<double, PoseFrame> Script;
+            private double now, taken = -1;
+            public PoseStatus Status => PoseStatus.Tracking;
+            public string Message => "";
+            public UnityEngine.Texture CameraTexture => null;
+            public string Diagnostics => "";
+            public void Start() { }
+            public void Stop() { }
+            public void Dispose() { }
+            public void Tick(double time) { now = time; }
+            public bool TryTakeFrame(PoseFrame target) { if (now == taken) return false; taken = now; target.CopyFrom(Script(now)); return true; }
+        }
+        [Test] public void CalibrationIsKeptForAMinuteUnlessTrackingWasLost()
+        {
+            Assert.IsTrue(CalibrationReuse.Keep(10, 5, false), "Just calibrated: the run skips its loading calibration");
+            Assert.IsTrue(CalibrationReuse.Keep(65, 5, false));
+            Assert.IsFalse(CalibrationReuse.Keep(65.1, 5, false), "More than 60 s ago");
+            Assert.IsFalse(CalibrationReuse.Keep(10, 5, true), "Tracking was lost since");
+            Assert.IsFalse(CalibrationReuse.Keep(10, -1, false), "Never calibrated");
+        }
+        [Test] public void TrackerSkipsRecalibrationRightAfterCalibratingAndNotAfterLosingThePlayer()
+        {
+            var previous = PoseEstimatorRegistry.Factory; bool present = true;
+            var camera = new FakeEstimator { Script = t => present ? Frame(new Body(), t) : new PoseFrame { HasPose = false, Time = t } };
+            PoseEstimatorRegistry.Factory = _ => camera;
+            var tracker = new PoseTracker(new PoseGameInput(), new PoseCameraOptions(), new MotionTuning(), () => 0, () => false);
+            try
+            {
+                tracker.SetStyle(PlayStyle.FullBody);
+                double t = 0; void Run(double seconds) { for (double end = t + seconds; t < end; t += 1 / 30.0) tracker.Tick(t, false); }
+                Assert.IsFalse(tracker.CalibrationFresh(t), "Not calibrated yet");
+                Run(1.5); Assert.AreEqual(PoseStatus.Tracking, tracker.Status);
+                Assert.IsTrue(tracker.CalibrationFresh(t), "Just calibrated: PrepareRun keeps it");
+                Assert.IsFalse(tracker.CalibrationFresh(tracker.CalibratedAt + 61), "A minute later it calibrates again");
+                present = false; Run(1); present = true; Run(1);
+                Assert.AreEqual(PoseStatus.Tracking, tracker.Status); Assert.IsFalse(tracker.CalibrationFresh(t), "Tracking was lost since the calibration");
+                tracker.Recalibrate(); Assert.IsFalse(tracker.CalibrationFresh(t));
+                Run(1.5); Assert.IsTrue(tracker.CalibrationFresh(t), "A new calibration is fresh again");
+                tracker.SetStyle(PlayStyle.UpperBody); Assert.IsFalse(tracker.CalibrationFresh(t), "Another play style needs its own baseline");
+            }
+            finally { tracker.Dispose(); PoseEstimatorRegistry.Factory = previous; }
+        }
         [Test] public void PoseCommandsStepTowardTheZoneAndUseAbsoluteLeanInTheCart()
         {
             var output = new PoseGameInput(); int lane = 0; bool cart = false;
@@ -226,19 +271,48 @@ namespace Muhanok.Tests
             Assert.IsFalse(wallet.TryUnlock(ItemKind.Shield)); CollectionAssert.AreEqual(new[] { ItemKind.Magnet }, wallet.Available());
             wallet.UnlockAll = true; Assert.AreEqual(ItemCatalog.All.Length, wallet.Available().Count);
         }
-        [Test] public void LeaderboardRanksByDistanceOverallAndPerDay()
+        [Test] public void LeaderboardRanksByScoreOverallAndPerDay()
         {
             var today = DateTime.Now; var yesterday = today.AddDays(-1);
             var board = new Leaderboard();
-            var old = new RankingEntry { Name = "Old", Distance = 900, Ticks = yesterday.Ticks };
-            var a = new RankingEntry { Name = "A", Distance = 300, Score = 9999, Ticks = today.Ticks };
-            var b = new RankingEntry { Name = "B", Distance = 500, Score = 1, Ticks = today.Ticks + 1 };
-            Assert.AreEqual(1, board.Add(old)); Assert.AreEqual(2, board.Add(a)); Assert.AreEqual(2, board.Add(b));
-            Assert.AreEqual(3, board.RankOf(a, false), "Distance decides the rank, not score");
-            Assert.AreEqual(2, board.RankOf(a, true), "Yesterday's run does not count for today");
-            CollectionAssert.AreEqual(new[] { "B", "A" }, board.View(true, today).ConvertAll(e => e.Name));
+            const PlayStyle full = PlayStyle.FullBody; const int mode = (int)full;
+            var old = new RankingEntry { Name = "Old", Distance = 300, Score = 1200, ScoreVersion = RunScore.Version, Mode = mode, Ticks = yesterday.Ticks };
+            var a = new RankingEntry { Name = "A", Distance = 300, Score = 900, ScoreVersion = RunScore.Version, Mode = mode, Ticks = today.Ticks };
+            var b = new RankingEntry { Name = "B", Distance = 500, Score = 500, ScoreVersion = RunScore.Version, Mode = mode, Ticks = today.Ticks + 1 };
+            var tie = new RankingEntry { Name = "Tie", Distance = 900, Score = 900, ScoreVersion = RunScore.Version, Mode = mode, Ticks = today.Ticks + 2 };
+            Assert.AreEqual(1, board.Add(old)); Assert.AreEqual(2, board.Add(a)); Assert.AreEqual(3, board.Add(b)); Assert.AreEqual(3, board.Add(tie));
+            Assert.AreEqual(2, board.RankOf(a, false, full), "Score decides the rank, not distance; a tie goes to the earlier run");
+            Assert.AreEqual(4, board.RankOf(b, false, full));
+            Assert.AreEqual(1, board.RankOf(a, true, full), "Yesterday's run does not count for today");
+            CollectionAssert.AreEqual(new[] { "A", "Tie", "B" }, board.View(true, today, full).ConvertAll(e => e.Name));
             board.ClearDay(Leaderboard.DayKey(today));
-            CollectionAssert.AreEqual(new[] { "Old" }, board.View(false, today).ConvertAll(e => e.Name));
+            CollectionAssert.AreEqual(new[] { "Old" }, board.View(false, today, full).ConvertAll(e => e.Name));
+        }
+        [Test] public void OlderScoreVersionsAreKeptButNotRanked()
+        {
+            var today = DateTime.Now;
+            var board = new Leaderboard();
+            const PlayStyle keys = PlayStyle.Keyboard;
+            var legacy = new RankingEntry { Name = "Legacy", Distance = 5000, Score = 50000, Style = "키보드", Ticks = today.Ticks };
+            var current = new RankingEntry { Name = "Now", Distance = 100, Score = 120, ScoreVersion = RunScore.Version, Mode = (int)keys, Ticks = today.Ticks + 1 };
+            board.Load(new[] { legacy, current });
+            Assert.AreEqual(1, legacy.ScoreVersion, "Records saved before the version field load as version 1");
+            Assert.AreEqual(2, board.All.Count, "Older records are not deleted");
+            CollectionAssert.AreEqual(new[] { "Now" }, board.View(false, today, keys).ConvertAll(e => e.Name));
+            CollectionAssert.AreEqual(new[] { "Now" }, board.View(true, today, keys).ConvertAll(e => e.Name));
+            Assert.AreEqual(0, board.RankOf(legacy, false, keys)); Assert.AreEqual(1, board.RankOf(current, false, keys));
+            Assert.AreEqual(0, board.Add(new RankingEntry { Name = "Old", Score = 99999, ScoreVersion = 1, Mode = (int)keys, Ticks = today.Ticks + 2 }));
+            Assert.AreEqual(1, board.Add(new RankingEntry { Name = "Best", Score = 121, ScoreVersion = RunScore.Version, Mode = (int)keys, Ticks = today.Ticks + 3 }));
+        }
+        [Test] public void BestScoreIsPerPlayStyleAndIgnoresOlderVersions()
+        {
+            var board = new Leaderboard(); long t = DateTime.Now.Ticks;
+            board.Add(new RankingEntry { Name = "A", Score = 900, ScoreVersion = RunScore.Version, Style = "전신", Ticks = t });
+            board.Add(new RankingEntry { Name = "B", Score = 1500, ScoreVersion = RunScore.Version, Style = "전신", Ticks = t + 1 });
+            board.Add(new RankingEntry { Name = "A", Score = 700, ScoreVersion = RunScore.Version, Style = "키보드", Ticks = t + 2 });
+            board.Add(new RankingEntry { Name = "A", Score = 99999, ScoreVersion = 1, Style = "전신", Ticks = t + 3 });
+            Assert.AreEqual(1500, board.BestScore("전신")); Assert.AreEqual(900, board.BestScore("전신", "A"));
+            Assert.AreEqual(700, board.BestScore("키보드")); Assert.AreEqual(0, board.BestScore("상체"));
         }
         [Test] public void PlayerStorePersistsProfileWalletRecordsAndStats()
         {
@@ -249,8 +323,8 @@ namespace Muhanok.Tests
                 Assert.IsFalse(store.Profile.HasName);
                 store.SaveProfile(new PlayerProfile { Name = "탈옥왕", Weight = "60", Style = PlayStyle.UpperBody });
                 long now = DateTime.Now.Ticks;
-                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 120, Ticks = now }, 12.5));
-                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 340, Ticks = now + 1 }, 30));
+                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 120, Score = 120, ScoreVersion = RunScore.Version, Mode = (int)PlayStyle.UpperBody, Kcal = 12.5, Ticks = now }, 12.5));
+                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 340, Score = 340, ScoreVersion = RunScore.Version, Mode = (int)PlayStyle.UpperBody, Kcal = 30, Ticks = now + 1 }, 30));
                 store.DepositCoins(55); Assert.IsTrue(store.Unlock(ItemKind.Magnet));
                 var reopened = new PlayerProgressStore(root);
                 Assert.AreEqual("탈옥왕", reopened.Profile.Name); Assert.AreEqual(PlayStyle.UpperBody, reopened.Profile.Style);

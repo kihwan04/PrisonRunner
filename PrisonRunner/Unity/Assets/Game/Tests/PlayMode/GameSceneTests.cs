@@ -32,7 +32,7 @@ namespace Muhanok.Tests
             {
                 InputSystem.Update();
                 InputState.Change(mouse, new MouseState().WithButton(MouseButton.Left)); game.TickInput();
-                Assert.IsTrue(game.MenuOpen, "Clicking the title opens the main menu"); Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);
+                Assert.IsTrue(game.MenuOpen, "Clicking the title opens the login gate"); Assert.AreEqual(Muhanok.Presentation.MenuPage.Login, game.GetComponent<Muhanok.Presentation.HUDPresenter>().Page); Assert.AreEqual(GameFlowState.TitleIdle,game.Session.Flow.State);
                 InputState.Change(mouse, new MouseState());
                 game.Session.Config.ExtendedRoutes=false;game.BeginRun(""); yield return new WaitForSecondsRealtime(1.1f);
                 Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
@@ -112,7 +112,7 @@ namespace Muhanok.Tests
                 float before=game.Session.Runner.Z; node.transform.position=new Vector3(0,1,before+.1f);
                 game.Session.Tick(.4f); int score=game.Session.Score.Score;
                 coin.Evaluate(game.Session,before);
-                Assert.AreEqual(1,game.Session.Score.Coins); Assert.AreEqual(score+10,game.Session.Score.Score);
+                Assert.AreEqual(1,game.Session.Score.Coins); Assert.AreEqual(score,game.Session.Score.Score,"Coins do not score");
                 coin.Evaluate(game.Session,before); Assert.AreEqual(1,game.Session.Score.Coins);
                 coin.ResetCoin(); node.SetActive(true);
                 node.transform.position=new Vector3(4.4f,1,game.Session.Runner.Z+.1f);
@@ -199,16 +199,16 @@ namespace Muhanok.Tests
         [UnityTest] public IEnumerator OnlyUnlockedItemsSpawnAwayFromBananaRows()
         {
             yield return SceneManager.LoadSceneAsync("GameScene"); yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>(); var wallet=game.Store.Wallet;
-            int coins=wallet.Coins; bool all=wallet.UnlockAll; var unlocked=new System.Collections.Generic.List<ItemKind>(wallet.Unlocked);
+            var game=Object.FindFirstObjectByType<GameBootstrap>(); game.SetDeveloperMode(false,false);
             try
             {
                 game.StartIntro(); for(int i=0;i<82;i++) game.Intro.Tick(.1f);
                 game.enabled=false;
                 foreach(var allowed in new[]{new ItemKind[0],new[]{ItemKind.Shield}})
                 {
-                    // In memory only: the saved wallet file is never written by this test.
-                    wallet.UnlockAll=false; wallet.Restore(coins,allowed);
+                    // Items come from the member's unlocks: a synthetic member in memory, no server calls.
+                    var ids=new int[allowed.Length]; for(int i=0;i<ids.Length;i++) ids[i]=(int)allowed[i];
+                    game.Account.SignInMember(new Muhanok.Application.AccountProfile{id="items-qa",name="아이템",unlocked=ids},"");
                     game.Map.Reset(); int found=0;
                     for(int n=0;n<80;n++)
                     {
@@ -224,7 +224,7 @@ namespace Muhanok.Tests
                     else Assert.Greater(found,0,"Unlocked items appear on the map");
                 }
             }
-            finally { wallet.UnlockAll=all; wallet.Restore(coins,unlocked); }
+            finally { game.Account.SignOut(); }
         }
         [UnityTest] public IEnumerator AuthoredCoinsAndRunnerFollowCurvesAndStairElevation()
         {

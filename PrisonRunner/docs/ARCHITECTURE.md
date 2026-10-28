@@ -49,8 +49,9 @@
 
 | 데이터 | 저장 위치 |
 | --- | --- |
-| 얼굴·프로필·로그인 세션·개인 운동 기록 | 중앙 서버 PostgreSQL의 `postgres-data` volume |
-| 거리 랭킹·지갑·상점 해금·PC 프로필 | 게임 PC의 `Player` 로컬 JSON. 기존 Exhibition 파일은 처음 한 번 읽어 이전 |
+| 얼굴·회원 계정(설정·코인·해금)·로그인 세션·회원 운동 기록 | 중앙 서버 PostgreSQL의 `postgres-data` volume. |
+| 이 PC 점수 랭킹 | 게임 PC의 `Player` 로컬 JSON. 기존 Exhibition 파일은 처음 한 번 읽어 이전 |
+| 예전 PC 프로필·지갑 | `Player/profile.json`, `wallet.json`. 개발자/전시 모드에서만 읽음 |
 | 누적 최고 기록 | `Player/records.json`. 기존 PlayerPrefs 최고 기록도 읽어 보존 |
 | 화면/입력 설정 | 게임 PC의 PlayerPrefs |
 

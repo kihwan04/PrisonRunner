@@ -142,7 +142,7 @@ namespace Muhanok.Tests
             var run=new RunSession(new RunConfig());
             for(int i=0;i<5;i++)run.RecordDodge();
             Assert.AreEqual(5,run.DodgeStreak);Assert.AreEqual(5,run.BestDodgeStreak);
-            Assert.AreEqual(run.Config.CleanBonus*2,run.Score.Score);
+            Assert.AreEqual(0,run.Score.Score,"Combos are recorded but do not score");
             run.Reset();Assert.AreEqual(0,run.DodgeStreak);Assert.AreEqual(0,run.BestDodgeStreak);
         }
         [Test] public void ActivitiesSumToTotalAndDoNotCountIdleKeyboardOrPause()

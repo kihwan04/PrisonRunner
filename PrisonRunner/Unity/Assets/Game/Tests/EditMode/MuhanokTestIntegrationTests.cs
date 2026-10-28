@@ -25,6 +25,7 @@ namespace Muhanok.Tests
                 var store=new PlayerProgressStore(root);
                 Assert.AreEqual(90,store.Wallet.Coins);Assert.IsTrue(store.Wallet.IsUnlocked(ItemKind.Magnet));
                 Assert.AreEqual(2,store.Board.All.Count);Assert.AreEqual(340,store.Board.All[0].Distance);
+                Assert.AreEqual(1,store.Board.All[0].ScoreVersion,"Old rankings load as score version 1");Assert.IsEmpty(store.Board.View(false,DateTime.Now,PlayStyle.FullBody));Assert.AreEqual(-1,store.Board.All[0].Mode,"No Style label: no mode tab");
                 Assert.AreEqual(2,store.Stats.Runs);Assert.AreEqual(460,store.Stats.TotalDistance,.001);
                 Assert.AreEqual(0,store.Stats.TotalKcal,"Old rankings did not store calories");
                 var reopened=new PlayerProgressStore(root);
@@ -40,10 +41,10 @@ namespace Muhanok.Tests
         }
 
         [Test]
-        public void LeaderboardLoadKeepsTheBestFiveHundredDistances()
+        public void LeaderboardLoadKeepsTheBestFiveHundredScores()
         {
             var rows=new List<RankingEntry>();rows.Add(null);
-            for(int i=0;i<600;i++)rows.Add(new RankingEntry{Name="Test",Distance=i,Ticks=i+1});
+            for(int i=0;i<600;i++)rows.Add(new RankingEntry{Name="Test",Distance=i,Score=i,ScoreVersion=RunScore.Version,Mode=(int)PlayStyle.FullBody,Ticks=i+1});
             var board=new Leaderboard();board.Load(rows);
             Assert.AreEqual(Leaderboard.MaxEntries,board.All.Count);
             Assert.AreEqual(599,board.All[0].Distance);Assert.AreEqual(100,board.All[499].Distance);
@@ -62,6 +63,7 @@ namespace Muhanok.Tests
         public void NewMenuKeepsTheFaceLoginEntryAndDataContract()
         {
             Assert.IsTrue(Enum.IsDefined(typeof(MenuPage),"Identity"));
+            Assert.IsTrue(Enum.IsDefined(typeof(MenuPage),"Login"));Assert.IsTrue(Enum.IsDefined(typeof(MenuPage),"SignUp"));
             Assert.IsTrue(Enum.IsDefined(typeof(MenuAction),"Identity"));
             Assert.IsNotNull(typeof(IIdentityData).GetProperty("SignedIn"));
             Assert.IsNotNull(typeof(HUDPresenter).GetMethod("ShowIdentity"));

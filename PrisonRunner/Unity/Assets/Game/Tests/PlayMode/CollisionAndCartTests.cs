@@ -69,7 +69,7 @@ namespace Muhanok.Tests
                     game.Session.Runner.Tick(.25f,0);game.Session.Runner.SetStartZ(gap.transform.position.z);
                     gap.Evaluate(game.Session,gap.transform.position.z-1);
                     Assert.IsTrue(gap.Passed);Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
-                    Assert.AreEqual(game.Settings.Run.CleanBonus,game.Session.Score.Score);
+                    Assert.AreEqual(1,game.Session.Score.CleanPasses);Assert.AreEqual(0,game.Session.Score.Score);
                     Assert.LessOrEqual(Mathf.Abs(game.Session.Runner.WorldLaneOffset),.161f);last=gap;
                 }
             }

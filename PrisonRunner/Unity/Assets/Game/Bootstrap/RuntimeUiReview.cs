@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using Muhanok.Application;
 using Muhanok.Domain;
 using Muhanok.Presentation;
 using UnityEngine;
@@ -41,13 +42,17 @@ namespace Muhanok.Bootstrap
             var hud = game.Hud; var data = (IHudData)game;
 
             yield return Shot("01_Title");
-            game.OpenMainMenu(); yield return Shot("02_MainMenu_NewPlayer");
-            hud.ShowPage(MenuPage.Profile, true); yield return Shot("03_Profile_FirstRun");
+            game.OpenLogin(); yield return Shot("02_Login");
+            hud.ShowPage(MenuPage.SignUp); yield return Shot("03_SignUp_Consent");
+            hud.SignUp.Agree(); yield return Shot("03b_SignUp_Nickname");
+            game.OpenMainMenu(); yield return Shot("03c_MainMenu_Guest");
+            hud.ShowPage(MenuPage.Shop); yield return Shot("03d_Shop_Guest");
 
             Seed(data);
             hud.ShowPage(MenuPage.Profile); yield return Shot("04_Profile");
             hud.ShowPage(MenuPage.Shop); yield return Shot("05_Shop");
-            hud.ShowPage(MenuPage.Ranking); yield return Shot("06_Ranking");
+            // The review data is on this PC (keyboard runs); the member tab would ask the server.
+            hud.ShowPage(MenuPage.Ranking); hud.Ranking.Select(false, PlayStyle.Keyboard, false); yield return Shot("06_Ranking");
             game.OpenMainMenu(); yield return Shot("07_MainMenu");
             hud.ShowPage(MenuPage.Setup); yield return Shot("08_Setup");
             hud.ShowIdentity();yield return Shot("08_Face_Login");hud.ShowPage(MenuPage.Setup);
@@ -100,15 +105,16 @@ namespace Muhanok.Bootstrap
         {
             while (shielded) { if (game.Session.Flow.State == GameFlowState.Running) game.Session.Items.Activate(ItemKind.Shield); yield return null; }
         }
-        // A profile, coins, one unlocked item and runs from today and yesterday.
+        // A profile, runs from today and yesterday, and a member with coins and one unlocked item.
         private void Seed(IHudData data)
         {
             data.SaveProfile(new PlayerProfile { Name = "탈옥왕", Weight = "65", Style = PlayStyle.Keyboard,CalorieGoal=180 });
             var today = DateTime.Now; var yesterday = today.AddDays(-1);
             float[] todayRuns = { 2310, 1530, 980, 640, 455 }, earlier = { 1820, 1240 };
-            for (int i = 0; i < todayRuns.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = todayRuns[i], Score = (int)todayRuns[i] * 3, Style = "키보드", Ticks = today.AddMinutes(-i * 7).Ticks }, todayRuns[i] / 25);
-            for (int i = 0; i < earlier.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = earlier[i], Score = (int)earlier[i] * 3, Style = "전신", Ticks = yesterday.AddMinutes(-i * 9).Ticks }, earlier[i] / 18);
-            game.Store.DepositCoins(240); game.Store.Unlock(ItemKind.Magnet);
+            for (int i = 0; i < todayRuns.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = todayRuns[i], Score = (int)todayRuns[i], ScoreVersion = RunScore.Version, Style = "키보드", Ticks = today.AddMinutes(-i * 7).Ticks }, todayRuns[i] / 25);
+            for (int i = 0; i < earlier.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = earlier[i], Score = (int)earlier[i] + 300, ScoreVersion = RunScore.Version, Style = "전신", Ticks = yesterday.AddMinutes(-i * 9).Ticks }, earlier[i] / 18);
+            // Coins and items belong to a member account now; a synthetic member (no token, no server calls) fills the shop.
+            game.Account.SignInMember(new AccountProfile { id = "ui-review", name = "탈옥왕", weight = 65, style = (int)PlayStyle.Keyboard, goal = 180, coins = 240, unlocked = new[] { (int)ItemKind.Magnet } }, "");
         }
         private IEnumerator Shot(string name)
         {
