@@ -27,12 +27,12 @@
 
 | 저장 위치 | 내용 |
 | --- | --- |
-| 게임 PC `Player/profile.json` | PC의 이름·몸무게·기본 방식·목표 설정 |
-| 게임 PC `Player/wallet.json` | 코인 지갑·상점 해금 |
+| 게임 PC `Player/profile.json`, `wallet.json` | 예전 PC 프로필과 지갑. 개발자/전시 모드에서만 읽고, 일반 플레이에서는 읽지 않습니다(지우지 않음) |
 | 게임 PC `Player/records.json` | 거리 기준 최대 500개 기록과 누적 통계 |
-| 연결된 얼굴 서버 PostgreSQL | 얼굴 프로필·세션·프로필별 개인 운동 기록 |
+| 연결된 얼굴 서버 PostgreSQL | 회원 계정(닉네임·몸무게·기본 방식·목표·코인·해금)·세션·회원 운동 기록 |
+| 게임 메모리 `AccountSession` | 지금 플레이하는 회원 또는 게스트. 게스트 설정은 게임을 끄면 사라집니다 |
 
-PC JSON은 Unity의 `Application.persistentDataPath/Player` 아래에 있습니다. 상점 지갑과 메뉴의 거리 랭킹을 여러 PC에 자동 동기화하는 기능은 포함하지 않습니다. 얼굴 로그인 중에는 서버 이름을 표시하고, PC 프로필의 기본 이름을 서버 이름으로 덮어쓰지 않습니다. 서버 이름은 이 화면에서 변경하지 않습니다.
+PC JSON은 Unity의 `Application.persistentDataPath/Player` 아래에 있습니다. 현재 플레이어는 `AccountSession` 한 곳에서만 읽습니다. 얼굴 로그인한 회원은 서버 닉네임을 쓰고, 코인과 해금은 회원 계정에만 쌓입니다. 회원 판은 서버(`/runs`, 모드·코인 포함)와 이 PC 랭킹(회원 ID 포함)에 함께 기록하고, 서버 저장이 실패하면 메모리에 보관했다가 다음 판 저장 때 한 번 다시 보냅니다. 게스트는 "게스트" 이름으로 이 PC 랭킹에만 기록되며 코인이 쌓이지 않고 아이템도 나오지 않습니다. 게임을 끄면 회원은 로그아웃합니다(자동 로그인 없음).
 
 기존 `Exhibition/progress.json`과 `ranking-*.json`은 새 Player 파일이 없을 때 한 번 읽어 코인·해금·거리 기록을 이전합니다. 원본을 수정/삭제하지 않습니다. 예전 순위에는 칼로리 값이 없으므로 이전 통계에 임의로 추가하지 않습니다. 실제 사용자 데이터로 이전을 실행한 검증이 아니라 임시 파일을 사용한 검증입니다.
 
@@ -42,9 +42,9 @@ PC JSON은 Unity의 `Application.persistentDataPath/Player` 아래에 있습니�
 
 | 항목 | 일반 | 개발자/전시 |
 | --- | --- | --- |
-| 이름 | 저장된 PC 프로필 또는 로그인한 얼굴 | 준비 화면에서 판마다 입력 |
-| 아이템 | 상점에서 해금 | 모두 사용 |
-| 코인 | PC 지갑에 적립 | 지갑 적립 없음 |
+| 이름 | 회원 닉네임 또는 "게스트" | 준비 화면에서 판마다 입력(회원은 닉네임) |
+| 아이템 | 회원이 상점에서 해금한 것만(게스트 없음) | 모두 사용 |
+| 코인 | 회원 계정에 적립(게스트 없음) | 적립 없음 |
 | 랭킹 메뉴 | 전체 탭 | 오늘 탭 |
 | 결과 버튼 | 다시 / 메인으로 | 다시 / 다음 플레이어 |
 | Ctrl+F10 | 비활성 | 오늘 PC 기록 초기화 |
@@ -53,7 +53,7 @@ PC JSON은 Unity의 `Application.persistentDataPath/Player` 아래에 있습니�
 
 ## 코드와 검수
 
-`HUDPresenter`가 MenuPage를 전환하고, `Overlay/`가 메뉴·상점·프로필·랭킹·작은 거리계를 그립니다. `RunHudModel`이 프레임당 한 번 상태를 갱신하고 장애물 검색을 0.1초 간격으로 제한합니다(차선/수레 전환은 즉시). 화면 장식은 Repaint에서만 그립니다. `PlayerProgressStore`가 PC JSON을, `LocalProfileClient`가 얼굴 API를 담당합니다.
+`HUDPresenter`가 MenuPage를 전환하고, `Overlay/`가 메뉴·상점·프로필·랭킹·작은 거리계를 그립니다. `RunHudModel`이 프레임당 한 번 상태를 갱신하고 장애물 검색을 0.1초 간격으로 제한합니다(차선/수레 전환은 즉시). 화면 장식은 Repaint에서만 그립니다. `AccountSession`이 현재 플레이어(회원/게스트)를, `PlayerProgressStore`가 이 PC 랭킹·통계와 개발자 모드 지갑을, `LocalProfileClient`(`IAccountGateway`)가 얼굴 촬영과 계정 API를 담당합니다.
 
 자동 검수는 개발 빌드에서 아래 플래그를 명시할 때만 실행됩니다. 실제 프로필과 카메라 대신 별도 폴더/합성 데이터를 사용합니다.
 
