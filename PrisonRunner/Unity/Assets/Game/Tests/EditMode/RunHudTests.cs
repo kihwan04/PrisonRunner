@@ -25,11 +25,13 @@ namespace Muhanok.Tests
             Assert.AreEqual(expected, model.ShowWorkout);
             if (expected) StringAssert.Contains("180 kcal", model.Workout);
         }
-        [Test] public void MissingWeightHidesExerciseCounter()
+        [TestCase(0f, "플레이 0:00")] [TestCase(192.7f, "플레이 3:12")] [TestCase(-3f, "플레이 0:00")] [TestCase(3600f, "플레이 60:00")]
+        public void PlayTimeIsMinutesAndSeconds(float seconds, string expected) { Assert.AreEqual(expected, RunHudModel.PlayTime(seconds)); }
+        [Test] public void MissingWeightStillShowsExerciseCounter()
         {
             var run = Running(); run.Workout.SetWeight("");
             var model = new RunHudModel(); model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 1);
-            Assert.IsFalse(model.ShowWorkout);
+            Assert.IsTrue(model.ShowWorkout, "An empty weight uses the default weight");
         }
         [TestCase(true, true, true, true, true, true, HudNoticeKind.Tracking)]
         [TestCase(false, true, true, true, true, true, HudNoticeKind.Obstacle)]
@@ -43,9 +45,37 @@ namespace Muhanok.Tests
         {
             var run = Running(); var model = new RunHudModel();
             model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Searching, false, 1);
-            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Searching, false, 1.5f); Assert.IsFalse(model.ShowPoseRecovery);
-            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Searching, false, 1.8f); Assert.AreEqual(HudNoticeKind.Tracking, model.NoticeKind);
-            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 2); Assert.IsFalse(model.ShowPoseRecovery); Assert.IsNull(model.Notice);
+            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Searching, false, 1.5f); Assert.IsFalse(model.ShowPoseRecovery); Assert.IsTrue(model.ShowCamera);
+            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Searching, false, 1.8f); Assert.AreEqual(HudNoticeKind.Tracking, model.NoticeKind); Assert.IsTrue(model.ShowPoseRecovery);
+            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 2); Assert.IsFalse(model.ShowPoseRecovery); Assert.IsNull(model.Notice); Assert.IsTrue(model.ShowCamera, "The small webcam corner stays while tracking normally.");
+        }
+        // Style × setting × recognition: camera styles always show the corner webcam, switching to recovery after 0.75s of loss.
+        [TestCase(PlayStyle.FullBody, true, PoseStatus.Tracking, true, false)]
+        [TestCase(PlayStyle.UpperBody, true, PoseStatus.Tracking, true, false)]
+        [TestCase(PlayStyle.FullBody, true, PoseStatus.Searching, true, true)]
+        [TestCase(PlayStyle.UpperBody, true, PoseStatus.Searching, true, true)]
+        [TestCase(PlayStyle.FullBody, false, PoseStatus.Tracking, false, false)]
+        [TestCase(PlayStyle.UpperBody, false, PoseStatus.Searching, false, true)]
+        [TestCase(PlayStyle.Keyboard, true, PoseStatus.Off, false, false)]
+        [TestCase(PlayStyle.Keyboard, false, PoseStatus.Off, false, false)]
+        public void InGameCameraFollowsStyleSettingAndTracking(PlayStyle style, bool enabled, PoseStatus pose, bool camera, bool recovery)
+        {
+            var run = Running(); var model = new RunHudModel { CameraEnabled = enabled };
+            model.Tick(run, null, style, pose, false, 1); model.Tick(run, null, style, pose, false, 2);
+            Assert.AreEqual(camera, model.ShowCamera); Assert.AreEqual(recovery, model.ShowPoseRecovery);
+        }
+        [Test] public void DoubleCoinItemMarksTheCoinCounter()
+        {
+            var run = Running(); var model = new RunHudModel();
+            model.Tick(run, null, PlayStyle.Keyboard, PoseStatus.Off, false, 1); Assert.IsFalse(model.CoinBoost);
+            run.Items.Activate(ItemKind.DoubleScore); model.Tick(run, null, PlayStyle.Keyboard, PoseStatus.Off, false, 2); Assert.IsTrue(model.CoinBoost);
+            StringAssert.StartsWith("코인 2배", model.ItemLabels[(int)ItemKind.DoubleScore]);
+        }
+        [Test] public void InGameCameraHidesOutsideRunning()
+        {
+            var run = Running(); var model = new RunHudModel();
+            model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 1); Assert.IsTrue(model.ShowCamera);
+            run.Paused = true; model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 2); Assert.IsFalse(model.ShowCamera);
         }
         [Test] public void CueSearchIsBoundedAndPauseSkipsWork()
         {

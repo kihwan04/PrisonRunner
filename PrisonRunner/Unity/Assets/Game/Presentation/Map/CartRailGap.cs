@@ -15,7 +15,7 @@ namespace Muhanok.Presentation.Map
             if(previousZ>transform.position.z||run.Runner.Z<transform.position.z)return;
             Passed=true;
             if(!run.Runner.Riding||run.Runner.CartLean*RequiredLean<.55f)run.Fail(CaptureReason.BrokenRail);
-            else run.Score.CleanPass(run.Config.CleanBonus);
+            else run.Score.CleanPass();
         }
     }
 }

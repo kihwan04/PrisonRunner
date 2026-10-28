@@ -15,6 +15,7 @@ namespace Muhanok.Presentation
         string message = "";
         bool failed, buying;
         int opened;
+        GUIStyle wrapped;
         public ShopScreen(OverlaySkin overlaySkin) { skin = overlaySkin; }
         public void Open() { message = ""; failed = buying = false; opened++; }
 
@@ -48,8 +49,14 @@ namespace Muhanok.Presentation
                 skin.BorderBox(r, Palette.A(Palette.Panel, 0.95f), owned ? Palette.Gold : Palette.Wood, 2);
                 skin.Circle(new Rect(r.center.x - 48, r.y + 34, 96, 96), Palette.A(Accent(item.Kind), 0.9f));
                 skin.Text(new Rect(r.x, r.y + 150, r.width, 36), item.Name, 28, Palette.Cream, TextAnchor.MiddleCenter);
-                skin.Text(new Rect(r.x + 20, r.y + 196, r.width - 40, 24), item.Description, 16, Palette.Sand, TextAnchor.MiddleCenter, false, true);
-                skin.Text(new Rect(r.x, r.y + 226, r.width, 24), item.Seconds.ToString("0", Num) + "초 지속", 16, Palette.Sand, TextAnchor.MiddleCenter, false, true);
+                // Descriptions can need two lines inside the card.
+                if (wrapped == null) wrapped = new GUIStyle(skin.Style(16, false, TextAnchor.MiddleCenter, true)) { wordWrap = true };
+                var oldColor = GUI.color; GUI.color = Palette.Sand;
+                GUI.Label(new Rect(r.x + 14, r.y + 188, r.width - 28, 48), item.Description, wrapped);
+                GUI.color = oldColor;
+                skin.Text(new Rect(r.x, r.y + 240, r.width, 24), item.Seconds.ToString("0", Num) + "초 지속", 16, Palette.Sand, TextAnchor.MiddleCenter, false, true);
+                // Only unlocked items are placed on the map during play.
+                skin.Text(new Rect(r.x, r.y + 270, r.width, 24), owned ? "플레이 중에 등장합니다" : "해금하면 플레이 중에 등장합니다", 15, owned ? Palette.Gold : Palette.Muted, TextAnchor.MiddleCenter, false, true);
                 var button = new Rect(r.x + 24, r.yMax - 82, r.width - 48, 56);
                 if (owned)
                 {

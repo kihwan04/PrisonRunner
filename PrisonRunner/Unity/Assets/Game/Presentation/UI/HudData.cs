@@ -24,7 +24,7 @@ namespace Muhanok.Presentation
         PlayerWallet Wallet { get; }
         Leaderboard Board { get; }
         PlayerStats Stats { get; }
-        // The run that just finished: its entry, rank among all runs and today, and whether it beat the best distance.
+        // The run that just finished: its entry, rank among all runs and today, whether it beat the best score for its play style, and that best.
         RankingEntry LastEntry { get; }
         // A guest's last run (outside developer mode) can still be renamed from "게스트" on this PC's ranking.
         bool CanNameLastRun { get; }
@@ -32,6 +32,7 @@ namespace Muhanok.Presentation
         int LastRank { get; }
         int LastTodayRank { get; }
         bool LastNewBest { get; }
+        int LastBestScore { get; }
         float BestDistance { get; }
         // The member's last run could not be saved on the account server (kept in memory and retried with the next run).
         bool RunSaveFailed { get; }

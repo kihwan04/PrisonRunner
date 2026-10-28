@@ -43,7 +43,7 @@ namespace Muhanok.Presentation
             var probe = new WorkoutEstimate();
             if (!probe.SetWeight(Weight?.Trim())) { Fail("몸무게는 10~350kg 숫자로 입력해 주세요."); return; }
             if (!probe.SetGoal(Goal?.Trim())) { Fail("칼로리 목표는 1~5000 kcal 숫자로 입력해 주세요."); return; }
-            var settings = new AccountSettings { Weight = probe.WeightKg ?? AccountSettings.DefaultWeight, Style = Style, Goal = probe.GoalKcal };
+            var settings = new AccountSettings { Weight = probe.WeightKg, Style = Style, Goal = probe.GoalKcal };
             int mine = opened; Busy = true; Failed = false; Message = "저장 중…"; Deleting = ProfileDeleteStep.None;
             identity.SaveMemberProfile(Nickname.Trim(), settings, (ok, reason) =>
             {

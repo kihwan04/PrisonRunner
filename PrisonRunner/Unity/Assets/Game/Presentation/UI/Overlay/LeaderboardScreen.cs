@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Muhanok.Presentation
 {
-    // Distance ranking with all-time and today tabs. After a run it also shows that run's summary and highlights its row.
+    // Score ranking with all-time and today tabs. After a run it also shows that run's summary and highlights its row.
     internal sealed class LeaderboardScreen
     {
         static readonly CultureInfo Num = CultureInfo.InvariantCulture;
@@ -39,8 +39,10 @@ namespace Muhanok.Presentation
             var parts = new List<string>();
             if (data != null && data.LastTodayRank > 0) parts.Add("오늘 " + data.LastTodayRank + "위");
             if (data != null && data.LastRank > 0) parts.Add("전체 " + data.LastRank + "위");
+            parts.Add("거리 " + Dist(session.Score.Distance));
+            parts.Add(RunHudModel.PlayTime(session.Elapsed));
             parts.Add("코인 +" + session.Score.Coins);
-            if (PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard) && session.Workout.WeightKg.HasValue) parts.Add(session.Workout.EstimatedKcal.ToString("F1", Num) + " kcal");
+            if (PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard)) parts.Add(session.Workout.EstimatedKcal.ToString("F1", Num) + " kcal");
             summary = string.Join("  ·  ", parts);
             guestName.Show(data);
             Reload(data);
@@ -52,6 +54,7 @@ namespace Muhanok.Presentation
         }
 
         static string Dist(float m) { return Mathf.FloorToInt(m).ToString("N0", Num) + "m"; }
+        static string Points(RankingEntry e) { return RunHudModel.Points(e.Score); }
 
         // primaryLabel/secondaryLabel: result buttons (다시 하기 / 메인으로 or 다음 플레이어); the menu board only shows a close button.
         public void Draw(IHudData data, RunSession session, Action primary, string primaryLabel, Action secondary, string secondaryLabel)
@@ -64,9 +67,12 @@ namespace Muhanok.Presentation
             float x = 230, w = 820;
             if (resultMode)
             {
+                // Title number is the run score; distance and play time sit in the summary line.
                 bool newBest = data != null && data.LastNewBest;
-                skin.Text(new Rect(x, 30, 500, 52), Dist(session.Score.Distance), 44, Palette.Cream, TextAnchor.MiddleLeft);
-                if (newBest) skin.Text(new Rect(x + 230, 30, 260, 52), "최고 기록 갱신!", 18, Palette.MeNote, TextAnchor.MiddleLeft, false, true);
+                skin.Text(new Rect(x, 30, 500, 52), RunHudModel.Points(session.Score.Score), 44, Palette.Cream, TextAnchor.MiddleLeft);
+                string style = PlayStyleInfo.Label(data?.Player?.Style ?? PlayStyle.Keyboard);
+                if (newBest) skin.Text(new Rect(x + 250, 30, 340, 52), "최고 기록 갱신! (" + style + ")", 18, Palette.MeNote, TextAnchor.MiddleLeft, false, true);
+                else if (data != null && data.LastBestScore > 0) skin.Text(new Rect(x + 250, 30, 340, 52), "내 최고 (" + style + ") " + RunHudModel.Points(data.LastBestScore), 18, Palette.Sand, TextAnchor.MiddleLeft, false, true);
                 skin.Text(new Rect(x, 78, 600, 22), summary, 15, Palette.Sand, TextAnchor.MiddleLeft, false, true);
             }
             else skin.Text(new Rect(x, 36, 300, 48), "랭킹", 44, Palette.Cream, TextAnchor.MiddleLeft);
@@ -91,9 +97,9 @@ namespace Muhanok.Presentation
             skin.BorderBox(new Rect(24,140,190,380),Palette.A(Palette.Panel,.95f),Palette.Wood,2);
             skin.Text(new Rect(38,152,164,30),"운동 기록",22,Palette.Gold,TextAnchor.MiddleLeft);
             skin.Text(new Rect(38,190,164,26),"최고 콤보 "+session.BestDodgeStreak,16,Palette.Cream,TextAnchor.MiddleLeft,false,true);
-            if (!PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard) || !session.Workout.WeightKg.HasValue)
+            if (!PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard))
             {
-                skin.Text(new Rect(38,235,164,30),"칼로리 계산 제외",16,Palette.Sand,TextAnchor.MiddleLeft,false,true);
+                skin.Text(new Rect(38,235,164,30),"키보드 · 칼로리 계산 제외",16,Palette.Sand,TextAnchor.MiddleLeft,false,true);
                 return;
             }
             skin.Text(new Rect(38,220,164,26),"목표 "+session.Workout.GoalKcal.ToString("F0")+" kcal",14,Palette.Sand,TextAnchor.MiddleLeft,false,true);
@@ -133,7 +139,7 @@ namespace Muhanok.Presentation
                 float cy = r.center.y;
                 skin.Text(new Rect(r.x, cy - 54, r.width, 34), (rank + 1).ToString(), 30, rankColor[rank], TextAnchor.MiddleCenter);
                 skin.Text(new Rect(r.x, cy - 16, r.width, 24), list[rank].Name, 17, Palette.Cream, TextAnchor.MiddleCenter, false, true);
-                skin.Text(new Rect(r.x, cy + 12, r.width, 34), Dist(list[rank].Distance), 28, Palette.Cream, TextAnchor.MiddleCenter);
+                skin.Text(new Rect(r.x, cy + 12, r.width, 34), Points(list[rank]), 28, Palette.Cream, TextAnchor.MiddleCenter);
             }
             if (list.Count == 0)
                 skin.Text(new Rect(x, 160, w, 60), todayOnly ? "오늘은 아직 기록이 없어요. 첫 기록을 남겨 보세요!" : "아직 기록이 없어요. 첫 기록을 남겨 보세요!", 18, Palette.Sand, TextAnchor.MiddleCenter, false, true);
@@ -147,7 +153,7 @@ namespace Muhanok.Presentation
                 if (rank >= list.Count) break;
                 var r = new Rect(x, 278 + i * 48, w, 42);
                 skin.BorderBox(r, Palette.A(Palette.Panel, 0.92f), Palette.WoodDim, 2);
-                Columns(r, rank + 1, list[rank].Name, Dist(list[rank].Distance), 18, 20, Palette.Muted, Palette.Cream);
+                Columns(r, rank + 1, list[rank].Name, Points(list[rank]), 18, 20, Palette.Muted, Palette.Cream);
             }
         }
 
@@ -160,14 +166,14 @@ namespace Muhanok.Presentation
             skin.BorderBox(row, Palette.MeFill, Color.Lerp(Palette.Gold, Palette.Cream, pulse * 0.35f), 2);
             // Developer mode has a name per run; otherwise every row is this PC's player, so the latest run reads "나".
             string name = data != null && data.DeveloperMode ? mine.Name : "나";
-            Columns(row, me + 1, name, Dist(mine.Distance), 20, 24, Palette.Gold, Palette.Gold);
+            Columns(row, me + 1, name, Points(mine), 20, 24, Palette.Gold, Palette.Gold);
         }
 
-        void Columns(Rect r, int rank, string name, string dist, int rankSize, int distSize, Color rankColor, Color distColor)
+        void Columns(Rect r, int rank, string name, string score, int rankSize, int scoreSize, Color rankColor, Color scoreColor)
         {
             skin.Text(new Rect(r.x + 20, r.y, 60, r.height), rank.ToString(), rankSize, rankColor, TextAnchor.MiddleLeft);
             skin.Text(new Rect(r.x + 84, r.y, r.width - 260, r.height), name, 16, Palette.Cream, TextAnchor.MiddleLeft, false, true);
-            skin.Text(new Rect(r.xMax - 180, r.y, 160, r.height), dist, distSize, distColor, TextAnchor.MiddleRight);
+            skin.Text(new Rect(r.xMax - 180, r.y, 160, r.height), score, scoreSize, scoreColor, TextAnchor.MiddleRight);
         }
     }
 }

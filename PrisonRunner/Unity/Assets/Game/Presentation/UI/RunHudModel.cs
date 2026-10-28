@@ -12,9 +12,14 @@ namespace Muhanok.Presentation
     {
         public const float CueInterval = .1f;
         public string Coins { get; private set; } = "0";
+        // The double-coin item marks the coin counter with "×2" while it lasts.
+        public bool CoinBoost { get; private set; }
         public string Workout { get; private set; } = "";
         public bool ShowWorkout { get; private set; }
         public bool ShowPoseRecovery { get; private set; }
+        // Camera styles keep the webcam corner on screen unless the player turned it off in settings.
+        public bool CameraEnabled { get; set; } = true;
+        public bool ShowCamera { get; private set; }
         public float GoalProgress { get; private set; }
         public string Notice { get; private set; }
         public HudNoticeKind NoticeKind { get; private set; }
@@ -27,6 +32,14 @@ namespace Muhanok.Presentation
         private string actionCue, comboText;
         private int previousLane;
 
+        // Play time without pauses as "플레이 3:12"; display only, not part of the score.
+        public static string PlayTime(float seconds)
+        {
+            int total = float.IsNaN(seconds) || float.IsInfinity(seconds) ? 0 : (int)Math.Max(0, Math.Floor(seconds));
+            return "플레이 " + total / 60 + ":" + (total % 60).ToString("00");
+        }
+        public static string Points(int score) => score.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) + "점";
+
         public void Tick(RunSession session, ChunkSpawner map, PlayStyle style, PoseStatus pose, bool police, float now)
         {
             bool running = session.Flow.State == GameFlowState.Running && !session.Paused;
@@ -37,7 +50,9 @@ namespace Muhanok.Presentation
             }
             lastZ = session.Runner.Z; lastTime = now;
             if (session.Score.Coins != coins) { coins = session.Score.Coins; Coins = coins.ToString(); }
-            ShowWorkout = PlayStyleInfo.UsesCamera(style) && session.Workout.WeightKg.HasValue;
+            CoinBoost = session.Items.IsActive(ItemKind.DoubleScore);
+            // Camera styles always estimate calories (an empty weight uses the default); keyboard play does not.
+            ShowWorkout = PlayStyleInfo.UsesCamera(style);
             GoalProgress = (float)session.Workout.GoalProgress;
             if (ShowWorkout)
             {
@@ -60,13 +75,14 @@ namespace Muhanok.Presentation
             Notice = null; NoticeKind = HudNoticeKind.None;
             if (!running)
             {
-                nextScan = 0; actionCue = null; ShowPoseRecovery = false; lostSince = -1;
+                nextScan = 0; actionCue = null; ShowPoseRecovery = ShowCamera = false; lostSince = -1;
                 return;
             }
             bool lost = PlayStyleInfo.UsesCamera(style) && pose != PoseStatus.Tracking;
             if (!lost) lostSince = -1;
             else if (lostSince < 0) lostSince = now;
             ShowPoseRecovery = lost && now - lostSince >= .75f;
+            ShowCamera = CameraEnabled && PlayStyleInfo.UsesCamera(style);
             if (session.DodgeStreak > streak && session.DodgeStreak > 1)
             {
                 comboText = session.DodgeStreak + " COMBO"; comboUntil = now + 1.1f;

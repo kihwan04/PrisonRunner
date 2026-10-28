@@ -187,16 +187,37 @@ namespace Muhanok.Tests
             }
             finally { RouteSurface.UsePlan(null); }
         }
-        [Test] public void ItemsDoubleScoreShieldOneHitAndExpire()
+        [Test] public void ItemsDoubleCoinsShieldOneHitAndExpire()
         {
             var run = new RunSession(new RunConfig());
             run.Flow.Transition(GameFlowState.TitleIdle); run.Flow.Transition(GameFlowState.LoadingIntro); run.Flow.Transition(GameFlowState.Running);
-            run.Items.Activate(ItemKind.DoubleScore); run.Tick(.01f); int before = run.Score.Score; run.Score.CollectCoin();
-            Assert.AreEqual(before + 20, run.Score.Score);
+            Assert.AreEqual("코인 2배", ItemCatalog.Get(ItemKind.DoubleScore).Name);
+            run.CollectCoin(); Assert.AreEqual(1, run.Score.Coins);
+            // Picked up in the same frame as the item, before the next tick, already doubles.
+            run.Items.Activate(ItemKind.DoubleScore); run.CollectCoin(); Assert.AreEqual(3, run.Score.Coins);
+            run.Tick(.01f); run.Score.CollectCoin(); Assert.AreEqual(5, run.Score.Coins);
+            run.Tick(ItemCatalog.Get(ItemKind.DoubleScore).Seconds); run.CollectCoin(); Assert.AreEqual(6, run.Score.Coins);
             run.Items.Activate(ItemKind.Shield);
             Assert.IsFalse(run.Hit(true)); Assert.AreEqual(GameFlowState.Running, run.Flow.State); Assert.AreEqual(1, run.ShieldSaves);
             Assert.IsTrue(run.Hit(true)); Assert.AreEqual(GameFlowState.Caught, run.Flow.State);
             var items = new PowerUpState(); items.Activate(ItemKind.Magnet); items.Tick(100); Assert.IsFalse(items.IsActive(ItemKind.Magnet));
+        }
+        [Test] public void ShieldBlocksOneSlipButNotABrokenRail()
+        {
+            var run = new RunSession(new RunConfig());
+            run.Flow.Transition(GameFlowState.TitleIdle); run.Flow.Transition(GameFlowState.LoadingIntro); run.Flow.Transition(GameFlowState.Running);
+            run.Items.Activate(ItemKind.Shield);
+            Assert.IsFalse(run.Slip(true)); Assert.AreEqual(1, run.ShieldSaves); Assert.IsFalse(run.Items.IsActive(ItemKind.Shield));
+            Assert.IsFalse(run.Runner.Slowing); Assert.AreEqual(0, run.BananaHits); Assert.AreEqual(0, run.Chase.Pressure);
+            // Without the shield the next two peels count, and the second starts the pursuit as before.
+            Assert.IsTrue(run.Slip(true)); Assert.IsTrue(run.Runner.Slowing); Assert.AreEqual(1, run.BananaHits);
+            Assert.IsTrue(run.Slip(true)); Assert.IsTrue(run.BananaPursuit);
+            run.Reset(); Assert.AreEqual(GameFlowState.Running, run.Flow.State);
+            run.Items.Activate(ItemKind.Shield);
+            run.Slip(true); run.Slip(true); Assert.AreEqual(1, run.BananaHits); Assert.IsFalse(run.BananaPursuit, "The shielded first peel must not count towards the pursuit.");
+            run.Items.Activate(ItemKind.Shield);
+            Assert.IsTrue(run.Fail(CaptureReason.BrokenRail)); Assert.AreEqual(GameFlowState.Caught, run.Flow.State); Assert.AreEqual(CaptureReason.BrokenRail, run.Reason);
+            Assert.IsTrue(run.Items.IsActive(ItemKind.Shield), "A broken rail ignores the shield and leaves it unused.");
         }
         [Test] public void WalletUnlocksItemsAndDeveloperModeOpensEverything()
         {
@@ -205,19 +226,46 @@ namespace Muhanok.Tests
             Assert.IsFalse(wallet.TryUnlock(ItemKind.Shield)); CollectionAssert.AreEqual(new[] { ItemKind.Magnet }, wallet.Available());
             wallet.UnlockAll = true; Assert.AreEqual(ItemCatalog.All.Length, wallet.Available().Count);
         }
-        [Test] public void LeaderboardRanksByDistanceOverallAndPerDay()
+        [Test] public void LeaderboardRanksByScoreOverallAndPerDay()
         {
             var today = DateTime.Now; var yesterday = today.AddDays(-1);
             var board = new Leaderboard();
-            var old = new RankingEntry { Name = "Old", Distance = 900, Ticks = yesterday.Ticks };
-            var a = new RankingEntry { Name = "A", Distance = 300, Score = 9999, Ticks = today.Ticks };
-            var b = new RankingEntry { Name = "B", Distance = 500, Score = 1, Ticks = today.Ticks + 1 };
-            Assert.AreEqual(1, board.Add(old)); Assert.AreEqual(2, board.Add(a)); Assert.AreEqual(2, board.Add(b));
-            Assert.AreEqual(3, board.RankOf(a, false), "Distance decides the rank, not score");
-            Assert.AreEqual(2, board.RankOf(a, true), "Yesterday's run does not count for today");
-            CollectionAssert.AreEqual(new[] { "B", "A" }, board.View(true, today).ConvertAll(e => e.Name));
+            var old = new RankingEntry { Name = "Old", Distance = 300, Score = 1200, ScoreVersion = RunScore.Version, Ticks = yesterday.Ticks };
+            var a = new RankingEntry { Name = "A", Distance = 300, Score = 900, ScoreVersion = RunScore.Version, Ticks = today.Ticks };
+            var b = new RankingEntry { Name = "B", Distance = 500, Score = 500, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 1 };
+            var tie = new RankingEntry { Name = "Tie", Distance = 900, Score = 900, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 2 };
+            Assert.AreEqual(1, board.Add(old)); Assert.AreEqual(2, board.Add(a)); Assert.AreEqual(3, board.Add(b)); Assert.AreEqual(3, board.Add(tie));
+            Assert.AreEqual(2, board.RankOf(a, false), "Score decides the rank, not distance; a tie goes to the earlier run");
+            Assert.AreEqual(4, board.RankOf(b, false));
+            Assert.AreEqual(1, board.RankOf(a, true), "Yesterday's run does not count for today");
+            CollectionAssert.AreEqual(new[] { "A", "Tie", "B" }, board.View(true, today).ConvertAll(e => e.Name));
             board.ClearDay(Leaderboard.DayKey(today));
             CollectionAssert.AreEqual(new[] { "Old" }, board.View(false, today).ConvertAll(e => e.Name));
+        }
+        [Test] public void OlderScoreVersionsAreKeptButNotRanked()
+        {
+            var today = DateTime.Now;
+            var board = new Leaderboard();
+            var legacy = new RankingEntry { Name = "Legacy", Distance = 5000, Score = 50000, Ticks = today.Ticks };
+            var current = new RankingEntry { Name = "Now", Distance = 100, Score = 120, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 1 };
+            board.Load(new[] { legacy, current });
+            Assert.AreEqual(1, legacy.ScoreVersion, "Records saved before the version field load as version 1");
+            Assert.AreEqual(2, board.All.Count, "Older records are not deleted");
+            CollectionAssert.AreEqual(new[] { "Now" }, board.View(false, today).ConvertAll(e => e.Name));
+            CollectionAssert.AreEqual(new[] { "Now" }, board.View(true, today).ConvertAll(e => e.Name));
+            Assert.AreEqual(0, board.RankOf(legacy, false)); Assert.AreEqual(1, board.RankOf(current, false));
+            Assert.AreEqual(0, board.Add(new RankingEntry { Name = "Old", Score = 99999, ScoreVersion = 1, Ticks = today.Ticks + 2 }));
+            Assert.AreEqual(1, board.Add(new RankingEntry { Name = "Best", Score = 121, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 3 }));
+        }
+        [Test] public void BestScoreIsPerPlayStyleAndIgnoresOlderVersions()
+        {
+            var board = new Leaderboard(); long t = DateTime.Now.Ticks;
+            board.Add(new RankingEntry { Name = "A", Score = 900, ScoreVersion = RunScore.Version, Style = "전신", Ticks = t });
+            board.Add(new RankingEntry { Name = "B", Score = 1500, ScoreVersion = RunScore.Version, Style = "전신", Ticks = t + 1 });
+            board.Add(new RankingEntry { Name = "A", Score = 700, ScoreVersion = RunScore.Version, Style = "키보드", Ticks = t + 2 });
+            board.Add(new RankingEntry { Name = "A", Score = 99999, ScoreVersion = 1, Style = "전신", Ticks = t + 3 });
+            Assert.AreEqual(1500, board.BestScore("전신")); Assert.AreEqual(900, board.BestScore("전신", "A"));
+            Assert.AreEqual(700, board.BestScore("키보드")); Assert.AreEqual(0, board.BestScore("상체"));
         }
         [Test] public void PlayerStorePersistsProfileWalletRecordsAndStats()
         {
@@ -228,8 +276,8 @@ namespace Muhanok.Tests
                 Assert.IsFalse(store.Profile.HasName);
                 store.SaveProfile(new PlayerProfile { Name = "탈옥왕", Weight = "60", Style = PlayStyle.UpperBody });
                 long now = DateTime.Now.Ticks;
-                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 120, Ticks = now }, 12.5));
-                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 340, Ticks = now + 1 }, 30));
+                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 120, Score = 120, ScoreVersion = RunScore.Version, Ticks = now }, 12.5));
+                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 340, Score = 340, ScoreVersion = RunScore.Version, Ticks = now + 1 }, 30));
                 store.DepositCoins(55); Assert.IsTrue(store.Unlock(ItemKind.Magnet));
                 var reopened = new PlayerProgressStore(root);
                 Assert.AreEqual("탈옥왕", reopened.Profile.Name); Assert.AreEqual(PlayStyle.UpperBody, reopened.Profile.Style);

@@ -56,6 +56,7 @@ namespace Muhanok.Bootstrap
         private System.Action<System.Action<string[]>> captureFaces;
         private bool playerRun, bannerSounded, goSounded, lastNewBest;
         private RankingEntry lastEntry;
+        private int lastBestScore;
         private int lastTodayRank;
         private UserSettings userSettings, settingsDefaults;
         private GraphicsSettingsApplier graphics;
@@ -90,6 +91,7 @@ namespace Muhanok.Bootstrap
             captureFaces=done=>identity.CaptureFaces(Pose.CameraTexture,done);
             Account.Changed+=AccountChanged;
             gameObject.AddComponent<CartRideView>().Configure(Session,Hero,CartRidePrefab);
+            gameObject.AddComponent<PowerUpAuraView>().Configure(Session,Hero);
             OutputCamera.GetComponent<CinematicFocus>()?.Configure(Session,Hero);
             var mapRoot = new GameObject("ChunkPool"); mapRoot.transform.SetParent(transform, false);
             Map = new ChunkSpawner(ChunkPrefabs, mapRoot.transform, Session, Settings != null ? Settings.Render : new RenderBudget());
@@ -158,6 +160,7 @@ namespace Muhanok.Bootstrap
             audioPlayer?.SetVolumes(userSettings.MusicVolume, userSettings.EffectsVolume);
             Pose.Configure(userSettings.CameraDevice, userSettings.LiteLandmarkModel, userSettings.LaneSensitivity);
             if (overlay != null) overlay.Visible = userSettings.PerformanceOverlay;
+            if (hud != null && hud.RunModel != null) hud.RunModel.CameraEnabled = userSettings.InGameCamera;
             if (save) UserSettingsStore.Save(userSettings);
         }
         private RunnerView CreateActor(string id, GameObject prefab)
@@ -361,7 +364,7 @@ namespace Muhanok.Bootstrap
                 bool tooling=System.Array.IndexOf(args,"--muhanok-capture")>=0||System.Array.IndexOf(args,"--muhanok-smoke")>=0
                     ||System.Array.IndexOf(args,"--mongscape-review")>=0||System.Array.IndexOf(args,"--mongscape-tests")>=0
                     ||System.Array.IndexOf(args,"--muhanok-uicapture")>=0;
-                lastEntry=null; lastRank=lastTodayRank=0; lastNewBest=false;
+                lastEntry=null; lastRank=lastTodayRank=lastBestScore=0; lastNewBest=false;
                 if(!tooling&&playerRun) RecordFinishedRun();
             }
         }
@@ -374,8 +377,10 @@ namespace Muhanok.Bootstrap
             string name=Account.IsMember||!developer?Account.Nickname
                 :player.HasName?player.Name.Trim():"플레이어 "+(Store.Board.Day(Leaderboard.DayKey(now)).Count+1);
             lastEntry=new RankingEntry{Name=name,Score=Session.Score.Score,Distance=Session.Score.Distance,Coins=Session.Score.Coins,
-                Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks,AccountId=Account.IsMember?Account.Id:""};
-            lastNewBest=Session.Score.Distance>Store.Stats.BestDistance;
+                Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks,AccountId=Account.IsMember?Account.Id:"",ScoreVersion=RunScore.Version};
+            // Personal best per play style; in developer mode every run has its own name.
+            int previousBest=Store.Board.BestScore(lastEntry.Style,developer?name:null);
+            lastNewBest=lastEntry.Score>previousBest; lastBestScore=Mathf.Max(previousBest,lastEntry.Score);
             lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
             lastTodayRank=Store.Board.RankOf(lastEntry,true);
             if(Account.IsMember)
@@ -485,6 +490,7 @@ namespace Muhanok.Bootstrap
         int IHudData.LastRank => lastRank;
         int IHudData.LastTodayRank => lastTodayRank;
         bool IHudData.LastNewBest => lastNewBest;
+        int IHudData.LastBestScore => lastBestScore;
         float IHudData.BestDistance => Store.Stats.BestDistance;
         bool IHudData.RunSaveFailed => runs != null && runs.LastFailed;
         public float StartBanner => Session.Flow.State == GameFlowState.Running ? Mathf.Max(0, 2.2f - (Time.realtimeSinceStartup - runStartedAt)) : 0;
