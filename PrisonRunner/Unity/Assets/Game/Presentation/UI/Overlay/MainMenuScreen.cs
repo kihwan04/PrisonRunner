@@ -4,16 +4,16 @@ using UnityEngine;
 
 namespace Muhanok.Presentation
 {
-    public enum MenuAction { None, Play, Ranking, Shop, Profile, Identity, Settings, Quit }
+    public enum MenuAction { None, Play, Ranking, Shop, Profile, Identity, Settings, Quit, Tutorial }
 
     // Main menu over the live title scene: logo on the left, actions on the right, coins and player name on top.
     internal sealed class MainMenuScreen
     {
         static readonly CultureInfo Num = CultureInfo.InvariantCulture;
         // The login entry reads "로그아웃" for a member and "로그인 / 회원가입" for a guest.
-        static readonly string[] Labels = { "게임 시작", "랭킹", "상점", "프로필", "로그인 / 회원가입", "설정", "게임 종료" };
+        static readonly string[] Labels = { "게임 시작", "튜토리얼", "랭킹", "상점", "프로필", "로그인 / 회원가입", "설정", "게임 종료" };
         const string LogoutLabel = "로그아웃";
-        static readonly MenuAction[] Actions = { MenuAction.Play, MenuAction.Ranking, MenuAction.Shop, MenuAction.Profile, MenuAction.Identity, MenuAction.Settings, MenuAction.Quit };
+        static readonly MenuAction[] Actions = { MenuAction.Play, MenuAction.Tutorial, MenuAction.Ranking, MenuAction.Shop, MenuAction.Profile, MenuAction.Identity, MenuAction.Settings, MenuAction.Quit };
 
         readonly OverlaySkin skin;
         public MainMenuScreen(OverlaySkin overlaySkin) { skin = overlaySkin; }
@@ -34,7 +34,7 @@ namespace Muhanok.Presentation
             bool member = SignedIn(data);
             for (int i = 0; i < Labels.Length; i++)
             {
-                var r = new Rect(860, 142 + i * 68, 340, 58);
+                var r = new Rect(860, 112 + i * 66, 340, 56);
                 bool primary = i == 0;
                 string label = Actions[i] == MenuAction.Identity && member ? LogoutLabel : Labels[i];
                 bool pressed = primary
