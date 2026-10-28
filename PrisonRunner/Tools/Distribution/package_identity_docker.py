@@ -13,7 +13,7 @@ SERVER_FILES=(
     'Caddyfile','.env.example','README_DOCKER.md','server.py','schema.sql','setup_models.py',
     'models/provenance.json','models/face_detection_yunet.LICENSE','models/face_recognition_sface.LICENSE',
     'ConfigureClient.ps1','identity-server.example.json','test_identity.py','test_http.py',
-    'storage.py','schema.postgres.sql','init-postgres.sh','prepare_secrets.py','migrate_sqlite.py',
+    'storage.py','schema.postgres.sql','init-postgres.sh','prepare_secrets.py','migrate_sqlite.py','migrate_account.py',
     'test_postgres.py','setup_postgres_runtime.py',
 )
 

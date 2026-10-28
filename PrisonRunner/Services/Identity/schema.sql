@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS profiles (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    avatar BLOB NOT NULL,
     created_at INTEGER NOT NULL,
     consent_version TEXT NOT NULL
 );

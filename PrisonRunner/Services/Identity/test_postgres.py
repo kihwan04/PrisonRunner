@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sqlite3
 import tempfile
 import unittest
 import uuid
@@ -25,6 +26,7 @@ class IsolatedSchema:
         self.url=psycopg.conninfo.make_conninfo(URL,options='-c search_path='+self.schema)
         super().setUp()
     def make_store(self):return Store(database_url=self.url)
+    def migrate_target(self):return dict(database_url=self.url)
     def tearDown(self):
         try:super().tearDown()
         finally:
@@ -45,12 +47,12 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
     def tearDown(self):
         self.store.db.close();self.temp.cleanup();super().tearDown()
     def profile(self):
-        return ('visitor',"Test ' visitor",b'test-photo',1,'test-consent')
+        return ('visitor',"Test ' visitor",1,'test-consent')
     def source(self,invalid=False):
         path=Path(self.temp.name)/'source.sqlite3'
         source=Store(path)
         with source.db:
-            source.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',self.profile())
+            source.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
             source.db.execute('INSERT INTO face_samples VALUES(?,?)',('visitor',b'\0'*512))
             source.db.execute('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?)',
                               ('run','visitor',100.5,23,2.5,50,'{}' if invalid else '[1,1,0.5,0,0]',2))
@@ -59,10 +61,10 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
     def test_transactions_rollback_and_leave_connection_open(self):
         with self.assertRaises(self.psycopg.errors.UniqueViolation):
             with self.store.db:
-                self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',self.profile())
-                self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',self.profile())
+                self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
+                self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
         self.assertEqual(self.store.db.execute('SELECT COUNT(*) FROM profiles').fetchone()[0],0)
-        with self.store.db:self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',self.profile())
+        with self.store.db:self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?)',self.profile())
         self.assertEqual(self.store.db.execute('SELECT name FROM profiles').fetchone()[0],self.profile()[1])
     def test_application_role_has_no_administrator_privileges(self):
         privileges=self.store.db.execute('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=current_user').fetchone()
@@ -99,9 +101,20 @@ class PostgresStorageTests(IsolatedSchema,unittest.TestCase):
         counts=migrate(path,database_url=self.url)
         self.assertEqual(counts,dict(profiles=1,face_samples=1,runs=1,sessions=0))
         self.assertEqual(hashlib.sha256(path.read_bytes()).digest(),before)
-        self.assertEqual(self.store.db.execute('SELECT avatar FROM profiles').fetchone()[0],b'test-photo')
+        self.assertEqual(self.store.db.execute('SELECT name FROM profiles').fetchone()[0],self.profile()[1])
+        self.assertNotIn('avatar',self.store.columns('profiles'))
         self.assertEqual(self.store.db.execute('SELECT activities FROM runs').fetchone()[0],[1,1,.5,0,0])
         with self.assertRaises(ApiError):self.store.authorize(token)
+    def test_import_from_legacy_sqlite_with_photos_drops_them(self):
+        path=Path(self.temp.name)/'legacy.sqlite3'
+        source=sqlite3.connect(path)
+        source.executescript(identity_tests.legacy_schema('sqlite'))
+        with source:
+            source.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',('visitor','Legacy visitor',b'old-photo',1,'test-consent'))
+            source.execute('INSERT INTO face_samples VALUES(?,?)',('visitor',b'\0'*512))
+        source.close()
+        self.assertEqual(migrate(path,database_url=self.url),dict(profiles=1,face_samples=1,runs=0,sessions=0))
+        self.assertEqual(self.store.db.execute('SELECT id,name FROM profiles').fetchone(),('visitor','Legacy visitor'))
     def test_migration_refuses_nonempty_target(self):
         path,_=self.source();migrate(path,database_url=self.url)
         with self.assertRaises(ValueError):migrate(path,database_url=self.url)

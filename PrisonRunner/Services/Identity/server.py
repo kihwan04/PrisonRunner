@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 BASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE / '.runtime'))
 MAX_BODY = 4 * 1024 * 1024
-from storage import ApiError,Store
+from storage import ApiError,SchemaError,Store
 
 class Faces:
     def __init__(self, models):
@@ -65,10 +65,11 @@ class App:
                 name=str(data.get('name','')).strip()[:20] or '탐험가'
                 pid=uuid.uuid4().hex
                 with self.store.db:
-                    self.store.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?)',(pid,name,avatar,int(time.time()),'local-exhibition-v1'))
+                    self.store.db.execute('INSERT INTO profiles (id,name,created_at,consent_version) VALUES(?,?,?,?)',(pid,name,int(time.time()),'local-exhibition-v1'))
                     self.store.db.executemany('INSERT INTO face_samples VALUES(?,?) ON CONFLICT DO NOTHING',[(pid,f.tobytes()) for f in features])
             if not pid: raise ApiError('등록된 얼굴을 찾지 못했습니다. 먼저 얼굴을 등록하세요.',401)
-            session=self.store.issue(pid); return self.store.profile(pid,session)
+            # The face crop only travels back in this response; the DB keeps features, never photos.
+            session=self.store.issue(pid); return self.store.profile(pid,session,avatar)
         pid=self.store.authorize(token)
         if path=='/delete': self.store.delete(pid); return dict(ok=True)
         if path=='/logout':
@@ -149,6 +150,7 @@ def main():
     parser.add_argument('--init-db',action='store_true')
     args=parser.parse_args()
     try:store=Store(args.database,database_url=args.database_url,backend=args.database_backend)
+    except SchemaError as error:raise SystemExit(str(error))
     except Exception as error:raise SystemExit('Identity database connection/setup failed: '+type(error).__name__)
     try:
         if args.init_db: print('Identity database initialized:',store.backend); return

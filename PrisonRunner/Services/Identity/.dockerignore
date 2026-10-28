@@ -6,6 +6,7 @@
 !schema.sql
 !schema.postgres.sql
 !migrate_sqlite.py
+!migrate_account.py
 !setup_models.py
 !models/
 models/*

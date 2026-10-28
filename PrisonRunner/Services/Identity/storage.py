@@ -15,6 +15,10 @@ class ApiError(Exception):
     def __init__(self,message,status=400):self.message,self.status=message,status
 
 
+class SchemaError(Exception):
+    """Existing DB predates the current schema; the server must not run until it is migrated."""
+
+
 class PostgresConnection:
     """Keep a single connection for the serial HTTP server; transaction contexts never close it."""
     def __init__(self,database_url=None):
@@ -79,6 +83,15 @@ class Store:
             self.db.execute('PRAGMA foreign_keys=ON');self.db.execute('PRAGMA journal_mode=WAL')
             if initialize:self.db.executescript((BASE/'schema.sql').read_text(encoding='utf-8-sig'))
         else:raise ValueError('Identity backend must be postgres or sqlite')
+        # CREATE TABLE IF NOT EXISTS keeps an old table as is; refuse it instead of failing later on enroll.
+        if initialize and 'avatar' in self.columns('profiles'):
+            self.db.close()
+            raise SchemaError('Old identity schema (profiles.avatar). Back up the DB, run migrate_account.py, then restart.')
+
+    def columns(self,table):
+        if self.backend=='sqlite':return {row[1] for row in self.db.execute(f'PRAGMA table_info({table})')}
+        return {row[0] for row in self.db.execute(
+            'SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=?',(table,))}
 
     def issue(self,profile_id):
         token=secrets.token_urlsafe(32);now=int(time.time())
@@ -94,10 +107,11 @@ class Store:
         if not row:raise ApiError('로그인이 만료되었습니다. 얼굴로 다시 로그인하세요.',401)
         return row[0]
 
-    def profile(self,profile_id,token):
-        row=self.db.execute('SELECT id,name,avatar FROM profiles WHERE id=?',(profile_id,)).fetchone()
+    def profile(self,profile_id,token,avatar):
+        # avatar is this request's aligned face JPG; it is returned once and never stored.
+        row=self.db.execute('SELECT id,name FROM profiles WHERE id=?',(profile_id,)).fetchone()
         if not row:raise ApiError('프로필 없음',404)
-        return dict(ok=True,id=row[0],name=row[1],avatar=base64.b64encode(row[2]).decode(),token=token)
+        return dict(ok=True,id=row[0],name=row[1],avatar=base64.b64encode(avatar).decode(),token=token)
 
     def delete(self,profile_id):
         with self.db:self.db.execute('DELETE FROM profiles WHERE id=?',(profile_id,))

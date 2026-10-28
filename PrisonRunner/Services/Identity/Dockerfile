@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 COPY setup_models.py ./
 COPY models/provenance.json models/
 RUN python setup_models.py
-COPY server.py storage.py schema.sql schema.postgres.sql migrate_sqlite.py ./
+COPY server.py storage.py schema.sql schema.postgres.sql migrate_sqlite.py migrate_account.py ./
 RUN mkdir /app/data && chown identity:identity /app/data
 USER 10001:10001
 EXPOSE 8765

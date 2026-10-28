@@ -22,8 +22,8 @@ class HttpTests(unittest.TestCase):
         def run():
             store=self.make_store()
             with store.db:
-                store.db.execute('INSERT INTO profiles VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING',
-                                 ('visitor','Test visitor',b'test-avatar',1,'test'))
+                store.db.execute('INSERT INTO profiles (id,name,created_at,consent_version) VALUES(?,?,?,?) ON CONFLICT DO NOTHING',
+                                 ('visitor','Test visitor',1,'test'))
             token=store.issue('visitor')
             # No face extraction is used here; real model coverage lives in test_identity.py.
             server=create_server('127.0.0.1',0,store,None,'faces.test,127.0.0.1:8765')

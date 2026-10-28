@@ -20,7 +20,7 @@ def migrate(source_path,*,database_url=None):
                    for table in ('profiles','face_samples','runs','sessions')):
                 raise ValueError('Target database must be empty; no data was imported')
             for table,columns in (
-                ('profiles','id,name,avatar,created_at,consent_version'),
+                ('profiles','id,name,created_at,consent_version'),
                 ('face_samples','profile_id,embedding'),
                 ('runs','id,profile_id,distance,score,kcal,goal,activities,created_at'),
             ):
