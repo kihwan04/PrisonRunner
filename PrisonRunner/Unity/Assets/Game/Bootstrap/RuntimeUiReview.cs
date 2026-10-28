@@ -51,7 +51,8 @@ namespace Muhanok.Bootstrap
             Seed(data);
             hud.ShowPage(MenuPage.Profile); yield return Shot("04_Profile");
             hud.ShowPage(MenuPage.Shop); yield return Shot("05_Shop");
-            hud.ShowPage(MenuPage.Ranking); yield return Shot("06_Ranking");
+            // The review data is on this PC (keyboard runs); the member tab would ask the server.
+            hud.ShowPage(MenuPage.Ranking); hud.Ranking.Select(false, PlayStyle.Keyboard, false); yield return Shot("06_Ranking");
             game.OpenMainMenu(); yield return Shot("07_MainMenu");
             hud.ShowPage(MenuPage.Setup); yield return Shot("08_Setup");
             hud.ShowIdentity();yield return Shot("08_Face_Login");hud.ShowPage(MenuPage.Setup);

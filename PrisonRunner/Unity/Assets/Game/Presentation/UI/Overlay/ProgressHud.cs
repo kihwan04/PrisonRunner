@@ -12,7 +12,8 @@ namespace Muhanok.Presentation
         private readonly GUIContent distanceContent = new GUIContent();
         private int shownScore = -1, shownMeters = -1, shownBest = -1;
         public ProgressHud(OverlaySkin overlaySkin) { skin = overlaySkin; }
-        public void Draw(RunSession session, float savedBest)
+        // savedBest: the member's best score for this play style, -1 for a guest (no best shown).
+        public void Draw(RunSession session, int savedBest)
         {
             // The live score uses the same RunScore formula as the result and the ranking.
             int score = session.Score.Score;
@@ -22,11 +23,11 @@ namespace Muhanok.Presentation
                 content.text = score.ToString("N0", CultureInfo.InvariantCulture) + "점";
             }
             int meters = Mathf.FloorToInt(session.Score.Distance);
-            int best = Mathf.FloorToInt(Mathf.Max(session.Score.Distance, savedBest));
+            int best = savedBest < 0 ? -1 : Mathf.Max(score, savedBest);
             if (meters != shownMeters || best != shownBest)
             {
                 shownMeters = meters; shownBest = best;
-                distanceContent.text = meters.ToString("N0", CultureInfo.InvariantCulture) + " m  ·  최고 " + best.ToString("N0", CultureInfo.InvariantCulture) + " m";
+                distanceContent.text = meters.ToString("N0", CultureInfo.InvariantCulture) + " m" + (best < 0 ? "" : "  ·  최고 " + best.ToString("N0", CultureInfo.InvariantCulture) + "점");
             }
             // Keep the score/distance group together beside the pause control, away from the road.
             skin.Box(new Rect(870, 24, 300, 88), Palette.A(Palette.Ground, .82f));

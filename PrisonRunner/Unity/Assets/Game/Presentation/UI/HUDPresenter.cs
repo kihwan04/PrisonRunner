@@ -31,6 +31,8 @@ namespace Muhanok.Presentation
         public SignUpFlow SignUp { get; } = new SignUpFlow();
         // 내 정보 form state (members only).
         public ProfileForm Profile { get; } = new ProfileForm();
+        // Ranking tabs, the result best and the calorie panel; tests read what the ranking screen shows.
+        public RankingBoard Ranking { get; } = new RankingBoard();
         public bool IdentityOpen=>Page==MenuPage.Identity;
         // Login gate, sign-up and face login keep the upper-body camera on for hand pointing and face capture.
         public bool AccountPageOpen=>Page==MenuPage.Login||Page==MenuPage.SignUp||Page==MenuPage.Identity;
@@ -66,7 +68,7 @@ namespace Muhanok.Presentation
             skin = new HudSkin();
             overlaySkin = new OverlaySkin(Resources.Load<Font>("MuhanokUI/BlackHanSans-Regular"), null);
             title = new TitleScreen(skin); setup = new SetupScreen(skin); loading = new LoadingScreen(skin); identity=new IdentityScreen(skin); signUp=new SignUpScreen(skin,identity);
-            menu = new MainMenuScreen(overlaySkin); gate = new LoginGateScreen(overlaySkin); profile = new ProfileScreen(overlaySkin); shop = new ShopScreen(overlaySkin); board = new LeaderboardScreen(overlaySkin);
+            menu = new MainMenuScreen(overlaySkin); gate = new LoginGateScreen(overlaySkin); profile = new ProfileScreen(overlaySkin); shop = new ShopScreen(overlaySkin); board = new LeaderboardScreen(overlaySkin, Ranking);
             runHud = new RunHud(skin, new ProgressHud(overlaySkin)); pause = new PauseScreen(skin);
         }
         public void ShowPage(MenuPage page)
@@ -77,7 +79,7 @@ namespace Muhanok.Presentation
             if (page == MenuPage.Setup) setup.Open(Data);
             else if (page == MenuPage.Profile) { Profile.Open(Data, Account); profile.Open(); }
             else if (page == MenuPage.Shop) shop.Open();
-            else if (page == MenuPage.Ranking) board.OpenBoard(Data);
+            else if (page == MenuPage.Ranking) board.OpenBoard(Data, Account);
             else if (page == MenuPage.Login) Account?.CheckServer();
             else if (page == MenuPage.SignUp) { SignUp.Open(Account); signUp.Open(); }
             TextInput?.Invoke(page == MenuPage.Setup || page == MenuPage.Profile || page == MenuPage.SignUp);
@@ -143,7 +145,7 @@ namespace Muhanok.Presentation
             }
             else if (state == GameFlowState.Result)
             {
-                if (!resultOpen) { resultOpen = true; board.OpenResult(Data, session); if (board.AsksGuestName) TextInput?.Invoke(true); }
+                if (!resultOpen) { resultOpen = true; board.OpenResult(Data, Account, session); if (board.AsksGuestName) TextInput?.Invoke(true); }
                 bool perRun = Data != null && Data.DeveloperMode;
                 board.Draw(Data, session, retry, "다시 하기", perRun ? NextPlayer : ToMenu, perRun ? "다음 플레이어" : "메인으로");
             }

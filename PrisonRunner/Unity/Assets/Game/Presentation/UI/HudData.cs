@@ -1,3 +1,4 @@
+using Muhanok.Application;
 using Muhanok.Domain;
 using UnityEngine;
 
@@ -31,9 +32,15 @@ namespace Muhanok.Presentation
         bool NameLastRun(string name);
         int LastRank { get; }
         int LastTodayRank { get; }
+        // A member's run is compared with the member's best for its play style from /stats, taken before this run was saved;
+        // LastBestScore is that earlier best, -1 when there is none to show (guests, or the server did not answer).
         bool LastNewBest { get; }
         int LastBestScore { get; }
-        float BestDistance { get; }
+        // The member's totals from /stats after this run was saved: null while waiting (or for a guest); LastStatsFailed when it could not be read.
+        StatsReply LastStats { get; }
+        bool LastStatsFailed { get; }
+        // The member's best score for the current play style, shown on the HUD and pause screen; -1 for a guest.
+        int BestScore { get; }
         // The member's last run could not be saved on the account server (kept in memory and retried with the next run).
         bool RunSaveFailed { get; }
         float StartBanner { get; }

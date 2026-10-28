@@ -24,6 +24,8 @@ namespace Muhanok.Presentation
         void SaveMemberProfile(string nickname,AccountSettings settings,Action<bool,string> done);
         // Totals for 내 정보; null without a member.
         void MemberStats(Action<StatsReply> done);
+        // 회원 랭킹: the server board for one play style (the member's own row in "me" when signed in).
+        void MemberLeaderboard(Muhanok.Domain.PlayStyle mode,bool today,Action<LeaderboardReply> done);
         // Deletes the account on the server and returns to a guest.
         void DeleteAccount(Action<bool,string> done);
     }

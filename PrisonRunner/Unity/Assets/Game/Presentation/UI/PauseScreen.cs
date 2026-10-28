@@ -16,7 +16,9 @@ namespace Muhanok.Presentation
             skin.Panel(new Rect(285, 140, 710, 440), .97f);
             GUI.color = Color.white; GUI.Label(new Rect(325, 165, 620, 60), "잠깐 쉬어가기", skin.Style(34, FontStyle.Bold));
             GUI.Label(new Rect(325, 240, 355, 35), "점수  " + RunHudModel.Points(session.Score.Score) + "   ·   " + RunHudModel.PlayTime(session.Elapsed), skin.Label);
-            GUI.Label(new Rect(325, 283, 355, 30), "거리  " + session.Score.Distance.ToString("N0") + " m   ·   최고 " + (data?.BestDistance ?? 0).ToString("N0") + " m   ·   코인 " + session.Score.Coins, skin.Small);
+            // A member's best for this play style; guests have none.
+            int best = data?.BestScore ?? -1;
+            GUI.Label(new Rect(325, 283, 355, 30), "거리  " + session.Score.Distance.ToString("N0") + " m   ·   " + (best >= 0 ? "최고 " + RunHudModel.Points(Mathf.Max(best, session.Score.Score)) + "   ·   " : "") + "코인 " + session.Score.Coins, skin.Small);
             GUI.Label(new Rect(325, 325, 350, 30), "기준 속도 " + session.TargetSpeed.ToString("F1") + " m/s · " + RouteSurface.AreaAt(session.Runner.Z), skin.Style(18, FontStyle.Normal));
             bool workout = PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard);
             GUI.Label(new Rect(325, 367, 355, 30), workout ? "예상 " + session.Workout.EstimatedKcal.ToString("F1") + " / " + session.Workout.GoalKcal.ToString("F0") + " kcal" : "키보드 · 칼로리 계산 제외", skin.Style(17, FontStyle.Normal));

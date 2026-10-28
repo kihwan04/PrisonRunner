@@ -56,7 +56,11 @@ namespace Muhanok.Bootstrap
         private System.Action<System.Action<string[]>> captureFaces;
         private bool playerRun, bannerSounded, goSounded, lastNewBest;
         private RankingEntry lastEntry;
-        private int lastBestScore;
+        private int lastBestScore = -1;
+        // The member's /stats (best score per play style) and the totals read after the last run was saved.
+        private StatsReply memberStats, lastStats;
+        private string memberStatsId = "";
+        private bool lastStatsFailed;
         private int lastTodayRank;
         private UserSettings userSettings, settingsDefaults;
         private GraphicsSettingsApplier graphics;
@@ -212,6 +216,8 @@ namespace Muhanok.Bootstrap
             if(profile==null||Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading||!Session.Workout.SetWeight(profile.Weight)) return;
             if(!userSettings.DeveloperMode&&profile.Style!=Account.Settings.Style){var saved=Account.Settings;saved.Style=profile.Style;SaveSettings(saved);}
             player=profile; playerRun=true; KeyboardGameInput.SetTextInput(false);
+            // The best to beat is read before the run (and before its save).
+            RefreshMemberStats();
             Session.Workout.Met=PlayStyleInfo.Met(profile.Style);
             Session.Workout.SetGoal(profile.CalorieGoal);
             Pose.SetStyle(profile.Style);
@@ -364,7 +370,7 @@ namespace Muhanok.Bootstrap
                 bool tooling=System.Array.IndexOf(args,"--muhanok-capture")>=0||System.Array.IndexOf(args,"--muhanok-smoke")>=0
                     ||System.Array.IndexOf(args,"--mongscape-review")>=0||System.Array.IndexOf(args,"--mongscape-tests")>=0
                     ||System.Array.IndexOf(args,"--muhanok-uicapture")>=0;
-                lastEntry=null; lastRank=lastTodayRank=lastBestScore=0; lastNewBest=false;
+                lastEntry=null; lastRank=lastTodayRank=0; lastBestScore=-1; lastNewBest=false; lastStats=null; lastStatsFailed=false;
                 if(!tooling&&playerRun) RecordFinishedRun();
             }
         }
@@ -376,14 +382,41 @@ namespace Muhanok.Bootstrap
             var now=System.DateTime.Now;
             string name=Account.IsMember||!developer?Account.Nickname
                 :player.HasName?player.Name.Trim():"플레이어 "+(Store.Board.Day(Leaderboard.DayKey(now)).Count+1);
+            var mode=player.Style;
             lastEntry=new RankingEntry{Name=name,Score=Session.Score.Score,Distance=Session.Score.Distance,Coins=Session.Score.Coins,
-                Style=PlayStyleInfo.Label(player.Style),Ticks=now.Ticks,AccountId=Account.IsMember?Account.Id:"",ScoreVersion=RunScore.Version};
-            // Personal best per play style; in developer mode every run has its own name.
-            int previousBest=Store.Board.BestScore(lastEntry.Style,developer?name:null);
-            lastNewBest=lastEntry.Score>previousBest; lastBestScore=Mathf.Max(previousBest,lastEntry.Score);
+                Style=PlayStyleInfo.Label(mode),Mode=(int)mode,Kcal=PlayStyleInfo.UsesCamera(mode)?Session.Workout.EstimatedKcal:0,
+                Ticks=now.Ticks,AccountId=Account.IsMember?Account.Id:"",ScoreVersion=RunScore.Version};
+            lastStats=null; lastStatsFailed=false;
+            // Personal best per play style: a member's from /stats read before this save; an exhibition run's from this PC by its name; none for guests.
+            int previousBest=Account.IsMember?MemberBest(mode):developer?Store.Board.BestScore(lastEntry.Style,name):-1;
+            lastNewBest=previousBest>=0&&lastEntry.Score>previousBest; lastBestScore=previousBest>0?previousBest:-1;
             lastRank=Store.Record(lastEntry,Session.Workout.EstimatedKcal);
-            lastTodayRank=Store.Board.RankOf(lastEntry,true);
-            if(Account.IsMember) runs.Save(AccountRun.Create(Session,player.Style,developer?0:Session.Score.Coins));
+            lastTodayRank=Store.Board.RankOf(lastEntry,true,mode);
+            if(!Account.IsMember) return;
+            // The result screen shows the member's totals once the server has this run.
+            string id=Account.Id;
+            runs.Save(AccountRun.Create(Session,mode,developer?0:Session.Score.Coins),saved=>
+            {
+                if(!saved){if(Account.Id==id)lastStatsFailed=true;return;}
+                RefreshMemberStats(reply=>{if(Account.Id!=id)return;lastStats=reply!=null&&reply.ok?reply:null;lastStatsFailed=lastStats==null;});
+            });
+        }
+        // The member's best score for one play style from the last /stats; -1 when it is not known.
+        private int MemberBest(PlayStyle mode)
+        {
+            var stats=memberStats;
+            return Account.IsMember&&stats!=null&&memberStatsId==Account.Id&&stats.best_score!=null&&stats.best_score.Length>(int)mode?stats.best_score[(int)mode]:-1;
+        }
+        // Reads /stats for the signed-in member and keeps it for the HUD best and the next result.
+        private void RefreshMemberStats(System.Action<StatsReply> done=null)
+        {
+            if(!Account.IsMember||string.IsNullOrEmpty(Account.Token)){done?.Invoke(null);return;}
+            string id=Account.Id;
+            gateway.Stats(Account.Token,reply=>
+            {
+                if(reply!=null&&reply.ok&&Account.IsMember&&Account.Id==id){memberStats=reply;memberStatsId=id;}
+                done?.Invoke(reply);
+            });
         }
         public void Retry()
         {
@@ -487,7 +520,9 @@ namespace Muhanok.Bootstrap
         int IHudData.LastTodayRank => lastTodayRank;
         bool IHudData.LastNewBest => lastNewBest;
         int IHudData.LastBestScore => lastBestScore;
-        float IHudData.BestDistance => Store.Stats.BestDistance;
+        StatsReply IHudData.LastStats => lastStats;
+        bool IHudData.LastStatsFailed => lastStatsFailed;
+        int IHudData.BestScore => MemberBest(player.Style);
         bool IHudData.RunSaveFailed => runs != null && runs.LastFailed;
         public float StartBanner => Session.Flow.State == GameFlowState.Running ? Mathf.Max(0, 2.2f - (Time.realtimeSinceStartup - runStartedAt)) : 0;
         float IHudData.CaughtFlash => Session.Flow.State == GameFlowState.Caught ? Mathf.Clamp01(1 - (Time.realtimeSinceStartup - caughtAt) / .6f) : 0;
@@ -524,6 +559,9 @@ namespace Muhanok.Bootstrap
             shownAccount = id;
             if (!Account.IsMember) ClearPortrait();
             faceAvatar.Apply(portrait);
+            // The HUD best and the next result compare with this member's /stats.
+            memberStats = null; memberStatsId = "";
+            if (Account.IsMember && gateway != null) RefreshMemberStats();
             if (userSettings == null) return;
             if (!userSettings.DeveloperMode) player = Account.Profile.Clone();
             else if (Account.IsMember) player.Name = Account.Nickname;
@@ -625,6 +663,12 @@ namespace Muhanok.Bootstrap
         {
             if (!Account.IsMember || string.IsNullOrEmpty(Account.Token)) { done?.Invoke(null); return; }
             gateway.Stats(Account.Token, done);
+        }
+        // 회원 랭킹 for anyone; a member's token adds their own row ("me").
+        public void MemberLeaderboard(PlayStyle mode, bool today, System.Action<LeaderboardReply> done)
+        {
+            if (gateway == null) { done?.Invoke(new LeaderboardReply { message = "서버에 연결할 수 없어요" }); return; }
+            gateway.Leaderboard(Account.IsMember ? Account.Token : "", mode, today, done);
         }
         // Account deletion (face, profile and runs on the server, and the member's rows on this PC's ranking); the player becomes a guest.
         public void DeleteAccount(System.Action<bool,string> done)

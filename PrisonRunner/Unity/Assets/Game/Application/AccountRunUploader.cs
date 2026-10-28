@@ -13,19 +13,20 @@ namespace Muhanok.Application
         public bool HasPending => pending != null;
         public AccountRunUploader(AccountSession session, IAccountGateway gateway) { account = session; Gateway = gateway; }
 
-        public void Save(AccountRun run)
+        // saved(ok) answers once for this run, after the server replied (the result screen then asks for /stats).
+        public void Save(AccountRun run, System.Action<bool> saved = null)
         {
-            if (run == null || Gateway == null || !account.IsMember) return;
+            if (run == null || Gateway == null || !account.IsMember) { saved?.Invoke(false); return; }
             string id = account.Id; LastFailed = false;
             var retry = pending; pending = null;
             // The older run goes first so the balance from the newest reply is the latest one.
-            if (retry != null && retry.AccountId == id) Gateway.SaveRun(account.Token, retry.Run, reply => { Finished(id, reply, null); Send(id, run); });
-            else Send(id, run);
+            if (retry != null && retry.AccountId == id) Gateway.SaveRun(account.Token, retry.Run, reply => { Finished(id, reply, null); Send(id, run, saved); });
+            else Send(id, run, saved);
         }
-        private void Send(string id, AccountRun run)
+        private void Send(string id, AccountRun run, System.Action<bool> saved)
         {
-            if (!account.IsMember || account.Id != id) { Keep(id, run); return; }
-            Gateway.SaveRun(account.Token, run, reply => Finished(id, reply, run));
+            if (!account.IsMember || account.Id != id) { Keep(id, run); saved?.Invoke(false); return; }
+            Gateway.SaveRun(account.Token, run, reply => { Finished(id, reply, run); saved?.Invoke(reply != null && reply.ok); });
         }
         private void Finished(string id, AccountReply reply, AccountRun run)
         {
