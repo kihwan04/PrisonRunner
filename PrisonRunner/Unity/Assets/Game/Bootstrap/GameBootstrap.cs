@@ -49,6 +49,11 @@ namespace Muhanok.Bootstrap
         private AccountRunUploader runs;
         private Texture2D portrait;
         private string shownAccount = "";
+        // Account server state for the login gate, and the face capture (the webcam, or a fake in tests).
+        private string serverProblem = "";
+        private int serverTicket;
+        private bool serverChecking;
+        private System.Action<System.Action<string[]>> captureFaces;
         private bool playerRun, bannerSounded, goSounded, lastNewBest;
         private RankingEntry lastEntry;
         private int lastTodayRank;
@@ -82,6 +87,7 @@ namespace Muhanok.Bootstrap
             PursuitCue=gameObject.AddComponent<PolicePursuitCue>();PursuitCue.Configure(Session);
             identity=gameObject.AddComponent<LocalProfileClient>(); faceAvatar=Hero.gameObject.AddComponent<FaceAvatarView>();
             gateway=identity; runs=new AccountRunUploader(Account,gateway);
+            captureFaces=done=>identity.CaptureFaces(Pose.CameraTexture,done);
             Account.Changed+=AccountChanged;
             gameObject.AddComponent<CartRideView>().Configure(Session,Hero,CartRidePrefab);
             OutputCamera.GetComponent<CinematicFocus>()?.Configure(Session,Hero);
@@ -137,7 +143,6 @@ namespace Muhanok.Bootstrap
             settingsWindow.Configure(this);
             settingsWindow.Closed += () => hud.Hidden = false;
             hud.OpenSettings = OpenSettings;
-            hud.OpenIdentity=()=>{Pose.SetStyle(PlayStyle.UpperBody);hud.ShowIdentity();};
             ApplySettings(false);
         }
         public void OpenSettings()
@@ -177,6 +182,12 @@ namespace Muhanok.Bootstrap
         {
             if(Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
             hud.OpenMainMenu();
+        }
+        // After the title: face login, sign-up or guest play.
+        public void OpenLogin()
+        {
+            if(Session.Flow.State!=GameFlowState.TitleIdle||hud.Loading) return;
+            hud.OpenLogin();
         }
         // Straight to the run setup (tests, "다음 플레이어").
         public void OpenStartSetup()
@@ -230,7 +241,8 @@ namespace Muhanok.Bootstrap
             double now = Time.realtimeSinceStartupAsDouble;
             bool live = Session.Flow.State == GameFlowState.Running && !Session.Paused && !hud.Loading;
             Pose.Tick(now, live);
-            if(!automated&&Session.Flow.State==GameFlowState.TitleIdle && !Pose.UsesCamera && !hud.SetupOpen && !hud.IdentityOpen)Pose.SetStyle(PlayStyle.UpperBody);
+            // Menus use the upper-body camera for hand pointing; the login gate, sign-up and face capture always do.
+            if(!automated&&Session.Flow.State==GameFlowState.TitleIdle&&(hud.AccountPageOpen?Pose.Style!=PlayStyle.UpperBody:!Pose.UsesCamera&&!hud.SetupOpen))Pose.SetStyle(PlayStyle.UpperBody);
             bool menu=Session.Flow.State!=GameFlowState.Running || Session.Paused;
             GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking,now);
             OperatorKeys();
@@ -309,7 +321,7 @@ namespace Muhanok.Bootstrap
             if (save) UserSettingsStore.Save(userSettings);
             player = on ? new PlayerProfile { Style = Account.Settings.Style } : Account.Profile.Clone();
             if(on&&Account.IsMember)player.Name=Account.Nickname;
-            if (hud.MenuOpen) hud.OpenMainMenu();
+            if (hud.MenuOpen && !hud.AccountPageOpen) hud.OpenMainMenu();
             Debug.Log("Developer mode " + (on ? "on" : "off"));
         }
         public void TickInput()
@@ -317,7 +329,7 @@ namespace Muhanok.Bootstrap
             keyboard.Poll();
             if(hud.Loading||hud.Revealing||(settingsWindow!=null&&settingsWindow.IsOpen)){keyboard.Clear();poseInput.Clear();return;}
             router.Tick();
-            if (Session.Flow.State == GameFlowState.TitleIdle && !hud.BlocksStart && KeyboardGameInput.StartPressed) OpenMainMenu();
+            if (Session.Flow.State == GameFlowState.TitleIdle && !hud.BlocksStart && KeyboardGameInput.StartPressed) OpenLogin();
         }
         private void LateUpdate()
         {
@@ -391,14 +403,14 @@ namespace Muhanok.Bootstrap
             Retry();
             if (again) StartPlayerRun(profile);
         }
-        // "다음 플레이어" (developer mode): back to an empty setup screen for the next person.
+        // "다음 플레이어" (developer mode): the member is signed out and the next person starts at the login gate.
         public void NextPlayer()
         {
             var style = player.Style;
             Retry();
             SignOutMember();
             player = new PlayerProfile { Style = style == PlayStyle.Keyboard ? PlayStyle.FullBody : style };
-            playerRun = false; OpenStartSetup();
+            playerRun = false; OpenLogin();
         }
         // "메인으로" from the result or pause screen; a paused run ends without a record.
         public void ExitToMenu()
@@ -421,11 +433,12 @@ namespace Muhanok.Bootstrap
         private void OnApplicationQuit() { if(Account.IsMember&&!string.IsNullOrEmpty(Account.Token)) gateway?.Logout(Account.Token,null); }
         private void OnDestroy() { Time.timeScale=1; graphics?.Dispose(); Pose?.Dispose(); RouteSurface.UsePlan(null); KeyboardGameInput.SetTextInput(false); ClearPortrait(); }
 
-        // Tests and tools: another account server (or a fake) and another PC store. Call on the title screen.
-        public void UseAccountServices(IAccountGateway accountGateway, PlayerProgressStore store = null)
+        // Tests and tools: another account server (or a fake), another PC store and a face capture without a webcam. Call on the title screen.
+        public void UseAccountServices(IAccountGateway accountGateway, PlayerProgressStore store = null, System.Action<System.Action<string[]>> faces = null)
         {
-            if (accountGateway != null) { gateway = accountGateway; runs.Gateway = accountGateway; }
+            if (accountGateway != null) { gateway = accountGateway; runs.Gateway = accountGateway; serverTicket++; serverChecking = false; serverProblem = ""; }
             if (store != null) Store = store;
+            if (faces != null) captureFaces = faces;
         }
         // Items placed on the map: every item in developer mode, otherwise what the member unlocked (none for guests).
         public System.Collections.Generic.List<ItemKind> RunItems()
@@ -531,16 +544,44 @@ namespace Muhanok.Bootstrap
         public bool SignedIn=>Account.IsMember;
         public string IdentityMessage=>identity.Message;
         public Texture Portrait=>portrait;
-        public void FaceLogin(bool enroll)
+        public bool ServerChecking=>serverChecking;
+        public string ServerProblem=>serverProblem;
+        // Asked each time the login gate opens; until the server answers, face login and sign-up wait. Only the latest answer counts.
+        public void CheckServer()
         {
-            if (IdentityBusy || Account.IsMember) return;
-            identity.CaptureFaces(Pose.CameraTexture, images =>
+            int mine=++serverTicket; serverChecking=true;
+            gateway.Health(reply=>{ if(mine!=serverTicket)return; serverChecking=false; serverProblem=reply!=null&&reply.ok?"":ServerReason(reply); });
+        }
+        public void CheckNickname(string name,System.Action<bool,string> done)
+        {
+            string problem=AccountSession.NicknameProblem(name);
+            if(problem!=null){done?.Invoke(false,problem);return;}
+            gateway.NameCheck(name.Trim(),reply=>
             {
-                if (!enroll) { gateway.Login(images, SignedInReply); return; }
-                var settings = Account.Settings;
-                gateway.Enroll(new AccountEnrollment { name = Account.Nickname, consent = true, images = images, weight = settings.Weight, style = (int)settings.Style, goal = settings.Goal }, SignedInReply);
+                if(reply==null||!reply.ok){NoteServer(reply);done?.Invoke(false,ServerReason(reply));return;}
+                done?.Invoke(reply.available,reply.available?"":string.IsNullOrEmpty(reply.message)?"사용할 수 없는 닉네임입니다.":reply.message);
             });
         }
+        public void FaceLogin(System.Action<bool> done)
+        {
+            if (IdentityBusy || Account.IsMember) return;
+            captureFaces(images => gateway.Login(images, reply => FaceReply(reply, done)));
+        }
+        // Sign-up: the nickname and settings chosen in the sign-up steps, not the guest's.
+        public void FaceEnroll(string nickname, AccountSettings settings, System.Action<bool> done)
+        {
+            if (IdentityBusy || Account.IsMember || AccountSession.NicknameProblem(nickname) != null) return;
+            settings ??= new AccountSettings();
+            captureFaces(images => gateway.Enroll(new AccountEnrollment { name = nickname.Trim(), consent = true, images = images, weight = settings.Weight, style = (int)settings.Style, goal = settings.Goal }, reply => FaceReply(reply, done)));
+        }
+        private void FaceReply(AccountReply reply, System.Action<bool> done)
+        {
+            NoteServer(reply); SignedInReply(reply);
+            done?.Invoke(reply != null && reply.HasProfile && Account.IsMember);
+        }
+        // A request that could not reach the server disables face login and sign-up on the gate until the next check.
+        private void NoteServer(AccountResult reply) { if (reply != null && !reply.ok && reply.status == 0) serverProblem = ServerReason(reply); }
+        private static string ServerReason(AccountResult reply) => reply != null && !string.IsNullOrEmpty(reply.message) ? reply.message : "얼굴 서버에 연결할 수 없습니다.";
         public void FaceLogout(bool delete)
         {
             if (IdentityBusy || !Account.IsMember) return;

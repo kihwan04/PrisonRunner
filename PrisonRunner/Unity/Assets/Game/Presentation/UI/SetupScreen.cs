@@ -23,7 +23,7 @@ namespace Muhanok.Presentation
             if (player != null) { name = player.Name; weightText = player.Weight; style = player.Style; goalText=player.CalorieGoal.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture); }
             data?.PreviewStyle(style);
         }
-        public void Draw(IHudData data, Action<PlayerProfile> beginRun, Action back, Action openSettings = null,Action openIdentity=null)
+        public void Draw(IHudData data, Action<PlayerProfile> beginRun, Action back, Action openSettings = null)
         {
             bool perRun = data != null && data.DeveloperMode;
             skin.Card(new Rect(0, 0, 1280, 720), Palette.A(Palette.Ground, .82f));
@@ -32,7 +32,6 @@ namespace Muhanok.Presentation
             if (openSettings != null && skin.FlatButton(new Rect(950, 92, 140, 44), "설정", false)) openSettings();
             if (back != null && skin.FlatButton(new Rect(800, 92, 140, 44), "뒤로", false)) back();
             GUI.color = Color.white;
-            if(openIdentity!=null && skin.FlatButton(new Rect(640,92,145,44),data is IIdentityData id && id.SignedIn?"내 얼굴":"얼굴 로그인",false))openIdentity();
             if (perRun)
             {
                 GUI.Label(new Rect(195, 150, 200, 34), "이름 (순위표)", skin.Label);
