@@ -42,7 +42,8 @@ namespace Muhanok.Presentation.Map
             foreach (var pickup in chunk.Pickups) if (pickup != null) pickup.gameObject.SetActive(false);
             if (chunk.FloorItems != null) foreach (var item in chunk.FloorItems) if (item != null) item.gameObject.SetActive(false);
             if (chunk.Coins != null) foreach (var coin in chunk.Coins) if (coin != null) coin.gameObject.SetActive(false);
-            if (chunk.RailGaps != null) foreach (var gap in chunk.RailGaps) if (gap != null) gap.gameObject.SetActive(false);
+            // Intact rails: both shown and nothing to judge (the seeded layout may have broken one).
+            if (chunk.RailGaps != null) foreach (var gap in chunk.RailGaps) if (gap != null) gap.Configure(0);
             chunk.DynamicObstacles.Clear(); chunk.DynamicFloorItems.Clear(); chunk.Pickups.Clear(); chunk.Animated.Clear();
         }
         private static void Hide(ObstacleController[] hazards) { if (hazards != null) foreach (var hazard in hazards) if (hazard != null) hazard.gameObject.SetActive(false); }
