@@ -12,7 +12,7 @@ SERVER_FILES=(
     'Dockerfile','.dockerignore','requirements.txt','compose.yaml','compose.https.yaml',
     'Caddyfile','.env.example','README_DOCKER.md','server.py','setup_models.py',
     'models/provenance.json','models/face_detection_yunet.LICENSE','models/face_recognition_sface.LICENSE',
-    'ConfigureClient.ps1','identity-server.example.json','test_identity.py','test_http.py',
+    'ConfigureClient.ps1','identity-server.example.json','test_identity.py','test_http.py','run_tests.ps1',
     'storage.py','schema.postgres.sql','init-postgres.sh','prepare_secrets.py','migrate_account.py',
     'setup_postgres_runtime.py',
 )
