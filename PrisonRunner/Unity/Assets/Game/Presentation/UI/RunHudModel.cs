@@ -15,6 +15,9 @@ namespace Muhanok.Presentation
         public string Workout { get; private set; } = "";
         public bool ShowWorkout { get; private set; }
         public bool ShowPoseRecovery { get; private set; }
+        // Camera styles keep the webcam corner on screen unless the player turned it off in settings.
+        public bool CameraEnabled { get; set; } = true;
+        public bool ShowCamera { get; private set; }
         public float GoalProgress { get; private set; }
         public string Notice { get; private set; }
         public HudNoticeKind NoticeKind { get; private set; }
@@ -60,13 +63,14 @@ namespace Muhanok.Presentation
             Notice = null; NoticeKind = HudNoticeKind.None;
             if (!running)
             {
-                nextScan = 0; actionCue = null; ShowPoseRecovery = false; lostSince = -1;
+                nextScan = 0; actionCue = null; ShowPoseRecovery = ShowCamera = false; lostSince = -1;
                 return;
             }
             bool lost = PlayStyleInfo.UsesCamera(style) && pose != PoseStatus.Tracking;
             if (!lost) lostSince = -1;
             else if (lostSince < 0) lostSince = now;
             ShowPoseRecovery = lost && now - lostSince >= .75f;
+            ShowCamera = CameraEnabled && PlayStyleInfo.UsesCamera(style);
             if (session.DodgeStreak > streak && session.DodgeStreak > 1)
             {
                 comboText = session.DodgeStreak + " COMBO"; comboUntil = now + 1.1f;

@@ -11,6 +11,8 @@ namespace Muhanok.Presentation
         private readonly ProgressHud progress;
         public readonly RunHudModel Model = new RunHudModel();
         private static readonly Rect NoticeArea = new Rect(400, 588, 480, 48);
+        // Bottom-right webcam: small while tracking, larger with status once recognition is lost. Both stay right of the notice and below the counters.
+        private static readonly Rect CameraArea = new Rect(1056, 514, 200, 150), RecoveryCameraArea = new Rect(1020, 490, 236, 174);
         public RunHud(HudSkin hudSkin, ProgressHud progressHud) { skin = hudSkin; progress = progressHud; }
         public void Draw(RunSession session, float fade, IHudData data, Action pause)
         {
@@ -40,8 +42,8 @@ namespace Muhanok.Presentation
             }
             if (session.Flow.State == GameFlowState.Running)
             {
-                if (Model.ShowPoseRecovery && data?.CameraTexture != null)
-                    PosePreview.Draw(skin, new Rect(1020, 490, 236, 174), data, true);
+                if (Model.ShowCamera && data?.CameraTexture != null)
+                    PosePreview.Draw(skin, Model.ShowPoseRecovery ? RecoveryCameraArea : CameraArea, data, Model.ShowPoseRecovery);
                 if (data == null || data.StartBanner <= 0) DrawNotice();
             }
             if (data != null) DrawBanners(data, session.Flow.State);
