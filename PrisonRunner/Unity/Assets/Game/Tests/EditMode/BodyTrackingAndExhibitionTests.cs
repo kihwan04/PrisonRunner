@@ -133,6 +133,51 @@ namespace Muhanok.Tests
             classifier.Update(new PoseFrame { HasPose = false, Time = 6 });
             classifier.Update(Frame(new Body(), 6.1)); Assert.AreEqual(PoseStatus.Calibrating, classifier.Status);
         }
+        // Camera stand-in for PoseTracker: one scripted frame per Tick time.
+        private sealed class FakeEstimator : IPoseEstimator
+        {
+            public Func<double, PoseFrame> Script;
+            private double now, taken = -1;
+            public PoseStatus Status => PoseStatus.Tracking;
+            public string Message => "";
+            public UnityEngine.Texture CameraTexture => null;
+            public string Diagnostics => "";
+            public void Start() { }
+            public void Stop() { }
+            public void Dispose() { }
+            public void Tick(double time) { now = time; }
+            public bool TryTakeFrame(PoseFrame target) { if (now == taken) return false; taken = now; target.CopyFrom(Script(now)); return true; }
+        }
+        [Test] public void CalibrationIsKeptForAMinuteUnlessTrackingWasLost()
+        {
+            Assert.IsTrue(CalibrationReuse.Keep(10, 5, false), "Just calibrated: the run skips its loading calibration");
+            Assert.IsTrue(CalibrationReuse.Keep(65, 5, false));
+            Assert.IsFalse(CalibrationReuse.Keep(65.1, 5, false), "More than 60 s ago");
+            Assert.IsFalse(CalibrationReuse.Keep(10, 5, true), "Tracking was lost since");
+            Assert.IsFalse(CalibrationReuse.Keep(10, -1, false), "Never calibrated");
+        }
+        [Test] public void TrackerSkipsRecalibrationRightAfterCalibratingAndNotAfterLosingThePlayer()
+        {
+            var previous = PoseEstimatorRegistry.Factory; bool present = true;
+            var camera = new FakeEstimator { Script = t => present ? Frame(new Body(), t) : new PoseFrame { HasPose = false, Time = t } };
+            PoseEstimatorRegistry.Factory = _ => camera;
+            var tracker = new PoseTracker(new PoseGameInput(), new PoseCameraOptions(), new MotionTuning(), () => 0, () => false);
+            try
+            {
+                tracker.SetStyle(PlayStyle.FullBody);
+                double t = 0; void Run(double seconds) { for (double end = t + seconds; t < end; t += 1 / 30.0) tracker.Tick(t, false); }
+                Assert.IsFalse(tracker.CalibrationFresh(t), "Not calibrated yet");
+                Run(1.5); Assert.AreEqual(PoseStatus.Tracking, tracker.Status);
+                Assert.IsTrue(tracker.CalibrationFresh(t), "Just calibrated: PrepareRun keeps it");
+                Assert.IsFalse(tracker.CalibrationFresh(tracker.CalibratedAt + 61), "A minute later it calibrates again");
+                present = false; Run(1); present = true; Run(1);
+                Assert.AreEqual(PoseStatus.Tracking, tracker.Status); Assert.IsFalse(tracker.CalibrationFresh(t), "Tracking was lost since the calibration");
+                tracker.Recalibrate(); Assert.IsFalse(tracker.CalibrationFresh(t));
+                Run(1.5); Assert.IsTrue(tracker.CalibrationFresh(t), "A new calibration is fresh again");
+                tracker.SetStyle(PlayStyle.UpperBody); Assert.IsFalse(tracker.CalibrationFresh(t), "Another play style needs its own baseline");
+            }
+            finally { tracker.Dispose(); PoseEstimatorRegistry.Factory = previous; }
+        }
         [Test] public void PoseCommandsStepTowardTheZoneAndUseAbsoluteLeanInTheCart()
         {
             var output = new PoseGameInput(); int lane = 0; bool cart = false;

@@ -127,5 +127,30 @@ namespace Muhanok.Tests
             Assert.IsFalse(Board.NewBest);Assert.AreEqual(RankingBoard.GuestBestNote,Board.BestLine);
             yield return null;
         }
+
+        // 웹캠 보정 is offered on the result screen of camera runs only. Without a webcam the calibration never completes,
+        // so the panel stays open (no hand pointing meanwhile) until it is closed or the result screen is left.
+        [UnityTest]
+        public IEnumerator WebcamCalibrationIsOfferedOnlyAfterCameraRuns()
+        {
+            yield return Open();
+            game.StartIntro();for(int i=0;i<82;i++)game.Intro.Tick(.1f);
+            Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
+            game.Session.Flow.Transition(GameFlowState.Caught);game.Session.Flow.Transition(GameFlowState.Result);
+            Data.Player.Style=PlayStyle.Keyboard;yield return null;
+            Assert.IsFalse(hud.CalibrationAvailable,"키보드 모드에는 버튼이 없다");
+            hud.OpenCalibration();Assert.IsFalse(hud.CalibrationOpen);
+
+            Data.Player.Style=PlayStyle.UpperBody;yield return null;
+            Assert.IsTrue(hud.CalibrationAvailable,"카메라 모드");
+            hud.OpenCalibration();Assert.IsTrue(hud.CalibrationOpen);
+            yield return null;yield return null;
+            Assert.IsTrue(hud.CalibrationOpen);Assert.IsFalse(GesturePointer.Visible,"No hand pointing while the panel is open");
+            hud.CloseCalibration();Assert.IsFalse(hud.CalibrationOpen);
+
+            hud.OpenCalibration();Assert.IsTrue(hud.CalibrationOpen);
+            game.Retry();yield return null;
+            Assert.IsFalse(hud.CalibrationAvailable);Assert.IsFalse(hud.CalibrationOpen,"Leaving the result screen closes it");
+        }
     }
 }
