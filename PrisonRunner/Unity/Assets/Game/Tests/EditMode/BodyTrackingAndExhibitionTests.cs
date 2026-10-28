@@ -230,32 +230,34 @@ namespace Muhanok.Tests
         {
             var today = DateTime.Now; var yesterday = today.AddDays(-1);
             var board = new Leaderboard();
-            var old = new RankingEntry { Name = "Old", Distance = 300, Score = 1200, ScoreVersion = RunScore.Version, Ticks = yesterday.Ticks };
-            var a = new RankingEntry { Name = "A", Distance = 300, Score = 900, ScoreVersion = RunScore.Version, Ticks = today.Ticks };
-            var b = new RankingEntry { Name = "B", Distance = 500, Score = 500, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 1 };
-            var tie = new RankingEntry { Name = "Tie", Distance = 900, Score = 900, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 2 };
+            const PlayStyle full = PlayStyle.FullBody; const int mode = (int)full;
+            var old = new RankingEntry { Name = "Old", Distance = 300, Score = 1200, ScoreVersion = RunScore.Version, Mode = mode, Ticks = yesterday.Ticks };
+            var a = new RankingEntry { Name = "A", Distance = 300, Score = 900, ScoreVersion = RunScore.Version, Mode = mode, Ticks = today.Ticks };
+            var b = new RankingEntry { Name = "B", Distance = 500, Score = 500, ScoreVersion = RunScore.Version, Mode = mode, Ticks = today.Ticks + 1 };
+            var tie = new RankingEntry { Name = "Tie", Distance = 900, Score = 900, ScoreVersion = RunScore.Version, Mode = mode, Ticks = today.Ticks + 2 };
             Assert.AreEqual(1, board.Add(old)); Assert.AreEqual(2, board.Add(a)); Assert.AreEqual(3, board.Add(b)); Assert.AreEqual(3, board.Add(tie));
-            Assert.AreEqual(2, board.RankOf(a, false), "Score decides the rank, not distance; a tie goes to the earlier run");
-            Assert.AreEqual(4, board.RankOf(b, false));
-            Assert.AreEqual(1, board.RankOf(a, true), "Yesterday's run does not count for today");
-            CollectionAssert.AreEqual(new[] { "A", "Tie", "B" }, board.View(true, today).ConvertAll(e => e.Name));
+            Assert.AreEqual(2, board.RankOf(a, false, full), "Score decides the rank, not distance; a tie goes to the earlier run");
+            Assert.AreEqual(4, board.RankOf(b, false, full));
+            Assert.AreEqual(1, board.RankOf(a, true, full), "Yesterday's run does not count for today");
+            CollectionAssert.AreEqual(new[] { "A", "Tie", "B" }, board.View(true, today, full).ConvertAll(e => e.Name));
             board.ClearDay(Leaderboard.DayKey(today));
-            CollectionAssert.AreEqual(new[] { "Old" }, board.View(false, today).ConvertAll(e => e.Name));
+            CollectionAssert.AreEqual(new[] { "Old" }, board.View(false, today, full).ConvertAll(e => e.Name));
         }
         [Test] public void OlderScoreVersionsAreKeptButNotRanked()
         {
             var today = DateTime.Now;
             var board = new Leaderboard();
-            var legacy = new RankingEntry { Name = "Legacy", Distance = 5000, Score = 50000, Ticks = today.Ticks };
-            var current = new RankingEntry { Name = "Now", Distance = 100, Score = 120, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 1 };
+            const PlayStyle keys = PlayStyle.Keyboard;
+            var legacy = new RankingEntry { Name = "Legacy", Distance = 5000, Score = 50000, Style = "키보드", Ticks = today.Ticks };
+            var current = new RankingEntry { Name = "Now", Distance = 100, Score = 120, ScoreVersion = RunScore.Version, Mode = (int)keys, Ticks = today.Ticks + 1 };
             board.Load(new[] { legacy, current });
             Assert.AreEqual(1, legacy.ScoreVersion, "Records saved before the version field load as version 1");
             Assert.AreEqual(2, board.All.Count, "Older records are not deleted");
-            CollectionAssert.AreEqual(new[] { "Now" }, board.View(false, today).ConvertAll(e => e.Name));
-            CollectionAssert.AreEqual(new[] { "Now" }, board.View(true, today).ConvertAll(e => e.Name));
-            Assert.AreEqual(0, board.RankOf(legacy, false)); Assert.AreEqual(1, board.RankOf(current, false));
-            Assert.AreEqual(0, board.Add(new RankingEntry { Name = "Old", Score = 99999, ScoreVersion = 1, Ticks = today.Ticks + 2 }));
-            Assert.AreEqual(1, board.Add(new RankingEntry { Name = "Best", Score = 121, ScoreVersion = RunScore.Version, Ticks = today.Ticks + 3 }));
+            CollectionAssert.AreEqual(new[] { "Now" }, board.View(false, today, keys).ConvertAll(e => e.Name));
+            CollectionAssert.AreEqual(new[] { "Now" }, board.View(true, today, keys).ConvertAll(e => e.Name));
+            Assert.AreEqual(0, board.RankOf(legacy, false, keys)); Assert.AreEqual(1, board.RankOf(current, false, keys));
+            Assert.AreEqual(0, board.Add(new RankingEntry { Name = "Old", Score = 99999, ScoreVersion = 1, Mode = (int)keys, Ticks = today.Ticks + 2 }));
+            Assert.AreEqual(1, board.Add(new RankingEntry { Name = "Best", Score = 121, ScoreVersion = RunScore.Version, Mode = (int)keys, Ticks = today.Ticks + 3 }));
         }
         [Test] public void BestScoreIsPerPlayStyleAndIgnoresOlderVersions()
         {
@@ -276,8 +278,8 @@ namespace Muhanok.Tests
                 Assert.IsFalse(store.Profile.HasName);
                 store.SaveProfile(new PlayerProfile { Name = "탈옥왕", Weight = "60", Style = PlayStyle.UpperBody });
                 long now = DateTime.Now.Ticks;
-                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 120, Score = 120, ScoreVersion = RunScore.Version, Ticks = now }, 12.5));
-                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 340, Score = 340, ScoreVersion = RunScore.Version, Ticks = now + 1 }, 30));
+                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 120, Score = 120, ScoreVersion = RunScore.Version, Mode = (int)PlayStyle.UpperBody, Kcal = 12.5, Ticks = now }, 12.5));
+                Assert.AreEqual(1, store.Record(new RankingEntry { Name = "탈옥왕", Distance = 340, Score = 340, ScoreVersion = RunScore.Version, Mode = (int)PlayStyle.UpperBody, Kcal = 30, Ticks = now + 1 }, 30));
                 store.DepositCoins(55); Assert.IsTrue(store.Unlock(ItemKind.Magnet));
                 var reopened = new PlayerProgressStore(root);
                 Assert.AreEqual("탈옥왕", reopened.Profile.Name); Assert.AreEqual(PlayStyle.UpperBody, reopened.Profile.Style);

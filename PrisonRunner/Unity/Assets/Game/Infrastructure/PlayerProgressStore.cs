@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Muhanok.Infrastructure
 {
-    // Player data on this PC: the distance leaderboard and lifetime stats. The old PC profile and wallet are only read
+    // Player data on this PC: the per-mode score leaderboard and lifetime stats (developer-mode statistics). The old PC profile and wallet are only read
     // in developer (exhibition) mode; players otherwise come from AccountSession and the files stay untouched.
     // Everything goes through this class so a server-backed store can replace it later.
     public sealed class PlayerProgressStore
@@ -37,7 +37,7 @@ namespace Muhanok.Infrastructure
         private string WalletPath => Path.Combine(folder, "wallet.json");
         private string RecordsPath => Path.Combine(folder, "records.json");
         public void SaveProfile(PlayerProfile value) { LoadDeveloperData(); profile = value.Clone(); Write(ProfilePath, profile); }
-        // Adds a finished run; returns its rank among all runs.
+        // Adds a finished run; returns its rank among the runs of its play style.
         public int Record(RankingEntry entry, double kcal)
         {
             int rank = Board.Add(entry);
@@ -49,7 +49,7 @@ namespace Muhanok.Infrastructure
         // A guest names the run that was recorded as "게스트"; false when the entry is no longer on the board.
         public bool Rename(RankingEntry entry, string name)
         {
-            if (entry == null || string.IsNullOrWhiteSpace(name) || Board.RankOf(entry, false) == 0) return false;
+            if (entry == null || string.IsNullOrWhiteSpace(name) || !Board.Contains(entry)) return false;
             entry.Name = name.Trim(); SaveRecords(); return true;
         }
         public void RemoveAccount(string id) { Board.RemoveAccount(id); SaveRecords(); }
