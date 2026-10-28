@@ -33,7 +33,7 @@ WebCamTexture → PoseImageSampler.compute → BlazePose 검출/랜드마크
 
 몸무게가 있고 실제 활동이 인식된 시간에 전신 4 MET, 상체 2.5 MET 가정으로 예상 칼로리를 계산합니다. 키보드 입력, 추적 손실과 일시정지 시간을 운동 칼로리로 적립하지 않습니다. 목표는 1~5000 kcal로 직접 입력하며 달성 후에도 플레이는 계속됩니다. 의료 측정값이 아닙니다.
 
-얼굴 로그인은 선택 사항입니다. 얼굴 프로필과 운동 기록은 연결된 서버 DB를 사용하며 서버 주소·배포는 [Docker 안내](../Services/Identity/README_DOCKER.md), 저장 위치는 [아키텍처](ARCHITECTURE.md)를 확인하세요. 거리 랭킹·지갑·화면 설정은 각 게임 PC에 남습니다. Ctrl+F10은 개발자/전시 모드에서만 오늘 기록을 초기화합니다. 메뉴 화면은 [UI 안내](GAME_FLOW_UI.md)를 확인하세요.
+얼굴 로그인은 선택 사항입니다. 얼굴 프로필과 운동 기록은 연결된 서버 DB를 사용하며 서버 주소·배포는 [Docker 안내](../Services/Identity/README_DOCKER.md), 저장 위치는 [아키텍처](ARCHITECTURE.md)를 확인하세요. 코인·해금은 회원 계정에 쌓이고, 거리 랭킹·화면 설정은 각 게임 PC에 남습니다. Ctrl+F10은 개발자/전시 모드에서만 오늘 기록을 초기화합니다. 메뉴 화면은 [UI 안내](GAME_FLOW_UI.md)를 확인하세요.
 
 ## 실물 확인 순서
 
