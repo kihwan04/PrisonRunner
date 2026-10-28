@@ -41,7 +41,7 @@
 
 ZIP에서는 `Game/identity-server.json`, 개발용 Unity에서는 `Unity/identity-server.json`입니다. 환경 변수 `MONGSCAPE_IDENTITY_URL`이 있으면 파일보다 우선합니다. 주소 변경 후 게임을 다시 실행하세요.
 
-얼굴 사진·특징·이름·운동 기록은 연결된 서버 DB에 저장됩니다. 원격 서버를 지정하면 로컬 Python 서버를 추가로 시작하지 않습니다. 서버·도메인은 아직 준비하지 않았으므로 [Docker 배포 안내](Services/Identity/README_DOCKER.md)에 따라 구성해야 합니다.
+얼굴 특징값·이름·운동 기록은 연결된 서버 DB에 저장됩니다. 얼굴 사진은 저장하지 않고 로그인 응답으로만 받아 캐릭터에 표시합니다. 원격 서버를 지정하면 로컬 Python 서버를 추가로 시작하지 않습니다. 서버·도메인은 아직 준비하지 않았으므로 [Docker 배포 안내](Services/Identity/README_DOCKER.md)에 따라 구성해야 합니다.
 
 2026-10-25의 이전 로컬 ZIP은 localhost 전용입니다. 이 ZIP에 설정 파일만 추가해서 원격 연결을 사용할 수는 없습니다. 이전 릴리스의 `Muhanok.exe`는 현재 실행 대상이 아닙니다.
 

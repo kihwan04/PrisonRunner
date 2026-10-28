@@ -101,11 +101,11 @@ SELECT id, score, distance, kcal, created_at FROM runs ORDER BY created_at DESC 
 \q
 ```
 
-`profiles`는 이름·얼굴 사진, `face_samples`는 특징 벡터, `sessions`는 토큰 해시·만료, `runs`는 운동 기록입니다. 얼굴 바이너리는 BYTEA, 동작별 기록은 JSONB, 시간은 Unix 초(BIGINT)입니다. 관련 프로필을 삭제하면 FK CASCADE로 특징·기록·세션도 삭제됩니다. 전시용 순위·화면 설정은 각 게임 PC의 로컬 저장입니다.
+`profiles`는 이름·가입 시각·동의 버전, `face_samples`는 얼굴 특징 벡터, `sessions`는 토큰 해시·만료, `runs`는 운동 기록입니다. **얼굴 사진은 저장하지 않습니다.** 로그인·가입 응답의 `avatar`는 그 요청에서 받은 첫 장의 정렬 얼굴을 잘라 돌려준 값이며 DB와 로그에 남지 않습니다. 특징 벡터는 BYTEA, 동작별 기록은 JSONB, 시간은 Unix 초(BIGINT)입니다. 관련 프로필을 삭제하면 FK CASCADE로 특징·기록·세션도 삭제됩니다. 전시용 순위·화면 설정은 각 게임 PC의 로컬 저장입니다.
 
 ## 6. 기존 SQLite 데이터를 옮기려면
 
-자동으로 이전하지 않습니다. 빈 PostgreSQL 대상에만 별도 도구로 가져옵니다. 기존 대상에 데이터가 있으면 거부하고, 오류가 나면 전체 트랜잭션을 롤백합니다. 프로필·사진·특징·운동 기록과 ID를 유지하고 로그인 세션은 복사하지 않으므로 다시 얼굴 로그인합니다.
+자동으로 이전하지 않습니다. 빈 PostgreSQL 대상에만 별도 도구로 가져옵니다. 기존 대상에 데이터가 있으면 거부하고, 오류가 나면 전체 트랜잭션을 롤백합니다. 프로필·특징·운동 기록과 ID를 유지하고 로그인 세션은 복사하지 않으므로 다시 얼굴 로그인합니다. 원본에 이전 버전의 얼굴 사진 열(`avatar`)이 있어도 사진은 가져오지 않습니다.
 
 원본 SQLite를 직접 옮기지 말고 먼저 SQLite backup API로 일관된 복사본을 준비하세요. 예를 들어 로컬 DB가 있는 폴더에서:
 
@@ -135,6 +135,39 @@ docker compose cp postgres:/tmp/mongscape.dump ./mongscape-backup.dump
 백업은 개인 얼굴 정보와 기록을 포함하므로 별도로 보관하고 Git/ZIP에서 제외합니다. 복구는 백업을 새 DB에 복원해 검증한 뒤 진행합니다. 기존 SQLite Docker volume은 PostgreSQL로 자동 변환하거나 삭제하지 않습니다.
 
 비밀번호 초기화 스크립트는 새 DB volume의 최초 초기화 때만 실행됩니다. 이미 초기화한 DB에서 비밀번호 파일만 바꿔도 DB 암호가 자동 변경되지는 않습니다.
+
+## 8. 기존 DB 갱신 (`migrate_account.py`)
+
+서버는 얼굴 사진을 저장하지 않습니다. 이전 버전으로 만든 DB에는 `profiles.avatar` 열과 사진이 남아 있으므로, 새 서버는 이 열을 발견하면 **시작하지 않고** `migrate_account.py` 실행을 안내한 뒤 종료합니다. 새 DB는 처음부터 새 스키마로 만들어지므로 이 절차가 필요 없습니다.
+
+`migrate_account.py`는 기존 DB를 현재 스키마로 바꿉니다. 모든 단계를 한 트랜잭션으로 실행해 오류가 나면 전부 되돌리고, 이미 적용된 단계는 건너뛰므로 다시 실행해도 안전합니다. 결과로 적용한 단계 이름만 출력합니다. 연결 설정은 `server.py`와 같습니다(`--database`, `--database-url`, `--database-backend` 또는 같은 환경 변수). 현재 단계는 `profiles.avatar` 삭제입니다. SQLite 3.35 미만에서는 열 삭제 대신 `profiles` 테이블을 다시 만듭니다.
+
+**저장된 얼굴 사진 삭제는 되돌릴 수 없습니다.** 반드시 백업 → 스크립트 → 재시작 순서로 진행합니다.
+
+Docker(PostgreSQL) 서버:
+
+```sh
+docker compose stop identity
+docker compose exec -T postgres pg_dump -U postgres -d mongscape -Fc -f /tmp/mongscape.dump
+docker compose cp postgres:/tmp/mongscape.dump ./mongscape-before-migrate.dump
+docker compose build identity
+docker compose run --rm identity python migrate_account.py
+docker compose up -d --wait
+curl --fail http://127.0.0.1:8765/health
+```
+
+HTTPS 구성이면 `up`에 3장과 같은 `--env-file .env -f compose.yaml -f compose.https.yaml`을 붙입니다.
+
+로컬 SQLite 서버(Windows): 게임과 로컬 얼굴 서버를 종료한 뒤 `Services/Identity` 폴더에서 로컬 서버가 쓰는 Python으로 실행합니다(휴대용 런타임이면 `.\python\python.exe`).
+
+```powershell
+.\python\python.exe -c "import sqlite3; s=sqlite3.connect('file:data/profiles.sqlite3?mode=ro',uri=True); d=sqlite3.connect('data/profiles-before-migrate.sqlite3'); s.backup(d); d.close(); s.close()"
+.\python\python.exe migrate_account.py --database data\profiles.sqlite3
+```
+
+그다음 게임을 다시 실행하면 로컬 서버가 새로 시작됩니다. 갱신하지 않은 로컬 DB로는 서버가 시작되지 않으며 이유는 `identity-error.log`에 남습니다.
+
+백업에는 이전 얼굴 사진이 그대로 남습니다. 서버 동작을 확인한 뒤 백업을 안전하게 삭제하거나 비공개로 보관하고 Git/ZIP에 넣지 않습니다.
 
 ## 로컬 SQLite와 확인 범위
 

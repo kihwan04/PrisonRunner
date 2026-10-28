@@ -59,7 +59,7 @@ Unity Hub에서 **Unity 6000.3.10f1**로 `PrisonRunner/Unity`를 엽니다. 패�
 
 게임은 사용자가 얼굴 등록/로그인을 선택하면 시차를 둔 얼굴 이미지 3장을 연결된 얼굴 서버로 보냅니다. 기본값은 `http://127.0.0.1:8765`이고, EXE 옆 `identity-server.json` 또는 환경 변수 `MONGSCAPE_IDENTITY_URL`로 원격 HTTPS 주소를 지정합니다. YuNet이 한 명의 얼굴을 검출하고 SFace가 특징 벡터를 만들어 저장된 벡터와 비교합니다. 로그인한 얼굴 사진은 캐릭터 머리에 표시되고 운동 기록은 해당 프로필에 연결됩니다.
 
-로컬 DB는 `Services/Identity/data/profiles.sqlite3`, Docker 중앙 DB는 PostgreSQL 17의 `postgres-data` volume에 저장합니다. 중앙 서버는 Psycopg로 연결하고 DB 비밀번호는 서버의 Docker secret 파일로 관리합니다. 얼굴 사진, 특징 벡터, 이름, 세션과 운동 기록이 들어가므로 Git/공개 ZIP에서 제외합니다. 로그인 토큰은 서버에서 해시로 보관합니다. 게임의 얼굴 삭제 기능으로 프로필과 관련 기록을 지울 수 있습니다. 로컬 기본 서버는 loopback에서만 접속하고, Docker 중앙 서버는 Caddy의 HTTPS 진입점을 사용합니다.
+로컬 DB는 `Services/Identity/data/profiles.sqlite3`, Docker 중앙 DB는 PostgreSQL 17의 `postgres-data` volume에 저장합니다. 중앙 서버는 Psycopg로 연결하고 DB 비밀번호는 서버의 Docker secret 파일로 관리합니다. 특징 벡터, 이름, 세션과 운동 기록이 들어가므로 Git/공개 ZIP에서 제외합니다. 얼굴 사진은 DB에 저장하지 않고, 로그인·가입 요청의 첫 장에서 잘라낸 얼굴을 응답으로만 돌려줍니다. 로그인 토큰은 서버에서 해시로 보관합니다. 게임의 얼굴 삭제 기능으로 프로필과 관련 기록을 지울 수 있습니다. 로컬 기본 서버는 loopback에서만 접속하고, Docker 중앙 서버는 Caddy의 HTTPS 진입점을 사용합니다.
 
 이 기능은 전시용 프로필 인식이며 검증된 사진 위조 방지 기능은 없습니다. 몸동작 인식과 얼굴 로그인은 서로 다른 처리 경로입니다.
 
