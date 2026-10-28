@@ -2,13 +2,29 @@
 from __future__ import annotations
 import base64
 import hashlib
+import json
 import os
 from pathlib import Path
 import secrets
 import sqlite3
 import time
+import unicodedata
 
 BASE=Path(__file__).resolve().parent
+SCHEMA_VERSION=2
+NAME_MAX=10
+
+
+def clean_name(value):
+    """Nickname rule: trimmed, 1-10 characters, no control/format characters. None when broken."""
+    name=value.strip() if isinstance(value,str) else ''
+    if not 1<=len(name)<=NAME_MAX or any(unicodedata.category(c)[0]=='C' for c in name):return None
+    return name
+
+
+def name_key(name):
+    """Uniqueness key: whitespace removed and casefolded, so 'Min Su' and 'minsu' collide."""
+    return ''.join(name.split()).casefold()
 
 
 class ApiError(Exception):
@@ -72,26 +88,42 @@ class Store:
         if self.backend=='postgres':
             self.path=None
             self.db=PostgresConnection(database_url)
-            if initialize:
-                try:
-                    with self.db:self.db.execute((BASE/'schema.postgres.sql').read_text(encoding='utf-8'))
-                except Exception:self.db.close();raise
         elif self.backend=='sqlite':
             self.path=Path(path or BASE/'data'/'profiles.sqlite3')
             self.path.parent.mkdir(parents=True,exist_ok=True)
             self.db=sqlite3.connect(self.path)
             self.db.execute('PRAGMA foreign_keys=ON');self.db.execute('PRAGMA journal_mode=WAL')
-            if initialize:self.db.executescript((BASE/'schema.sql').read_text(encoding='utf-8-sig'))
         else:raise ValueError('Identity backend must be postgres or sqlite')
-        # CREATE TABLE IF NOT EXISTS keeps an old table as is; refuse it instead of failing later on enroll.
-        if initialize and 'avatar' in self.columns('profiles'):
-            self.db.close()
-            raise SchemaError('Old identity schema (profiles.avatar). Back up the DB, run migrate_account.py, then restart.')
+        if not initialize:return
+        try:
+            # CREATE TABLE IF NOT EXISTS would keep an old table as is; refuse it instead of failing later.
+            version=self.version()
+            if version is not None and version<SCHEMA_VERSION:
+                raise SchemaError(f'Old identity schema (v{version}). Back up the DB, run migrate_account.py, then restart.')
+            if version is not None and version>SCHEMA_VERSION:
+                raise SchemaError(f'Identity schema v{version} is newer than this server (v{SCHEMA_VERSION}).')
+            if self.backend=='sqlite':self.db.executescript((BASE/'schema.sql').read_text(encoding='utf-8-sig'))
+            else:
+                with self.db:self.db.execute((BASE/'schema.postgres.sql').read_text(encoding='utf-8'))
+        except Exception:self.db.close();raise
 
     def columns(self,table):
         if self.backend=='sqlite':return {row[1] for row in self.db.execute(f'PRAGMA table_info({table})')}
         return {row[0] for row in self.db.execute(
             'SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=?',(table,))}
+
+    def indexes(self):
+        if self.backend=='sqlite':return {row[0] for row in self.db.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+        return {row[0] for row in self.db.execute('SELECT indexname FROM pg_indexes WHERE schemaname=current_schema()')}
+
+    def version(self):
+        """None for an empty DB; 1 for the pre-account layout that has no schema_version table."""
+        if self.columns('schema_version'):return self.db.execute('SELECT MAX(version) FROM schema_version').fetchone()[0] or 1
+        return 1 if self.columns('profiles') else None
+
+    def name_owner(self,key):
+        row=self.db.execute('SELECT id FROM profiles WHERE name_key=?',(key,)).fetchone()
+        return row[0] if row else None
 
     def issue(self,profile_id):
         token=secrets.token_urlsafe(32);now=int(time.time())
@@ -107,11 +139,19 @@ class Store:
         if not row:raise ApiError('로그인이 만료되었습니다. 얼굴로 다시 로그인하세요.',401)
         return row[0]
 
+    def account(self,profile_id):
+        """Profile object of the API (section 4.2); JSONB arrives parsed from PostgreSQL, TEXT from SQLite."""
+        row=self.db.execute('SELECT id,name,weight,style,goal,coins,unlocked,tutorial_done FROM profiles WHERE id=?',(profile_id,)).fetchone()
+        if not row:raise ApiError('프로필 없음',404)
+        unlocked=json.loads(row[6]) if isinstance(row[6],str) else row[6]
+        return dict(id=row[0],name=row[1],weight=float(row[2]),style=row[3],goal=float(row[4]),coins=row[5],
+                    unlocked=sorted(unlocked),tutorial_done=bool(row[7]))
+
     def profile(self,profile_id,token,avatar):
         # avatar is this request's aligned face JPG; it is returned once and never stored.
-        row=self.db.execute('SELECT id,name FROM profiles WHERE id=?',(profile_id,)).fetchone()
-        if not row:raise ApiError('프로필 없음',404)
-        return dict(ok=True,id=row[0],name=row[1],avatar=base64.b64encode(avatar).decode(),token=token)
+        # id/name stay at the top level for clients built before the profile object.
+        account=self.account(profile_id)
+        return dict(ok=True,token=token,avatar=base64.b64encode(avatar).decode(),profile=account,id=account['id'],name=account['name'])
 
     def delete(self,profile_id):
         with self.db:self.db.execute('DELETE FROM profiles WHERE id=?',(profile_id,))

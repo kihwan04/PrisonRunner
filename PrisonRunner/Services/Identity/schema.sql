@@ -1,6 +1,14 @@
+CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS profiles (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    name_key TEXT NOT NULL,
+    weight REAL NOT NULL DEFAULT 65,
+    style INTEGER NOT NULL DEFAULT 0,
+    goal REAL NOT NULL DEFAULT 50,
+    coins INTEGER NOT NULL DEFAULT 0 CHECK(coins >= 0),
+    unlocked TEXT NOT NULL DEFAULT '[]',
+    tutorial_done INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL,
     consent_version TEXT NOT NULL
 );
@@ -22,8 +30,15 @@ CREATE TABLE IF NOT EXISTS runs (
     kcal REAL NOT NULL CHECK(kcal >= 0),
     goal REAL NOT NULL CHECK(goal > 0),
     activities TEXT NOT NULL,
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    mode INTEGER,
+    coins INTEGER NOT NULL DEFAULT 0,
+    score_version INTEGER NOT NULL DEFAULT 1,
+    play_seconds REAL NOT NULL DEFAULT 0
 );
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_name_key ON profiles(name_key);
 CREATE INDEX IF NOT EXISTS runs_profile_created ON runs(profile_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS runs_mode_score ON runs(mode, score DESC);
 CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires_at);
-PRAGMA user_version=1;
+INSERT INTO schema_version (version) SELECT 2 WHERE NOT EXISTS (SELECT 1 FROM schema_version);
+PRAGMA user_version=2;
