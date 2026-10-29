@@ -63,7 +63,7 @@ EditMode 128/128, PlayMode 38/38, Windows 빌드·합성 손 메뉴/경로 검�
 - Development Build 종료 때 Unity 메모리 정리 진단이 남음. 기본 스모크는 정상 종료.
 - 얼굴 로그인은 전시 프로필용이며 검증된 사진 위조 방지 기능은 없음.
 
-다음 작업은 [개발 계획](DEVELOPMENT_PLAN.md) 순서로 진행합니다. 과거 작업 일지는 [보관 기록](archive/history/BEFORE_2026_10_26_PROGRESS.md)에 있습니다.
+다음 작업은 [개발 계획](DEVELOPMENT_PLAN.md) 순서로 진행합니다.
 
 최신 DB 검증과 SQLite 이전 범위는 [PostgreSQL 보고서](reports/POSTGRES_IDENTITY_2026_10_26.md)를 확인하세요.
 

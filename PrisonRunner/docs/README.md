@@ -37,6 +37,6 @@
 | [초기 중앙 서버 준비 보고서](reports/DOCKER_IDENTITY_2026_10_26.md) | PostgreSQL 전환 전 서버 주소 설정과 Windows 빌드 검증 |
 | [최종 게임 검수 자료](previews/Polish20261025/review.json) | 원시 측정값. 같은 폴더에 화면과 테스트 XML 보관 |
 
-과거 문서 35개는 `archive/`와 `reports/`로 정리했습니다. V10~V12 기획서 내용은 수정하지 않고 보관했습니다. 이전 안내의 Python PoseServer·UDP·WebSocket은 현재 몸동작 처리 방식이 아닙니다. 역사 자료가 필요할 때만 [보관함](archive/README.md)을 확인하세요.
+2026-10-27에 대체된 문서·V10~V12 기획서·이전 버전 캡처를 삭제했습니다. 필요하면 Git 기록에서 복원합니다. 이전 안내의 Python PoseServer·UDP·WebSocket은 현재 몸동작 처리 방식이 아닙니다.
 
-현재 다운로드는 [공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)를 기준으로 합니다. `archive/`와 `reports/`의 업로드 보류·로컬 전달 경로는 각 기록을 작성한 시점의 상태이며 현재 게시 상태와 구분합니다.
+현재 다운로드는 [공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)를 기준으로 합니다. `reports/`의 업로드 보류·로컬 전달 경로는 각 기록을 작성한 시점의 상태이며 현재 게시 상태와 구분합니다.

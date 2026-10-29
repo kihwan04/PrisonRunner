@@ -18,3 +18,5 @@
 공개 소스 전체 검사 EditMode 129/129, PlayMode 41/41 통과, Windows 빌드·연속 녹화·MP4 전체 디코딩 종료 코드 0. 최신 검사와 영상의 정확한 범위는 [녹화·출시 검수](https://github.com/kihwan04/PrisonRunner/blob/v2026.10.26-r2/PrisonRunner/docs/reports/GAMEPLAY_RECORDING_2026_10_26.md)를 확인하세요. 앞선 서버 검사 PostgreSQL 18개·SQLite 9개는 당시 결과입니다. Docker 기동·외부 HTTPS·여러 PC 연결·실물 웹캠/휴대폰은 미검증입니다. 기존 자동 메뉴 캡처 종료 네이티브 오류와 Unity 종료 메모리 진단은 남아 있습니다.
 
 개인 DB·얼굴·토큰·비밀번호·설치별 설정과 Mixamo 원본은 공개 소스/ZIP에서 제외합니다. 공개 소스는 자체 Blender 동작으로 연결하며 Windows 게임은 기존 실행용 애니메이션을 포함합니다. [리소스 조건](https://github.com/kihwan04/PrisonRunner/blob/v2026.10.26-r2/PrisonRunner/THIRD_PARTY_NOTICES.md)을 따르며 프로젝트 전체에 새로운 오픈소스 라이선스를 부여한 배포가 아닙니다. 이전 릴리스와 기획 기록은 보존합니다.
+
+2026-10-29 게시: 기존 develop의 Tailscale 배포 설정과 문서 정리를 보존합니다. 녹화일은 2026-10-26이며 PR #20의 신규 기능은 포함하지 않습니다.

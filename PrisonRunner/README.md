@@ -20,7 +20,6 @@ Unity 6000.3.10f1 / C# 기반 Windows 운동 러너입니다. 현재 소스는 `
 | `Tools/` | 에셋 제작, 문서 생성, 테스트와 패키징 |
 | `References/` | 제작 원본, 참고 자료, 리소스 출처 |
 | `docs/` | 현재 안내, 최신 기획서와 검증 기록 |
-| `docs/archive/` | 이전 계획·아트·릴리스·기획서 기록 |
 | `Builds/` | 로컬 빌드와 검증 산출물. Git 제외 |
 
 [문서 목록](docs/README.md), [아키텍처](docs/ARCHITECTURE.md), [개발 규칙](AGENTS.md), [외부 리소스·공개 조건](THIRD_PARTY_NOTICES.md)을 기준으로 작업합니다. Mixamo 원본 FBX는 공개 소스에서 제외하며 자체 Blender 동작으로 대체 연결합니다.
