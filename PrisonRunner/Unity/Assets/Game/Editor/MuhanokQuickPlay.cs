@@ -73,7 +73,7 @@ namespace Muhanok.Editor
                 return;
             }
             if (EditorApplication.timeSinceStartup < captureAfter) return;
-            string path = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../docs/previews/Mongscape/Title_LatestEditor.png"));
+            string path = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../Builds/QA/VisualReview/Mongscape/Title_LatestEditor.png"));
             if (!captureRequested)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path));

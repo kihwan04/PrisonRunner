@@ -196,6 +196,6 @@ HTTPS 구성이면 `up`에 3장과 같은 `--env-file .env -f compose.yaml -f co
 
 ## 확인 범위
 
-API는 현재 단일 프로세스에서 요청을 순서대로 처리하며 얼굴 등록/로그인은 서버 전체 분당 15회, 닉네임 확인은 분당 60회 제한입니다. PostgreSQL을 도입했다고 얼굴 추론 병렬 처리까지 구현한 것은 아닙니다. 현재 계정 v2 검사 27/27과 남은 범위는 [통합 검수](../../docs/reports/PR20_LOCAL_MERGE_2026_10_29.md)를 확인하세요. `docs/reports/POSTGRES_IDENTITY_2026_10_26.md`는 이전 서버 검증 기록입니다. 얼굴 로그인은 전시 프로필용이고 검증된 사진 위조 방지 기능은 없습니다.
+API는 현재 단일 프로세스에서 요청을 순서대로 처리하며 얼굴 등록/로그인은 서버 전체 분당 15회, 닉네임 확인은 분당 60회 제한입니다. PostgreSQL을 도입했다고 얼굴 추론 병렬 처리까지 구현한 것은 아닙니다. 현재 계정 v2 검사 27/27과 남은 범위는 [통합 검수](../../docs/reports/PR20_LOCAL_MERGE_2026_10_29.md)를 확인하세요. `docs/reports/PR20_LOCAL_MERGE_2026_10_29.md`는 이전 서버 검증 기록입니다. 얼굴 로그인은 전시 프로필용이고 검증된 사진 위조 방지 기능은 없습니다.
 
 공식 문서: [PostgreSQL Docker 이미지](https://hub.docker.com/_/postgres), [Psycopg 트랜잭션](https://www.psycopg.org/psycopg3/docs/basic/transactions.html), [Docker Compose](https://docs.docker.com/compose/gettingstarted/), [Caddy HTTPS](https://caddyserver.com/docs/automatic-https).

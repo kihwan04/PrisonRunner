@@ -305,7 +305,7 @@ bpy.context.scene.camera=cam; bpy.context.scene.render.engine='CYCLES'; bpy.cont
 bpy.context.scene.render.resolution_x=1440; bpy.context.scene.render.resolution_y=900; bpy.context.scene.render.resolution_percentage=100
 source=ROOT/'References/Blender/MuhanokCharacters.blend'; source.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
-preview=ROOT/'docs/previews/ArtV10/BlenderCharacters.png'; preview.parent.mkdir(parents=True,exist_ok=True)
+preview=ROOT/'Builds/QA/VisualReview/ArtV10/BlenderCharacters.png'; preview.parent.mkdir(parents=True,exist_ok=True)
 bpy.context.scene.render.filepath=str(preview); bpy.ops.render.render(write_still=True)
 (OUT/'AuthoredMotions.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
 print('BLENDER_CHARACTERS_PASS: 2 detailed skinned characters, 18 authored animations including cart grip and cell idle, unrigged Mixamo T-pose')

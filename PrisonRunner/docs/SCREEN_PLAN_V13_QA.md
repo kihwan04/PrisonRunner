@@ -4,9 +4,9 @@
 
 ## 생성 및 수정 파일
 
-- 생성: `무한옥_화면별_게임기획서_V13.docx`, `Tools/AssetPipeline/refine_screen_plan.py`, 이 검수 기록.
+- 당시 생성: `무한옥_화면별_게임기획서_V13.docx`, 일회성 V12→V13 변환 도구(현재 정리됨), 이 검수 기록.
 - 수정: `Tools/AssetPipeline/render_screen_plan.py`, `Tools/AssetPipeline/verify_screen_plan.py`, `AGENTS.md`.
-- 내부 검수 자료: `document-qa/V13/document-audit.json` 및 `document-qa/V13/final`의 렌더 결과.
+- 내부 검수 자료: 당시 로컬 문서 렌더 자료(정리 후 Git에는 미포함). 새 검수 출력은 `Builds/QA/Documents/V13/`.
 
 ## 반영 내용
 
@@ -28,3 +28,7 @@
 ## 남은 결정 사항
 
 맵 길이와 장애물 간격, 시작·최대 속도와 가속 간격은 아직 미정이다. 실제 몸동작으로 연속 회피 여유와 안내 시점을 확인한 뒤 배치를 확정하고 화면을 다시 촬영한다.
+
+## 현재 보존 범위 (2026-10-29)
+
+V13 DOCX와 이 검수 기록은 유지합니다. V10~V12를 입력으로 쓰던 일회성 생성 도구와 외부 캡처/설명도 복사본은 정리했습니다. 현재 `verify_screen_plan.py`는 DOCX 안의 그림·표·관계·바닥글을 독립 검사하며, `--rendered-check`는 새로 렌더한 29쪽 PDF/PNG를 추가 검사합니다. 기존 10월 5일 렌더 결과를 이번에 새로 수행한 결과로 표현하지 않습니다.

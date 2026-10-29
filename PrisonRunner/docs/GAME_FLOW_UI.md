@@ -156,11 +156,9 @@ PC JSON은 Unity의 `Application.persistentDataPath/Player` 아래에 있습니�
 Mongscape.exe --muhanok-uicapture --mongscape-tests --muhanok-out <캡처 폴더> --muhanok-data <임시 데이터 폴더>
 ```
 
-검증 범위와 출처 커밋은 [통합 보고서](reports/MUHANOK_TEST_MERGE_2026_10_26.md)에 있습니다.
+현재 검증과 출처는 [통합 보고서](reports/PR20_LOCAL_MERGE_2026_10_29.md)를 확인하세요. 합성 UI 화면과 실물 웹캠 검증은 구분합니다.
 
-이후 HUD 정리와 성능 측정은 [HUD 검수 보고서](reports/HUD_POLISH_2026_10_26.md)를 확인하세요. UI 캡처의 Workout/Tracking Synthetic 화면은 합성 상태이며 실물 웹캠 검증과 구분합니다.
-
-세 갈래 철로는 회차 내 96~120m에서 선택하고 144m부터 다음 맵 입구로 연결됩니다. 갈림길은 48m이며, 확정 후 긴 직선 구간을 제거했습니다. [경로 검수](reports/FORK_SHORT_2026_10_26.md).
+세 갈래 철로는 회차 내 96~120m에서 선택하고 144m부터 다음 맵 입구로 연결됩니다. 갈림길은 48m이며, 확정 후 긴 직선 구간을 제거했습니다. [경로 검수](reports/PR20_LOCAL_MERGE_2026_10_29.md).
 
 ## 로컬 통합에서 유지한 화면
 

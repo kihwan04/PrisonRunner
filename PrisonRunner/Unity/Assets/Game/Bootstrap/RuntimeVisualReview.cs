@@ -27,7 +27,7 @@ namespace Muhanok.Bootstrap
         {
             UnityEngine.Application.runInBackground=true;
             game=FindFirstObjectByType<GameBootstrap>(); started=Time.realtimeSinceStartup;
-            destination=Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath,"../../../docs/previews/ArtV10"));
+            destination=Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath,"../../../Builds/QA/VisualReview/ArtV10"));
             maps=Array.IndexOf(Environment.GetCommandLineArgs(),"--muhanok-mapcapture")>=0;
             if(Array.IndexOf(Environment.GetCommandLineArgs(),"--muhanok-detailcapture")>=0){maps=true;step=35;}
             suffix="_"+Screen.width+"x"+Screen.height;

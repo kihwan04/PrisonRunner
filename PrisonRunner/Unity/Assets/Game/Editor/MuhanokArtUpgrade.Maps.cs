@@ -52,8 +52,8 @@ namespace Muhanok.Editor
         }
         private static void UpgradeChunk(int index)
         {
-            string id=MuhanokContentBuilder.ChunkIds[index], path=Root+"/Prefabs/"+id+".prefab", backup="../References/BlockoutBackup/"+id+".prefab";
-            if(!File.Exists(backup)) File.Copy(path,backup);
+            string id=MuhanokContentBuilder.ChunkIds[index], path=Root+"/Prefabs/"+id+".prefab", backup="../Builds/ArtBackups/BlockoutBackup/"+id+".prefab";
+            Directory.CreateDirectory(Path.GetDirectoryName(backup)); if(!File.Exists(backup)) File.Copy(path,backup);
             var root=PrefabUtility.LoadPrefabContents(path); var env=root.transform.Find("EnvironmentRoot"); Clear(env);
             var priorRoute=root.transform.Find("RouteStructure"); if(priorRoute!=null) UnityEngine.Object.DestroyImmediate(priorRoute.gameObject);
             AddCoins(root);

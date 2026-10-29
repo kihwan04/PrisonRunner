@@ -91,8 +91,8 @@ namespace Muhanok.Editor
         private static void Clear(Transform root) { for(int i=root.childCount-1;i>=0;i--) UnityEngine.Object.DestroyImmediate(root.GetChild(i).gameObject); }
         private static GameObject EditPrefab(string id)
         {
-            string path=Root+"/Prefabs/"+id+".prefab", backup="../References/BlockoutBackup/"+id+".prefab";
-            Directory.CreateDirectory("../References/BlockoutBackup"); if(!File.Exists(backup)) File.Copy(path,backup);
+            string path=Root+"/Prefabs/"+id+".prefab", backup="../Builds/ArtBackups/BlockoutBackup/"+id+".prefab";
+            Directory.CreateDirectory(Path.GetDirectoryName(backup)); if(!File.Exists(backup)) File.Copy(path,backup);
             var root=PrefabUtility.LoadPrefabContents(path); Clear(root.transform); return root;
         }
         private static void Save(GameObject item,string path=null)

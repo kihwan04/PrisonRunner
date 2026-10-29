@@ -99,7 +99,7 @@ namespace Muhanok.Editor
             RenderPipeline.SubmitRenderRequest(camera, request);
             RenderTexture old = RenderTexture.active; RenderTexture.active = target;
             var texture = new Texture2D(1280, 720, TextureFormat.RGB24, false); texture.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0); texture.Apply();
-            string path = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../docs/previews/" + id + ".png"));
+            string path = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "../../Builds/QA/VisualReview/" + id + ".png"));
             Directory.CreateDirectory(Path.GetDirectoryName(path)); File.WriteAllBytes(path, texture.EncodeToPNG());
             RenderTexture.active = old; UnityEngine.Object.Destroy(texture); target.Release(); UnityEngine.Object.Destroy(target);
             Debug.Log("MUHANOK_PREVIEW_SAVED: " + path);

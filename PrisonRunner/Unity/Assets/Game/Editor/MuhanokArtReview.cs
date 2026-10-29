@@ -88,7 +88,7 @@ namespace Muhanok.Editor
             RenderPipeline.SubmitRenderRequest(camera,new RenderPipeline.StandardRequest{destination=rt,mipLevel=0,slice=0,face=CubemapFace.Unknown}); camera.rect=rect;
             var old=RenderTexture.active; RenderTexture.active=rt; var texture=new Texture2D(1280,720,TextureFormat.RGB24,false);
             texture.ReadPixels(new Rect(0,0,1280,720),0,0); texture.Apply();
-            string destination=Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath,"../../docs/previews/ArtV5/"+id+".png")); Directory.CreateDirectory(Path.GetDirectoryName(destination)); File.WriteAllBytes(destination,texture.EncodeToPNG());
+            string destination=Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath,"../../Builds/QA/VisualReview/ArtV5/"+id+".png")); Directory.CreateDirectory(Path.GetDirectoryName(destination)); File.WriteAllBytes(destination,texture.EncodeToPNG());
             RenderTexture.active=old; UnityEngine.Object.DestroyImmediate(texture); rt.Release(); UnityEngine.Object.DestroyImmediate(rt);
             Debug.Log("ART_CAPTURE: "+id);
         }
