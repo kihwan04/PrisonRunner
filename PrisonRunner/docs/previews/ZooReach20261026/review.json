@@ -1,0 +1,9 @@
+{
+    "passed": true,
+    "error": "",
+    "gpu": "NVIDIA GeForce GTX 1060 3GB",
+    "kinds": 3,
+    "width": 1280,
+    "height": 720,
+    "maximumAttachmentError": 0.0
+}

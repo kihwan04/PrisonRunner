@@ -56,12 +56,16 @@ namespace Muhanok.Bootstrap
         public PolicePursuitCue PursuitCue { get; private set; }
         private float guardDistance=15;
         private bool automated;
+        private readonly AdaptivePerformance adaptive = new AdaptivePerformance();
+        private UserSettings effectiveGraphics;
+        private bool menuCamera;
+        private PlayStyle cameraBeforeMenu;
         private void Awake()
         {
             var flags=System.Environment.GetCommandLineArgs();
             automated=System.Array.IndexOf(flags,"--muhanok-smoke")>=0||System.Array.IndexOf(flags,"--muhanok-uicapture")>=0
                 ||System.Array.IndexOf(flags,"--mongscape-review")>=0||System.Array.IndexOf(flags,"--mongscape-tests")>=0
-                ||System.Array.IndexOf(flags,"--muhanok-capture")>=0;
+                ||System.Array.IndexOf(flags,"--muhanok-capture")>=0||System.Array.IndexOf(flags,"--mongscape-recording")>=0;
             Session = new RunSession(Settings != null ? JsonUtility.FromJson<RunConfig>(JsonUtility.ToJson(Settings.Run)) : new RunConfig());
             if (ChunkPrefabs == null || ChunkPrefabs.Length < 5 || CameraRig == null || OutputCamera == null)
             { Debug.LogError("GameScene requires content references. Run Muhanok/Build GameScene."); enabled = false; return; }
@@ -119,17 +123,18 @@ namespace Muhanok.Bootstrap
                 MusicVolume = Settings != null ? Settings.MusicVolume : .35f, EffectsVolume = Settings != null ? Settings.EffectsVolume : .7f,
                 LiteLandmarkModel = Settings != null && !Settings.Camera.FullLandmarkModel, CameraDevice = Settings != null ? Settings.Camera.DeviceName : "",
             };
+            settingsDefaults.ApplyPreset(QualityPreset.Balanced);
             userSettings = UserSettingsStore.Load(settingsDefaults);
             graphics = new GraphicsSettingsApplier();
             overlay = gameObject.AddComponent<PerformanceOverlay>();
             overlay.PoseLine = () => Pose.UsesCamera ? Pose.Diagnostics : "";
-            overlay.QualityLine = () => "화질 " + userSettings.Preset + " · 렌더 " + Mathf.RoundToInt(userSettings.RenderScale * 100) + "% · 그림자 " + userSettings.Shadows + (userSettings.FrameCap > 0 ? " · 상한 " + userSettings.FrameCap : "");
+            overlay.QualityLine = () => "화질 " + userSettings.Preset + " · 렌더 " + Mathf.RoundToInt((effectiveGraphics?.RenderScale ?? userSettings.RenderScale) * 100) + "% · 그림자 " + (effectiveGraphics?.Shadows ?? userSettings.Shadows) + (userSettings.AutoPerformance ? " · 자동 " + adaptive.Level : "") + (userSettings.FrameCap > 0 ? " · 상한 " + userSettings.FrameCap : "");
             var window = new GameObject("SettingsWindow"); window.transform.SetParent(transform, false);
             settingsWindow = window.AddComponent<SettingsWindow>();
             settingsWindow.Configure(this);
             settingsWindow.Closed += () => hud.Hidden = false;
             hud.OpenSettings = OpenSettings;
-            hud.OpenIdentity=()=>{Pose.SetStyle(PlayStyle.UpperBody);hud.ShowIdentity();};
+            hud.OpenIdentity=()=>{menuCamera=false;Pose.SetStyle(PlayStyle.UpperBody);hud.ShowIdentity();};
             ApplySettings(false);
         }
         public void OpenSettings()
@@ -140,10 +145,13 @@ namespace Muhanok.Bootstrap
         }
         public void ApplySettings(bool save)
         {
-            graphics?.Apply(userSettings);
+            adaptive.Reset();
+            effectiveGraphics=userSettings.Clone();
+            graphics?.Apply(effectiveGraphics);
             if (Map != null) Map.DetailScale = userSettings.DetailDistance;
             audioPlayer?.SetVolumes(userSettings.MusicVolume, userSettings.EffectsVolume);
             Pose.Configure(userSettings.CameraDevice, userSettings.LiteLandmarkModel, userSettings.LaneSensitivity);
+            Pose.SetInferenceRate(30);
             if (overlay != null) overlay.Visible = userSettings.PerformanceOverlay;
             Store.Wallet.UnlockAll = userSettings.DeveloperMode;
             if (save) UserSettingsStore.Save(userSettings);
@@ -193,7 +201,7 @@ namespace Muhanok.Bootstrap
             player=profile; playerRun=true; KeyboardGameInput.SetTextInput(false);
             Session.Workout.Met=PlayStyleInfo.Met(profile.Style);
             Session.Workout.SetGoal(profile.CalorieGoal);
-            Pose.SetStyle(profile.Style);
+            menuCamera=false; Pose.SetStyle(profile.Style);
             StartCoroutine(PrepareRun(Settings != null && Settings.Run.RandomizeLayout ? Random.Range(1, int.MaxValue) : 723));
         }
         private IEnumerator PrepareRun(int seed)
@@ -218,14 +226,30 @@ namespace Muhanok.Bootstrap
             Session.Paused=!Session.Paused; Time.timeScale=Session.Paused?0:1;
             keyboard.Clear(); poseInput.Clear();
         }
+        private void UpdateAdaptive(bool live)
+        {
+            if(automated || !userSettings.AutoPerformance)return;
+            if(!adaptive.Tick(Time.unscaledDeltaTime,live && !hud.Revealing && UnityEngine.Application.isFocused,userSettings.FrameCap))return;
+            adaptive.Apply(userSettings,effectiveGraphics);graphics.Apply(effectiveGraphics);
+            Map.DetailScale=effectiveGraphics.DetailDistance;
+            // Rate changes reuse the loaded model and do not restart the camera or invalidate calibration.
+            Pose.SetInferenceRate(adaptive.Level>=2?20:30);
+        }
+        private void UpdateMenuCamera(bool menu)
+        {
+            bool needsCamera=!automated && userSettings.HandMenus && menu;
+            if(needsCamera && !Pose.UsesCamera){cameraBeforeMenu=Pose.Style;menuCamera=true;Pose.SetStyle(PlayStyle.UpperBody);}
+            else if(menuCamera && !needsCamera){menuCamera=false;Pose.SetStyle(cameraBeforeMenu);}
+        }
         private void Update()
         {
             double now = Time.realtimeSinceStartupAsDouble;
             bool live = Session.Flow.State == GameFlowState.Running && !Session.Paused && !hud.Loading;
+            bool menu=(Session.Flow.State==GameFlowState.TitleIdle || Session.Flow.State==GameFlowState.Result || Session.Paused || settingsWindow.IsOpen) && !hud.Loading && !hud.Revealing;
+            UpdateMenuCamera(menu);
+            UpdateAdaptive(live);
             Pose.Tick(now, live);
-            if(!automated&&Session.Flow.State==GameFlowState.TitleIdle && !Pose.UsesCamera && !hud.SetupOpen && !hud.IdentityOpen)Pose.SetStyle(PlayStyle.UpperBody);
-            bool menu=Session.Flow.State!=GameFlowState.Running || Session.Paused;
-            GesturePointer.Feed(Pose.LastFrame,menu&&Pose.Tracking,now);
+            GesturePointer.Feed(Pose.LastFrame,menu && userSettings.HandMenus && Pose.Tracking,now);
             OperatorKeys();
             TickInput();
             if (Session.Flow.State == GameFlowState.Caught && Time.timeScale < 1 && Time.realtimeSinceStartup - caughtAt > .7f) Time.timeScale = 1;
@@ -404,7 +428,7 @@ namespace Muhanok.Bootstrap
             UnityEngine.Application.Quit();
 #endif
         }
-        private void OnDestroy() { Time.timeScale=1; graphics?.Dispose(); Pose?.Dispose(); RouteSurface.UsePlan(null); KeyboardGameInput.SetTextInput(false); }
+        private void OnDestroy() { GesturePointer.Reset(); Time.timeScale=1; graphics?.Dispose(); Pose?.Dispose(); RouteSurface.UsePlan(null); KeyboardGameInput.SetTextInput(false); }
 
         // IHudData
         PlayerProfile IHudData.Player => player;
@@ -430,7 +454,7 @@ namespace Muhanok.Bootstrap
         float IHudData.BestDistance => Store.Stats.BestDistance;
         public float StartBanner => Session.Flow.State == GameFlowState.Running ? Mathf.Max(0, 2.2f - (Time.realtimeSinceStartup - runStartedAt)) : 0;
         float IHudData.CaughtFlash => Session.Flow.State == GameFlowState.Caught ? Mathf.Clamp01(1 - (Time.realtimeSinceStartup - caughtAt) / .6f) : 0;
-        void IHudData.PreviewStyle(PlayStyle style) { player.Style = style; Pose.SetStyle(style); }
+        void IHudData.PreviewStyle(PlayStyle style) { menuCamera=false; player.Style = style; Pose.SetStyle(style); }
         void IHudData.Unlock(ItemKind kind) => Store.Unlock(kind);
         void IHudData.SaveProfile(PlayerProfile profile)
         {
@@ -461,5 +485,6 @@ namespace Muhanok.Bootstrap
         UserSettings ISettingsHost.Defaults => settingsDefaults;
         System.Collections.Generic.IReadOnlyList<string> ISettingsHost.CameraDevices => PoseTracker.CameraDevices();
         IHudData ISettingsHost.Hud => this;
+        void ISettingsHost.RefreshCamera() => Pose.RefreshCamera();
     }
 }

@@ -25,6 +25,6 @@ Unity 6000.3.10f1 / C# 기반 Windows 운동 러너입니다. 현재 소스는 `
 
 [문서 목록](docs/README.md), [아키텍처](docs/ARCHITECTURE.md), [개발 규칙](AGENTS.md), [외부 리소스·공개 조건](THIRD_PARTY_NOTICES.md)을 기준으로 작업합니다. Mixamo 원본 FBX는 공개 소스에서 제외하며 자체 Blender 동작으로 대체 연결합니다.
 
-공개 저장소는 `kihwan04/PrisonRunner`이며 [최신 Windows 게임·서버·기획서 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)에서 다운로드합니다. 로컬 전달물은 작업 폴더의 `../Deliverables/2026-10-26/ForkShort/`에도 보관합니다.
+공개 저장소는 `kihwan04/PrisonRunner`이며 [최신 Windows 게임·서버·기획서 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)에서 다운로드합니다. 로컬 전달물은 작업 폴더의 `../Deliverables/2026-10-26/Gameplay/`에도 보관합니다.
 
 통합 UI는 [게임 화면 안내](docs/GAME_FLOW_UI.md)를 확인하세요. `lilohdong/muhanok-test` main `b2215ef`의 메뉴·상점·거리 랭킹·개발자 모드를 기존 게임/얼굴 서버와 함께 사용합니다.

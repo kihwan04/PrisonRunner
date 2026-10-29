@@ -1,6 +1,22 @@
 # 현재 진행 상태
 
-기준일: **2026-10-26**. Windows 로컬 게임과 중앙 얼굴 서버 연결 기능을 준비했습니다. 소스와 전달 파일은 [개인 저장소 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)로 공개하며 실제 외부 서버는 아직 배포하지 않았습니다.
+기준일: **2026-10-26**. Windows 로컬 게임과 중앙 얼굴 서버 연결 기능을 준비했습니다. 소스와 전달 파일은 [개인 저장소 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)로 공개하며 실제 외부 서버는 아직 배포하지 않았습니다.
+
+사이렌 표시 복원: HUD 간소화 중 빠진 빨강·파랑 경광등을 상단 중앙에 다시 표시합니다. 관련 HUD 17개·추격 씬 1개, 새 빌드·EXE 화면·스모크 검수 통과. [화면과 기록](reports/PLAY_POLISH_2026_10_26.md#사이렌-표시-복원-2026-10-26).
+
+## 이번 릴리스 변경: 동물원 목·코와 쓰러지는 나무
+
+기린 목과 코끼리 코를 몸·머리에서 이어지는 곡선 메시로 바꾸고, 접근 시 낮게 길을 막도록 했습니다. 길 옆에서 쓰러지는 나무도 풀링 장애물로 추가했습니다. PlayMode 41/41, 새 Windows 빌드·12장 화면 검수·스모크 종료 코드 0. 이번 릴리스에 포함합니다. [검수 보고서](reports/ZOO_ENCOUNTERS_2026_10_26.md).
+
+## 이번 릴리스 변경: 칼로리·철로·손 메뉴·자동 화질
+
+앞선 릴리스 이후 소스를 수정했습니다. 오른쪽 위 목표/소모 칼로리, 방향 표지와 선택 레일 강조, 손목 커서 0.75초 메뉴 선택, 휴대폰 연결 안내·카메라 재검색, 성능 자동 조절을 추가했습니다. 이번 변경은 이번 릴리스에 포함합니다.
+
+EditMode 128/128, PlayMode 38/38, Windows 빌드·합성 손 메뉴/경로 검수·스모크 종료 코드 0. 실물 웹캠/휴대폰과 여러 PC의 자동 화질은 미검증입니다. [최신 보고서](reports/PLAY_POLISH_2026_10_26.md).
+
+## 전체 플레이 녹화와 최신 공개 소스 검수
+
+2분 6초 연속 자동 키보드 플레이와 게임 소리를 녹화했습니다. 최신 검사·영상·개인 데이터 제외 범위는 [녹화·출시 보고서](reports/GAMEPLAY_RECORDING_2026_10_26.md)를 확인하세요. 아래 항목의 테스트 수는 각 변경 당시 기록입니다.
 
 ## 구현된 것
 
@@ -15,7 +31,8 @@
 
 | 날짜 | 확인한 범위 | 결과·근거 |
 | --- | --- | --- |
-| 2026-10-26 | 공개 소스 추가 검증 | Mixamo 원본 제외, 자체 Humanoid 연결 18개 유효·PlayMode 37/37. [근거](previews/PublicRelease20261026/review.json) |
+| 2026-10-26 | 이번 공개 소스 전체 검사·연속 녹화 | EditMode 129/129, PlayMode 41/41. Windows 빌드·126초 녹화·MP4 전체 디코딩 통과. [근거](reports/GAMEPLAY_RECORDING_2026_10_26.md) |
+| 2026-10-26 | 이전 공개 소스 추가 검증 | Mixamo 원본 제외, 자체 Humanoid 연결 18개 유효·PlayMode 37/37. [근거](previews/PublicRelease20261026/review.json) |
 | 2026-10-26 | 세 갈래 철로 단축 | EditMode 115/115, PlayMode 37/37. 새 Windows 빌드·3방향 진입·스모크 종료 코드 0. [보고서](reports/FORK_SHORT_2026_10_26.md) |
 | 2026-10-26 | HUD 정리 후 Unity 검증 | EditMode 113/113, PlayMode 37/37. 고정값 HUD 모델 3,600회 관리 메모리 할당 0바이트 |
 | 2026-10-26 | HUD 정리 후 실제 EXE | 16개 화면·스모크 검수. GTX 1060/720p 키보드, 보통·높음 약60fps/저사양 약30fps 유지. [보고서](reports/HUD_POLISH_2026_10_26.md) |
@@ -31,11 +48,11 @@
 | 2026-10-26 | 배포 파일 | Compose YAML 구조·PowerShell 설정 도구·모델 해시·ZIP CRC/SHA-256 확인 |
 | 2026-10-25 | 당시 전체 Unity 검증 | EditMode 80/80, PlayMode 34/34. 당일 보고서 기준 |
 
-같은 날 앞선 중앙 서버 준비와 UI 통합 검증을 구분해 기록했습니다. 최신 전체 Unity 검증은 철로 단축 후 수행했습니다. 자세한 근거는 [UI 통합 보고서](reports/MUHANOK_TEST_MERGE_2026_10_26.md), [중앙 서버 보고서](reports/DOCKER_IDENTITY_2026_10_26.md)와 [게임 빌드 보고서](reports/LOCAL_COMPLETION_2026_10_25.md)에 있습니다.
+같은 날 앞선 중앙 서버 준비와 UI 통합 검증을 구분해 기록했습니다. 이전 공개 배포의 전체 Unity 검증은 철로 단축 후 수행했고, 이후 로컬 변경은 위 최신 검증 기록을 기준으로 합니다. 자세한 근거는 [UI 통합 보고서](reports/MUHANOK_TEST_MERGE_2026_10_26.md), [중앙 서버 보고서](reports/DOCKER_IDENTITY_2026_10_26.md)와 [게임 빌드 보고서](reports/LOCAL_COMPLETION_2026_10_25.md)에 있습니다.
 
 ## 전달 파일
 
-[공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)에 Windows 게임·서버 배포 ZIP·기획서·실행 안내·SHA-256을 제공합니다. 로컬 사본은 `Deliverables/2026-10-26/ForkShort/`에 있습니다. 2026-10-25 ZIP은 이전 로컬 서버용 실행본으로 보존합니다.
+[공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)에 전체 플레이 영상·Windows 게임·서버 배포 ZIP·기획서·실행 안내·SHA-256을 제공합니다. 로컬 사본은 `Deliverables/2026-10-26/Gameplay/`에 있습니다. 2026-10-25 ZIP은 이전 로컬 서버용 실행본으로 보존합니다.
 
 ## 남은 확인
 

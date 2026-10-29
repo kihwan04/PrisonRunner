@@ -1,0 +1,11 @@
+{
+  "playModePassed": 41,
+  "playModeFailed": 0,
+  "buildExitCode": 0,
+  "reviewExitCode": 0,
+  "smokeExitCode": 0,
+  "encounterKinds": 3,
+  "maximumAttachmentError": 0.0,
+  "cameraTested": false,
+  "newFpsBenchmark": false
+}

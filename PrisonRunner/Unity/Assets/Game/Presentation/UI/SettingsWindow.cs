@@ -14,6 +14,7 @@ namespace Muhanok.Presentation
         IReadOnlyList<string> CameraDevices { get; }
         IHudData Hud { get; }
         void ApplySettings(bool save);
+        void RefreshCamera();
     }
 
     // UI Toolkit settings window. Layout and look live in Resources/MuhanokUI/SettingsWindow.uxml/.uss so the
@@ -32,6 +33,7 @@ namespace Muhanok.Presentation
         private Label status;
         private Font font;
         private bool syncing;
+        private GUIStyle handScrollStyle;
         private readonly Dictionary<VisualElement,Action> gestureActions=new Dictionary<VisualElement,Action>();
         public bool IsOpen { get; private set; }
         public event Action Closed;
@@ -75,6 +77,10 @@ namespace Muhanok.Presentation
             SliderBind("render-scale", () => s.RenderScale, v => { s.RenderScale = v; Custom(); });
             Dropdown("frame-cap", FrameCaps, () => Math.Max(0, Array.IndexOf(UserSettings.FrameCaps, s.FrameCap)), i => { s.FrameCap = UserSettings.FrameCaps[i]; Custom(); });
             ToggleBind("vsync", () => s.VSync, v => s.VSync = v);
+            ToggleBind("auto-performance", () => s.AutoPerformance, v => s.AutoPerformance = v);
+            ToggleBind("hand-menus", () => s.HandMenus, v => s.HandMenus = v);
+            Clicked("refresh-cameras", ()=>{Refresh();host.RefreshCamera();});
+            Clicked("phone-camera-guide",()=>{var guide=root.Q<VisualElement>("phone-guide");guide.style.display=guide.resolvedStyle.display==DisplayStyle.None?DisplayStyle.Flex:DisplayStyle.None;});
             Dropdown("shadow-quality", ShadowNames, () => (int)s.Shadows, i => { s.Shadows = (ShadowSetting)i; Custom(); });
             ToggleBind("ambient-occlusion", () => s.AmbientOcclusion, v => { s.AmbientOcclusion = v; Custom(); });
             ToggleBind("gpu-resident-drawer", () => s.GpuResidentDrawer, v => s.GpuResidentDrawer = v);
@@ -187,7 +193,8 @@ namespace Muhanok.Presentation
         private Rect ToGui(VisualElement element)
         {
             var b=element.worldBound;float w=Mathf.Max(1,root.layout.width),h=Mathf.Max(1,root.layout.height);
-            return new Rect(b.x/w*1280,b.y/h*720,b.width/w*1280,b.height/h*720);
+            var viewport=ViewportLayout.Current;float scale=viewport.width/1280f,top=Screen.height-viewport.yMax;
+            return new Rect((b.x/w*Screen.width-viewport.x)/scale,(b.y/h*Screen.height-top)/scale,b.width/w*Screen.width/scale,b.height/h*Screen.height/scale);
         }
         private static bool Shown(VisualElement element)
         {
@@ -197,11 +204,23 @@ namespace Muhanok.Presentation
         private void OnGUI()
         {
             if(!IsOpen||root==null)return;
-            var old=GUI.matrix;GUI.matrix=ViewportLayout.GuiMatrix;
-            foreach(var pair in gestureActions)if(Shown(pair.Key)&&GesturePointer.Activate(ToGui(pair.Key),pair.Key.name)){pair.Value();break;}
+            var old=GUI.matrix;GUI.matrix=ViewportLayout.GuiMatrix;GesturePointer.BeginPass();
+            var screen=GUI.matrix.MultiplyPoint3x4(GesturePointer.Position);
+            var panelPoint=new Vector2(screen.x/Mathf.Max(1,Screen.width)*root.layout.width,screen.y/Mathf.Max(1,Screen.height)*root.layout.height);
+            var picked=root.panel?.Pick(panelPoint);
+            foreach(var pair in gestureActions)
+                if(Shown(pair.Key) && picked!=null && (picked==pair.Key || pair.Key.Contains(picked)) && GesturePointer.Activate(ToGui(pair.Key),pair.Key.name)){pair.Value();break;}
+            var scroll=root.Q<ScrollView>("settings-content");
+            if(scroll!=null && scroll.verticalScroller.highValue>0)
+            {
+                handScrollStyle??=new GUIStyle(GUI.skin.button){fontSize=25};
+                var up=new Rect(1120,310,72,60);var down=new Rect(1120,390,72,60);
+                if(GUI.Button(up,"↑",handScrollStyle)||GesturePointer.Activate(up,"settings-scroll-up"))scroll.scrollOffset-=new Vector2(0,180);
+                if(GUI.Button(down,"↓",handScrollStyle)||GesturePointer.Activate(down,"settings-scroll-down"))scroll.scrollOffset+=new Vector2(0,180);
+            }
             GesturePointer.Draw();GUI.matrix=old;
         }
         private static void CopyInto(UserSettings from, UserSettings to) => JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(from), to);
-        private void OnDestroy() { if (font != null) Destroy(font); }
+        private void OnDestroy() { if (font != null) Destroy(font); if(document!=null&&document.panelSettings!=null)Destroy(document.panelSettings); }
     }
 }

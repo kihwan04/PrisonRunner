@@ -26,9 +26,9 @@
 
 - 창: `settings-root`, `settings-panel`, `close-button`, `apply-button`, `reset-button`
 - 탭: `tab-graphics`, `tab-sound`, `tab-body`, `tab-display` / 페이지: `page-graphics`, `page-sound`, `page-body`, `page-display`
-- 화면: `quality-preset`, `render-scale`, `frame-cap`, `vsync`, `shadow-quality`, `ambient-occlusion`, `detail-distance`, `gpu-resident-drawer`, `fullscreen`
+- 화면: `auto-performance`, `quality-preset`, `render-scale`, `frame-cap`, `vsync`, `shadow-quality`, `ambient-occlusion`, `detail-distance`, `gpu-resident-drawer`, `fullscreen`
 - 소리: `music-volume`, `effects-volume`
-- 몸동작: `camera-device`, `lite-model`, `lane-sensitivity`, `camera-preview`(웹캠 영상이 들어가는 칸), `pose-status`, `recalibrate-button`
+- 몸동작: `hand-menus`, `refresh-cameras`, `phone-camera-guide`, `phone-guide`, `camera-device`, `lite-model`, `lane-sensitivity`, `camera-preview`(웹캠 영상이 들어가는 칸), `pose-status`, `recalibrate-button`
 - 표시: `performance-overlay`, `pose-diagnostics`
 
 요소가 없으면 Console에 경고만 나오고 나머지는 동작합니다. 선택된 탭에는 코드가 `settings-tab--selected` 클래스를 붙입니다.
@@ -51,6 +51,9 @@
 
 | 항목 | 적용 |
 | --- | --- |
+| 성능 자동 조절 | 첫 실행은 보통 화질. 플레이 5초 뒤부터 2초 구간의 프레임 시간을 보고 최대 3단계 완화. 안정 상태 20초 뒤 한 단계 복구. 선택한 화질을 상한으로 삼고 저장값은 보존. 일시정지·로딩·포커스 없음·검수 도구에서는 조절하지 않음 |
+| 손 메뉴 | 손목 커서를 버튼에 0.75초 머무르면 한 번 선택. 타이틀 안내·메뉴·일시정지·결과·설정에 적용. 설정 스크롤은 오른쪽 ↑/↓ 버튼. 이름·숫자 직접 입력은 키보드 사용 |
+| 휴대폰 연결 | 몸동작 탭에서 안내를 열고 연결된 카메라를 다시 검색. OS에 등록된 USB/가상 웹캠 선택, 직접 USB 수신이나 드라이버 자동 설치는 미구현 |
 | 화질 프리셋 | 높음(100%, 그림자 높음, SSAO, 60fps) / 보통(85%, 그림자 낮음, SSAO 끔) / 저사양(70%, 그림자 끔, 30fps) |
 | 렌더 해상도 | URP 렌더 스케일 50~100%, 100% 미만이면 FSR 업스케일 |
 | 프레임 제한 / 수직 동기화 | `Application.targetFrameRate`, `QualitySettings.vSyncCount` |

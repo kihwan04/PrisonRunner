@@ -24,18 +24,37 @@ namespace Muhanok.Presentation.Map
         private void Update() { transform.Rotate(0, Time.deltaTime * 120, 0, Space.Self); }
     }
 
-    // Both animals lower a visible low obstacle across the path: jump after the warning.
+    // The neck/trunk is one continuous mesh from the visible animal to the road.
     public sealed class ZooHazard : MonoBehaviour, IRunnerAnimated
     {
         public bool Giraffe;
-        public Transform Moving;
+        public Transform Moving,Attachment,Head;
+        public AnimalReachMesh Reach;
         public ObstacleController[] Hazards;
+        public float Progress {get;private set;}
+        private float previous=-1;
         public void Preview(float runnerZ)
         {
-            if (Moving == null) return;
-            float t = Mathf.InverseLerp(32f, 14f, transform.position.z - runnerZ);
-            if (Giraffe) Moving.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(8f, 90f, Mathf.SmoothStep(0, 1, t)));
-            else Moving.localRotation = Quaternion.Euler(0, Mathf.Sin(Time.time * 3f) * 10f * (1 - t), Mathf.Lerp(-55f, 0f, Mathf.SmoothStep(0, 1, t)));
+            if(Reach==null)return;
+            Progress=Mathf.SmoothStep(0,1,Mathf.InverseLerp(32,14,transform.position.z-runnerZ));
+            if(Mathf.Abs(Progress-previous)<.00001f)return;previous=Progress;
+            var start=transform.InverseTransformPoint(Attachment.position);
+            if(Giraffe)
+            {
+                var mid=Vector3.Lerp(new Vector3(5.1f,5.1f,0),new Vector3(2.7f,.72f,0),Progress);
+                var tip=Vector3.Lerp(new Vector3(4.7f,7.25f,0),new Vector3(-3.45f,.72f,0),Progress);
+                Reach.Pose(start,Vector3.Lerp(new Vector3(5.4f,3.7f,0),new Vector3(4.7f,5.2f,0),Progress),Vector3.Lerp(new Vector3(5.2f,4.4f,0),new Vector3(3.4f,.72f,0),Progress),mid,
+                    Vector3.Lerp(new Vector3(5.0f,5.8f,0),new Vector3(2,.72f,0),Progress),Vector3.Lerp(new Vector3(4.9f,6.6f,0),new Vector3(-2.5f,.72f,0),Progress),tip);
+                Head.localPosition=tip;Head.localRotation=Quaternion.Euler(0,-100,Mathf.Lerp(0,8,Progress));
+            }
+            else
+            {
+                var mid=Vector3.Lerp(new Vector3(4.3f,1.8f,0),new Vector3(2.6f,.64f,0),Progress);
+                var tip=Vector3.Lerp(new Vector3(4.7f,1.3f,-.4f),new Vector3(-3.35f,.64f,0),Progress);
+                Reach.Pose(start,Vector3.Lerp(new Vector3(4.25f,2.8f,0),new Vector3(4,3.9f,0),Progress),Vector3.Lerp(new Vector3(4.1f,2.2f,0),new Vector3(3.3f,.64f,0),Progress),mid,
+                    Vector3.Lerp(new Vector3(4.5f,1.4f,0),new Vector3(1.9f,.64f,0),Progress),Vector3.Lerp(new Vector3(4.6f,1.0f,-.3f),new Vector3(-2.9f,.64f,0),Progress),tip);
+                Moving.localPosition=tip;Moving.localRotation=Quaternion.Euler(0,0,Mathf.Lerp(-30,90,Progress));
+            }
         }
     }
     public sealed class ThemedLaneBlock : MonoBehaviour
@@ -45,13 +64,14 @@ namespace Muhanok.Presentation.Map
     }
 
     // Places items and zoo animals into walking chunks at runtime, from pools, without touching the authored prefabs.
-    public sealed class RuntimeContent : ChunkSpawner.IChunkDecorator
+    public sealed partial class RuntimeContent : ChunkSpawner.IChunkDecorator
     {
         private readonly Transform root;
         private readonly Func<List<ItemKind>> availableItems;
         private readonly float itemChance;
         private readonly Dictionary<ItemKind, Stack<ItemPickup>> itemPool = new Dictionary<ItemKind, Stack<ItemPickup>>();
         private readonly Stack<ZooHazard> giraffes = new Stack<ZooHazard>(), elephants = new Stack<ZooHazard>();
+        private readonly Stack<FallenTreeHazard> trees=new Stack<FallenTreeHazard>();
         private readonly Stack<FloorItemController> bananas = new Stack<FloorItemController>();
         private readonly Stack<ThemedLaneBlock>[] blockers = { new Stack<ThemedLaneBlock>(), new Stack<ThemedLaneBlock>(), new Stack<ThemedLaneBlock>() };
         private readonly Dictionary<MuhanokMapChunk, List<Component>> placed = new Dictionary<MuhanokMapChunk, List<Component>>();
@@ -64,6 +84,7 @@ namespace Muhanok.Presentation.Map
             RailForkView.PrewarmMeshes();
             foreach(var chunk in parent.GetComponentsInChildren<MuhanokMapChunk>(true))if(chunk.RouteType==1||chunk.RouteType==2)RailForkView.PrewarmInstance(chunk);
             for (int i = 0; i < 4; i++) { var g = BuildGiraffe(); g.gameObject.SetActive(false); giraffes.Push(g); var e = BuildElephant(); e.gameObject.SetActive(false); elephants.Push(e); }
+            for(int i=0;i<4;i++){var tree=BuildTree();tree.gameObject.SetActive(false);trees.Push(tree);}
             for(int i=0;i<28;i++){var peel=BuildBanana();peel.gameObject.SetActive(false);bananas.Push(peel);}
             for(int theme=0;theme<3;theme++)for(int i=0;i<10;i++){var block=BuildBlock(theme);block.gameObject.SetActive(false);blockers[theme].Push(block);}
         }
@@ -121,9 +142,19 @@ namespace Muhanok.Presentation.Map
                 float z = start + 12f;
                 if (!float.IsNaN(z))
                 {
-                    var animal = sequence % 2 == 0 ? Giraffe(z) : Elephant(z, -1);
-                    animal.transform.SetParent(chunk.transform, true);
-                    chunk.DynamicObstacles.AddRange(animal.Hazards); chunk.Animated.Add(animal); list.Add(animal);
+                    if(sequence%3==2)
+                    {
+                        var tree=trees.Count>0?trees.Pop():BuildTree();
+                        PlaceEncounter(tree.transform,tree.Hazards,z);tree.Preview(z-40);tree.gameObject.SetActive(true);
+                        tree.transform.SetParent(chunk.transform,true);
+                        chunk.DynamicObstacles.AddRange(tree.Hazards);chunk.Animated.Add(tree);list.Add(tree);
+                    }
+                    else
+                    {
+                        var animal = sequence%3==0 ? Giraffe(z) : Elephant(z);
+                        animal.transform.SetParent(chunk.transform, true);
+                        chunk.DynamicObstacles.AddRange(animal.Hazards); chunk.Animated.Add(animal); list.Add(animal);
+                    }
                 }
             }
             if(expanded&&walking)
@@ -168,7 +199,8 @@ namespace Muhanok.Presentation.Map
                 if(item is RouteTransitionView connection){connection.Release();continue;}
                 item.gameObject.SetActive(false); item.transform.SetParent(root, true);
                 if (item is ItemPickup pickup) Pool(pickup.Kind).Push(pickup);
-                else if (item is ZooHazard animal) (animal.Giraffe ? giraffes : elephants).Push(animal);
+                else if (item is ZooHazard animal) {animal.Preview(animal.transform.position.z-40);(animal.Giraffe ? giraffes : elephants).Push(animal);}
+                else if(item is FallenTreeHazard tree){tree.Preview(tree.transform.position.z-40);trees.Push(tree);}
                 else if(item is FloorItemController peel)bananas.Push(peel);
                 else if(item is ThemedLaneBlock block)blockers[block.Theme].Push(block);
             }
@@ -305,74 +337,22 @@ namespace Muhanok.Presentation.Map
 
         private ZooHazard Giraffe(float z)
         {
-            var animal = giraffes.Count > 0 ? giraffes.Pop() : BuildGiraffe();
-            PlaceAnimal(animal, z, true); return animal;
+            var animal=giraffes.Count>0?giraffes.Pop():BuildGiraffe();PlaceEncounter(animal.transform,animal.Hazards,z);
+            animal.Preview(z-40);animal.gameObject.SetActive(true);return animal;
         }
-        private ZooHazard Elephant(float z, int lane)
+        private ZooHazard Elephant(float z)
         {
-            var animal = elephants.Count > 0 ? elephants.Pop() : BuildElephant();
-            PlaceAnimal(animal, z, true, lane); return animal;
+            var animal=elephants.Count>0?elephants.Pop():BuildElephant();PlaceEncounter(animal.transform,animal.Hazards,z);
+            animal.Preview(z-40);animal.gameObject.SetActive(true);return animal;
         }
-        private static void PlaceAnimal(ZooHazard animal, float z, bool fullRow, int lane = 0)
+        private static void PlaceEncounter(Transform encounter,ObstacleController[] hazards,float z)
         {
-            RouteSurface.Sample(z, out float x, out float y);
-            animal.transform.position = new Vector3(x, y, z);
-            for (int i = 0; i < animal.Hazards.Length; i++)
+            RouteSurface.Sample(z,out float x,out float y);encounter.SetPositionAndRotation(new Vector3(x,y,z),Quaternion.identity);
+            for(int i=0;i<hazards.Length;i++)
             {
-                var hazard = animal.Hazards[i];
-                int hazardLane = fullRow ? i - 1 : lane;
-                hazard.transform.position = new Vector3(hazardLane * 2.2f + x, y, z);
-                hazard.FullExerciseRow = fullRow; hazard.ResetPass(); hazard.gameObject.SetActive(true);
+                hazards[i].transform.position=new Vector3((i-1)*2.2f+x,y,z);
+                hazards[i].FullExerciseRow=true;hazards[i].ResetPass();hazards[i].gameObject.SetActive(true);
             }
-            if (!fullRow && animal.Moving != null)
-            {
-                // The trunk reaches from the right-hand enclosure into the chosen lane.
-                animal.Moving.parent.localPosition = new Vector3(4.6f, 0, 0);
-                float length = 4.6f - lane * 2.2f + 1f;
-                var trunk = animal.Moving.GetChild(0);
-                trunk.localScale = new Vector3(.45f, length * .5f, .45f);
-                trunk.localPosition = new Vector3(-length * .5f, 0, 0);
-            }
-            animal.Preview(-1000f); animal.gameObject.SetActive(true);
-        }
-        private ZooHazard BuildGiraffe()
-        {
-            var node = new GameObject("Zoo_Giraffe"); node.transform.SetParent(root, false);
-            var animal = node.AddComponent<ZooHazard>(); animal.Giraffe = true;
-            var body = new GameObject("Body").transform; body.SetParent(node.transform, false); body.localPosition = new Vector3(5.2f, 0, 0);
-            Color yellow = new Color(.95f, .74f, .3f), brown = new Color(.45f, .27f, .12f);
-            Part(PrimitiveType.Capsule, body, new Vector3(0, 2.2f, 0), new Vector3(1.3f, 1.1f, 2.4f), yellow, Quaternion.Euler(90, 0, 0));
-            for (int i = 0; i < 4; i++) Part(PrimitiveType.Cylinder, body, new Vector3(i < 2 ? -.4f : .4f, 1f, i % 2 == 0 ? -.8f : .8f), new Vector3(.22f, 1f, .22f), yellow);
-            for (int i = 0; i < 5; i++) Part(PrimitiveType.Sphere, body, new Vector3(.62f * (i % 2 == 0 ? 1 : -1), 2.3f + (i % 3) * .2f, -.9f + i * .4f), new Vector3(.08f, .35f, .35f), brown);
-            // The neck pivots at the shoulder and lowers across all three lanes to slide height.
-            var pivot = new GameObject("NeckPivot").transform; pivot.SetParent(body, false); pivot.localPosition = new Vector3(-.4f, .45f, 0);
-            Part(PrimitiveType.Cylinder, pivot, new Vector3(0, 3.6f, 0), new Vector3(.38f, 3.6f, .38f), yellow);
-            Part(PrimitiveType.Cube, pivot, new Vector3(0, 7.4f, 0), new Vector3(.55f, .6f, 1f), yellow);
-            Part(PrimitiveType.Cylinder, pivot, new Vector3(0, 7.85f, .2f), new Vector3(.08f, .25f, .08f), brown);
-            Part(PrimitiveType.Cylinder, pivot, new Vector3(0, 7.85f, -.2f), new Vector3(.08f, .25f, .08f), brown);
-            for (int i = 0; i < 4; i++) Part(PrimitiveType.Sphere, pivot, new Vector3(.2f, 1.5f + i * 1.4f, 0), new Vector3(.1f, .3f, .3f), brown);
-            animal.Moving = pivot; animal.Hazards = Hazards(node.transform, ObstacleKind.Crate, 3);
-            return animal;
-        }
-        private ZooHazard BuildElephant()
-        {
-            var node = new GameObject("Zoo_Elephant"); node.transform.SetParent(root, false);
-            var animal = node.AddComponent<ZooHazard>();
-            var body = new GameObject("Body").transform; body.SetParent(node.transform, false); body.localPosition = new Vector3(4.6f, 0, 0);
-            Color grey = new Color(.55f, .57f, .6f), tusk = new Color(.95f, .93f, .85f);
-            Part(PrimitiveType.Sphere, body, new Vector3(2.4f, 1.9f, 0), new Vector3(3.2f, 2.3f, 2.4f), grey);
-            Part(PrimitiveType.Sphere, body, new Vector3(.6f, 2.4f, 0), new Vector3(1.6f, 1.5f, 1.5f), grey);
-            Part(PrimitiveType.Cube, body, new Vector3(.9f, 2.5f, .95f), new Vector3(.15f, 1.2f, 1f), grey * .9f);
-            Part(PrimitiveType.Cube, body, new Vector3(.9f, 2.5f, -.95f), new Vector3(.15f, 1.2f, 1f), grey * .9f);
-            Part(PrimitiveType.Cylinder, body, new Vector3(-.1f, 1.8f, .4f), new Vector3(.12f, .5f, .12f), tusk, Quaternion.Euler(0, 0, 70));
-            Part(PrimitiveType.Cylinder, body, new Vector3(-.1f, 1.8f, -.4f), new Vector3(.12f, .5f, .12f), tusk, Quaternion.Euler(0, 0, 70));
-            for (int i = 0; i < 4; i++) Part(PrimitiveType.Cylinder, body, new Vector3(i < 2 ? 1.6f : 3.2f, .7f, i % 2 == 0 ? -.7f : .7f), new Vector3(.6f, .7f, .6f), grey);
-            // The trunk lies along the ground into the lane: jump over it.
-            var pivot = new GameObject("TrunkPivot").transform; pivot.SetParent(body, false); pivot.localPosition = new Vector3(0, .35f, 0);
-            var trunk = Part(PrimitiveType.Cylinder, pivot, new Vector3(-3.8f, 0, 0), new Vector3(.45f, 3.8f, .45f), grey, Quaternion.Euler(0, 0, 90));
-            trunk.name = "Trunk";
-            animal.Moving = pivot; animal.Hazards = Hazards(node.transform, ObstacleKind.Crate, 3);
-            return animal;
         }
         private static ObstacleController[] Hazards(Transform parent, ObstacleKind kind, int count)
         {

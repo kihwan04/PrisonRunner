@@ -41,6 +41,12 @@
 
 `RoutePlan`, `RouteSurface`, `CartFork`가 진행 경로와 좌우·높이 좌표를 계산합니다. `ChunkSpawner`가 `MuhanokMapChunk`를 풀에서 꺼내 연결하고, `RuntimeContent`가 차단물·바나나·동물·아이템을 배치/재사용합니다. 현재 확장 경로는 목적지가 섞이는 세 갈래 수레와 광산·감옥·동물원을 포함합니다.
 
+## 실행 성능과 손 메뉴
+
+`AdaptivePerformance`는 순수 규칙으로 프레임 시간 구간을 판정하고, Bootstrap이 런타임 그래픽 복사본에 렌더 스케일·그림자·SSAO·소품 거리를 적용합니다. 저장한 사용자 설정은 바꾸지 않습니다. 높은 완화 단계에서는 기존 포즈 모델을 다시 만들지 않고 추론 상한을 30→20회/초로 줄입니다. 모든 PC에서 같은 FPS를 보장하는 기능은 아니며 카메라 추론에는 기존 Compute Shader 지원 GPU가 필요합니다.
+
+`HandMenuPointer`는 신뢰도·프레임 시각·어깨 크기로 손목 좌표를 정규화합니다. Presentation의 `GesturePointer`가 화면별 실제 버튼과 0.75초 머무르기를 연결합니다. 메뉴용 카메라는 게임의 선택한 입력 방식과 구분해, 키보드 달리기 진입 시 종료합니다.
+
 ## 얼굴 서버와 저장 경계
 
 `Services/Identity/server.py`는 단일 API 프로세스이고 `storage.py`가 PostgreSQL/SQLite 연결을 담당합니다. 중앙 배포는 Caddy HTTPS → Docker API/Psycopg → PostgreSQL 17 → postgres-data volume 순서입니다. 기존 로컬 Python은 PostgreSQL 설정이 없으면 SQLite를 사용합니다. 실제 배포 명령과 백업은 [서버 안내](../Services/Identity/README_DOCKER.md)에 있습니다.

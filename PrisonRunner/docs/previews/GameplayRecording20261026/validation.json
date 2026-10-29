@@ -1,0 +1,18 @@
+{
+  "publicSource": true,
+  "excludedMixamoOriginals": true,
+  "tests": {
+    "EditMode": {
+      "passed": 129,
+      "failed": 0,
+      "exitCode": 0,
+      "result": "Passed"
+    },
+    "PlayMode": {
+      "passed": 41,
+      "failed": 0,
+      "exitCode": 0,
+      "result": "Passed"
+    }
+  }
+}

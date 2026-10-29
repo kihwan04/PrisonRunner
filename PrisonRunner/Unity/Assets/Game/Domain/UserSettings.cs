@@ -13,6 +13,8 @@ namespace Muhanok.Domain
         public float RenderScale = 1f;
         public int FrameCap = 60;          // 0 = unlimited
         public bool VSync = false;
+        public bool AutoPerformance = true;
+        public bool HandMenus = true;
         public ShadowSetting Shadows = ShadowSetting.High;
         public bool AmbientOcclusion = true;
         // GPU Resident Drawer: draws the many repeated chunk meshes in instanced batches.

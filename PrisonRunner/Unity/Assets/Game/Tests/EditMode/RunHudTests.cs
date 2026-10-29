@@ -16,20 +16,41 @@ namespace Muhanok.Tests
             run.Workout.SetWeight("70"); run.Workout.SetGoal(180);
             return run;
         }
-        [TestCase(PlayStyle.Keyboard, false)]
+        [TestCase(PlayStyle.Keyboard, true)]
         [TestCase(PlayStyle.FullBody, true)]
         [TestCase(PlayStyle.UpperBody, true)]
-        public void CalorieGoalOnlyAppearsForExerciseStyles(PlayStyle style, bool expected)
+        public void GoalAndBurnCounterAreVisibleForEveryStyle(PlayStyle style, bool expected)
         {
             var model = new RunHudModel(); model.Tick(Running(), null, style, PoseStatus.Tracking, false, 1);
             Assert.AreEqual(expected, model.ShowWorkout);
             if (expected) StringAssert.Contains("180 kcal", model.Workout);
         }
-        [Test] public void MissingWeightHidesExerciseCounter()
+        [Test] public void MissingWeightShowsUnavailableBurnInsteadOfAnInventedValue()
         {
             var run = Running(); run.Workout.SetWeight("");
             var model = new RunHudModel(); model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 1);
-            Assert.IsFalse(model.ShowWorkout);
+            Assert.IsTrue(model.ShowWorkout); StringAssert.Contains("—",model.BurnLabel);
+            StringAssert.Contains("몸무게",model.WorkoutHint);Assert.AreEqual(0,model.GoalProgress);
+        }
+        [Test] public void FractionalGoalAndBurnHaveExplicitLabelsAndKeyboardNeverShowsExerciseBurn()
+        {
+            var run=Running();run.Workout.SetGoal(80.5);run.Workout.TickActivity(60,true,true,true,0);
+            var model=new RunHudModel();model.Tick(run,null,PlayStyle.FullBody,PoseStatus.Tracking,false,1);
+            StringAssert.Contains("목표  80.5 kcal",model.GoalLabel);StringAssert.Contains("소모  4.9 kcal",model.BurnLabel);
+            model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,false,2);
+            StringAssert.Contains("0.0 kcal",model.BurnLabel);StringAssert.Contains("미집계",model.WorkoutHint);
+            Assert.AreEqual(0,model.GoalProgress);
+        }
+        [Test] public void ForkPreviewShowsTheLiveLaneThenCommittedDestinationAndHidesAtExit()
+        {
+            var run=Running();RouteSurface.UsePlan(new RoutePlan(new RunConfig{ExtendedRoutes=true},723));
+            var model=new RunHudModel();run.Runner.SetStartZ(110);run.Runner.Command(MotionCommand.Right);
+            model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,false,1);
+            Assert.IsTrue(model.ShowFork);Assert.IsFalse(model.ForkCommitted);Assert.AreEqual(1,model.ForkLane);
+            RouteSurface.ActivePlan.UpdateChoice(120,1);run.Runner.SetStartZ(132);
+            model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,false,2);
+            Assert.IsTrue(model.ForkCommitted);StringAssert.Contains("진입",model.ForkCaption);
+            run.Runner.SetStartZ(144);model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,false,3);Assert.IsFalse(model.ShowFork);
         }
         [TestCase(true, true, true, true, true, true, HudNoticeKind.Tracking)]
         [TestCase(false, true, true, true, true, true, HudNoticeKind.Obstacle)]
@@ -74,6 +95,17 @@ namespace Muhanok.Tests
             for (int i = 0; i < 3600; i++) model.Tick(run, null, PlayStyle.FullBody, PoseStatus.Tracking, false, 60 + i / 60f);
             long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
             Assert.AreSame(label, model.Workout); Assert.AreEqual(0, bytes, "Unchanged counters should not format strings or allocate each frame. This excludes Unity rendering and changing values.");
+        }
+        [Test] public void SirenRemainsVisibleWhenAForkInstructionTakesPriorityAndHidesWhenPausedOrCaught()
+        {
+            var run=Running();var model=new RunHudModel();
+            RouteSurface.UsePlan(new RoutePlan(new RunConfig{ExtendedRoutes=true},723));run.Runner.SetStartZ(110);
+            model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,true,1);
+            Assert.IsTrue(model.ShowSiren);Assert.AreEqual(HudNoticeKind.Fork,model.NoticeKind);
+            model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,true,5);Assert.IsTrue(model.ShowSiren);
+            run.Paused=true;model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,true,6);Assert.IsFalse(model.ShowSiren);
+            run.Paused=false;model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,true,7);Assert.IsTrue(model.ShowSiren);
+            run.Hit(true);model.Tick(run,null,PlayStyle.Keyboard,PoseStatus.Off,true,8);Assert.IsFalse(model.ShowSiren);
         }
     }
 }
