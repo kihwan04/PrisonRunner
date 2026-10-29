@@ -10,7 +10,7 @@ namespace Muhanok.Domain
         public bool Tick(string hovered, double now, bool valid, double seconds=.9)
         {
             if (!valid || string.IsNullOrEmpty(hovered)) { target=null; fired=null; Progress=0; return false; }
-            if (hovered!=target || now-lastSeen>.25 || now<lastSeen) { target=hovered; fired=null; entered=now; Progress=0; }
+            if (hovered!=target || now-lastSeen>.25) { target=hovered; entered=now; Progress=0; }
             lastSeen=now;
             if (fired==hovered) { Progress=1; return false; }
             Progress=Math.Max(0,Math.Min(1,(now-entered)/Math.Max(.2,seconds)));

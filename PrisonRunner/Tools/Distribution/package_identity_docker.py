@@ -10,7 +10,6 @@ OUTPUT=PROJECT.parent/'Deliverables'/'2026-10-26'/'ForkShort'
 SERVICE=PROJECT/'Services'/'Identity'
 SERVER_FILES=(
     'Dockerfile','.dockerignore','requirements.txt','compose.yaml','compose.https.yaml',
-    'compose.tailscale.yaml','tailscale-serve.json',
     'Caddyfile','.env.example','README_DOCKER.md','server.py','schema.sql','setup_models.py',
     'models/provenance.json','models/face_detection_yunet.LICENSE','models/face_recognition_sface.LICENSE',
     'ConfigureClient.ps1','identity-server.example.json','test_identity.py','test_http.py',
@@ -89,13 +88,7 @@ A/D 좌우 이동, Space 점프, S 숙이기, W 하이니, F1 설정, F3 성능 
 세 갈래 철로는 48m로 줄였으며 선택 후 긴 직선 없이 다음 맵 입구로 이어집니다. 좌우 간격과 진입 곡선도 함께 조정했습니다.
 메인 메뉴에서 게임 시작, 랭킹, 상점, 프로필, 얼굴 로그인, 설정과 게임 종료를 선택합니다. Ctrl+Shift+F12는 개발자/전시 모드입니다.
 상점·거리 랭킹·화면 설정은 PC 로컬이고, 얼굴 로그인·개인 운동 기록은 PostgreSQL 서버를 사용합니다.
-거리·최고 기록·목표 칼로리·소모 칼로리는 오른쪽 위에 모으고 코인은 왼쪽 위에 표시합니다. 키보드는 소모 0.0과 미집계 안내, 몸무게 미입력은 소모 미확정으로 표시합니다.
-바나나 접촉으로 경찰 경고가 켜지면 상단 중앙에 빨강·파랑 사이렌이 번갈아 표시됩니다. 다른 조작 안내와 함께 보이며 일시정지·잡힘에서는 숨깁니다.
-갈림길에는 방향 표지와 선택 레일 강조를 표시합니다. 확정 뒤에는 선택한 목적지로 바로 이어집니다.
-동물원에서는 몸에 이어진 기린 목·코끼리 코가 낮게 길을 막고, 길 옆 나무도 쓰러집니다. 준비 동작을 보고 점프로 넘으세요.
-손을 들어 초록 커서를 버튼 위에 0.75초 머무르면 선택합니다. F1 몸동작 탭에서 손 메뉴를 끄거나 휴대폰 연결 안내·카메라 재검색을 사용할 수 있습니다. 이름·숫자 직접 입력은 키보드가 필요합니다.
-아이폰·안드로이드를 Windows 웹캠으로 등록하는 연결 앱/드라이버 또는 지원 기기의 USB 웹캠 모드가 필요합니다. 게임에 휴대폰 USB 직접 수신 앱을 내장한 것은 아닙니다.
-성능 자동 조절은 선택한 화질을 상한으로 렌더 해상도·그림자·소품 거리를 조절하고 필요한 경우 포즈 추론 상한을 낮춥니다. 모든 컴퓨터에서 같은 FPS를 보장하지 않습니다.
+거리·최고 기록·운동 모드의 칼로리 목표는 오른쪽 위에 모으고 코인은 왼쪽 위에 표시합니다. 방향 안내는 한 번에 하나, 상세 수치는 일시정지/결과에서 확인합니다.
 '''
         launcher='@echo off\r\nsetlocal\r\nstart "" /d "%~dp0Game" "%~dp0Game\\Mongscape.exe" %*\r\n'
         write_archive(OUTPUT/'Mongscape-RemoteClient-Windows-x64.zip',entries,
@@ -116,7 +109,7 @@ A/D 좌우 이동, Space 점프, S 숙이기, W 하이니, F1 설정, F3 성능 
 
 앞선 서버 작업 검증: 실제 PostgreSQL 17.11에서 얼굴/HTTP/트랜잭션/권한/SQLite 이전 테스트 18개, 기존 SQLite 얼굴·HTTP 테스트 9개 통과. PostgreSQL은 임시 로컬 클러스터에서 비관리자 앱 계정으로 확인했고 종료했습니다. 실제 개인 DB를 이전하지 않았습니다. 이번 철로 변경에서는 서버를 변경하지 않았습니다.
 Windows EXE는 lilohdong/muhanok-test b2215ef의 UI 기능을 기존 로컬 게임/얼굴/PostgreSQL 연결과 합친 소스에서 빌드합니다. 메뉴·상점·거리 랭킹·개발자 모드와 기존 갈림길/운동/얼굴 기능을 함께 사용합니다.
-동물원 목·코 연결과 쓰러지는 나무의 최신 검증은 프로젝트의 docs/reports/ZOO_ENCOUNTERS_2026_10_26.md를 확인하세요. 칼로리·손 메뉴·화질 조절과 당시 FPS 측정은 docs/reports/PLAY_POLISH_2026_10_26.md, 이전 철로 단축은 docs/reports/FORK_SHORT_2026_10_26.md에 보존합니다. 보고서가 없는 이전 소스에서 이 도구를 실행했다면 그 소스의 진행 상태를 기준으로 확인하세요. 상점 지갑과 거리 랭킹은 PC 로컬 저장이며 서버 DB의 개인 운동 기록과 구분합니다.
+철로 단축 후 Unity EditMode 115/115, PlayMode 37/37을 통과했습니다. Windows 빌드·세 방향 입구 화면·기본 플레이·정상 종료를 확인했습니다. 고정된 값의 HUD 모델 갱신도 관리 메모리 할당 0바이트를 유지했습니다(화면 렌더링 전체를 뜻하지 않음). 근거는 프로젝트의 docs/reports/FORK_SHORT_2026_10_26.md에 있습니다. 이번 경로 검수는 FPS 측정을 다시 수행한 결과가 아닙니다. 상점 지갑과 거리 랭킹은 PC 로컬 저장이며 서버 DB의 개인 운동 기록과 구분합니다.
 Docker 컨테이너 기동·외부 HTTPS·실물 웹캠/본인 얼굴/여러 PC의 실제 접속을 이번 작업에서 검증한 것은 아닙니다.
 
 다음 단계: 실제 서버와 도메인 준비 → 비밀번호 파일 생성 → PostgreSQL/Docker HTTPS 배포 → 외부 health 응답의 storage=postgres 확인 → 두 게임 PC에서 등록/로그인/기록 공유 확인.

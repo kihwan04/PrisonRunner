@@ -74,14 +74,12 @@ namespace Muhanok.Presentation
             RouteSurface.Sample(head.z+7,out float nx,out float ny);
             if(RouteSurface.ActivePlan?.ForkWindow(head.z)??false){float lane=head.x-x;x+=lane;nx+=lane;}
             var forward=new Vector3(nx-x,ny-y,7).normalized;
-            float local=RouteSurface.ActivePlan?.LapDistance(head.z)??0;
-            float junction=(RouteSurface.ActivePlan?.Extended??false)?Mathf.SmoothStep(0,1,Mathf.InverseLerp(80,96,local))*(1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(144,160,local))):0;
-            var position=new Vector3(x,y,head.z)-forward*Mathf.Lerp(4.4f,5.2f,junction)+Vector3.up*Mathf.Lerp(3.0f,3.5f,junction);
+            var position=new Vector3(x,y,head.z)-forward*4.4f+Vector3.up*3.0f;
             var target=new Vector3(nx,ny+.75f,head.z+7);
             float blend=1-Mathf.Exp(-12*dt);
             Chase.transform.position=Vector3.Lerp(Chase.transform.position,position,blend);
-            Chase.transform.rotation=Quaternion.Slerp(Chase.transform.rotation,Quaternion.LookRotation(target-position)*Quaternion.AngleAxis(bank*.35f*(1-junction),Vector3.forward),blend);
-            Chase.Lens.FieldOfView=Mathf.Lerp(62,65,junction);
+            Chase.transform.rotation=Quaternion.Slerp(Chase.transform.rotation,Quaternion.LookRotation(target-position)*Quaternion.AngleAxis(bank*.35f,Vector3.forward),blend);
+            Chase.Lens.FieldOfView=62;
         }
         public void ResetCamera() { Select(Menu); }
         public void FollowCapture(Vector3 player,float dt,float prone=0)

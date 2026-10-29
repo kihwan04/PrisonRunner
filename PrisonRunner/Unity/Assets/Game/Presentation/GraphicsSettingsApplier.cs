@@ -44,8 +44,7 @@ namespace Muhanok.Presentation
             if (working != null)
             {
                 // Setting the mode re-validates the asset and URP rebuilds the pipeline with or without the drawer.
-                var drawer=s.GpuResidentDrawer ? GPUResidentDrawerMode.InstancedDrawing : GPUResidentDrawerMode.Disabled;
-                if(working.gpuResidentDrawerMode!=drawer)working.gpuResidentDrawerMode=drawer;
+                working.gpuResidentDrawerMode = s.GpuResidentDrawer ? GPUResidentDrawerMode.InstancedDrawing : GPUResidentDrawerMode.Disabled;
                 working.renderScale = s.RenderScale;
                 // Below native resolution, FSR upscaling keeps edges sharper than plain bilinear.
                 working.upscalingFilter = s.RenderScale < .99f ? UpscalingFilterSelection.FSR : UpscalingFilterSelection.Auto;
@@ -53,7 +52,7 @@ namespace Muhanok.Presentation
                 working.mainLightShadowmapResolution = s.Shadows == ShadowSetting.High ? 2048 : 1024;
                 working.additionalLightsShadowmapResolution = s.Shadows == ShadowSetting.High ? 2048 : 512;
             }
-            for (int i = 0; i < ambientOcclusion.Count; i++) if (ambientOcclusion[i] != null) { bool enabled=s.AmbientOcclusion && ambientOcclusionWas[i]; if(ambientOcclusion[i].isActive!=enabled)ambientOcclusion[i].SetActive(enabled); }
+            for (int i = 0; i < ambientOcclusion.Count; i++) if (ambientOcclusion[i] != null) ambientOcclusion[i].SetActive(s.AmbientOcclusion && ambientOcclusionWas[i]);
             foreach (var light in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
             {
                 if (light.type != LightType.Directional) continue;

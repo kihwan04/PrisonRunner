@@ -76,7 +76,7 @@ namespace Muhanok.Presentation
         // Main call to action: gold with dark text, brighter on hover and glowing gently.
         public bool PrimaryButton(Rect rect, string text, int size = 28)
         {
-            bool hover = rect.Contains(Event.current.mousePosition) || (GesturePointer.Visible && rect.Contains(GesturePointer.Position));
+            bool hover = rect.Contains(Event.current.mousePosition);
             float pulse = .5f + .5f * Mathf.Sin(Time.unscaledTime * 3f);
             Card(new Rect(rect.x - 3, rect.y - 3, rect.width + 6, rect.height + 6), Palette.A(Palette.Gold, .35f + .3f * pulse));
             Card(rect, hover ? Color.Lerp(Palette.Gold, Color.white, .15f) : Palette.Gold);
@@ -93,7 +93,7 @@ namespace Muhanok.Presentation
                 flatButton = new GUIStyle(Button);
                 foreach (var state in new[] { flatButton.normal, flatButton.hover, flatButton.active, flatButton.focused }) { state.background = null; state.textColor = Color.white; }
             }
-            bool hover = rect.Contains(Event.current.mousePosition) || (GesturePointer.Visible && rect.Contains(GesturePointer.Position));
+            bool hover = rect.Contains(Event.current.mousePosition);
             if (primary) Card(rect, hover ? Color.Lerp(Palette.Gold, Color.white, .15f) : Palette.Gold);
             else { Card(rect, Palette.Wood); Card(new Rect(rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4), hover ? Color.Lerp(Palette.Ground, Color.white, .12f) : Palette.Ground); }
             GUI.color = primary ? Palette.Outline : Palette.Cream;

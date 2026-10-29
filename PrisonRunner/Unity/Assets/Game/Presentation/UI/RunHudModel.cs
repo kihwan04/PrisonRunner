@@ -14,27 +14,14 @@ namespace Muhanok.Presentation
         public string Coins { get; private set; } = "0";
         public string Workout { get; private set; } = "";
         public bool ShowWorkout { get; private set; }
-        public string GoalLabel { get; private set; } = "";
-        public string BurnLabel { get; private set; } = "";
-        public string WorkoutHint { get; private set; } = "";
         public bool ShowPoseRecovery { get; private set; }
-        public bool ShowSiren { get; private set; }
         public float GoalProgress { get; private set; }
         public string Notice { get; private set; }
         public HudNoticeKind NoticeKind { get; private set; }
         public readonly string[] ItemLabels = new string[ItemCatalog.All.Length];
         public int CueScans { get; private set; }
-        public bool ShowFork {get;private set;}
-        public bool ForkCommitted {get;private set;}
-        public int ForkLane {get;private set;}
-        public float ForkProgress {get;private set;}
-        public string ForkCaption {get;private set;}
-        private int forkDestination=99;
-        private static readonly string[] ChoiceCaptions={"왼쪽 선택","가운데 선택","오른쪽 선택"};
         private readonly int[] itemSeconds = new int[ItemCatalog.All.Length];
-        private int coins = -1, kcal = -1, streak;
-        private double goal = -1;
-        private int workoutMode = -1;
+        private int coins = -1, kcal = -1, goal = -1, streak;
         private bool goalReached, previousPolice, previousRiding;
         private float nextScan, lastZ = -1, lastTime = -1, lostSince = -1, comboUntil, policeUntil, sectionUntil;
         private string actionCue, comboText;
@@ -43,20 +30,6 @@ namespace Muhanok.Presentation
         public void Tick(RunSession session, ChunkSpawner map, PlayStyle style, PoseStatus pose, bool police, float now)
         {
             bool running = session.Flow.State == GameFlowState.Running && !session.Paused;
-            // The beacon must remain visible even when another instruction has higher priority.
-            ShowSiren = running && police;
-            var plan=RouteSurface.ActivePlan;
-            float lap=plan?.LapDistance(session.Runner.Z)??0;
-            ShowFork=running && (plan?.Extended??false) && lap>=CartFork.Start && lap<CartFork.End;
-            ForkCommitted=ShowFork && plan.ForkLocked(session.Runner.Z);
-            ForkLane=ForkCommitted?plan.ChoiceAt(RouteSurface.SequenceAt(session.Runner.Z)):session.Runner.Lane;
-            ForkProgress=Mathf.InverseLerp(CartFork.Start,CartFork.Decision,lap);
-            if(ForkCommitted)
-            {
-                int destination=plan.DestinationAt(RouteSurface.SequenceAt(session.Runner.Z));
-                if(destination!=forkDestination){forkDestination=destination;ForkCaption=RoutePlan.DestinationName(destination)+" 진입";}
-            }
-            else {forkDestination=99;ForkCaption=ChoiceCaptions[Mathf.Clamp(ForkLane+1,0,2)];}
             if (now < lastTime || session.Runner.Z < lastZ - .01f)
             {
                 nextScan = comboUntil = policeUntil = sectionUntil = 0;
@@ -64,21 +37,16 @@ namespace Muhanok.Presentation
             }
             lastZ = session.Runner.Z; lastTime = now;
             if (session.Score.Coins != coins) { coins = session.Score.Coins; Coins = coins.ToString(); }
-            ShowWorkout = true;
-            int mode = !PlayStyleInfo.UsesCamera(style) ? 0 : session.Workout.WeightKg.HasValue ? 2 : 1;
-            GoalProgress = mode == 2 ? (float)session.Workout.GoalProgress : 0;
+            ShowWorkout = PlayStyleInfo.UsesCamera(style) && session.Workout.WeightKg.HasValue;
+            GoalProgress = (float)session.Workout.GoalProgress;
             if (ShowWorkout)
             {
-                int nextKcal = mode == 2 ? (int)Math.Round(session.Workout.EstimatedKcal * 10) : 0;
-                double nextGoal = session.Workout.GoalKcal;
-                bool reached = mode == 2 && session.Workout.GoalReached;
-                if (kcal != nextKcal || goal != nextGoal || reached != goalReached || workoutMode != mode)
+                int nextKcal = (int)Math.Round(session.Workout.EstimatedKcal * 10), nextGoal = (int)session.Workout.GoalKcal;
+                bool reached = session.Workout.GoalReached;
+                if (kcal != nextKcal || goal != nextGoal || reached != goalReached)
                 {
-                    kcal = nextKcal; goal = nextGoal; goalReached = reached; workoutMode = mode;
-                    GoalLabel = "목표  " + goal.ToString("0.##") + " kcal";
-                    BurnLabel = "소모  " + (mode == 1 ? "—" : (kcal / 10.0).ToString("F1")) + " kcal" + (reached ? "  ✓" : "");
-                    WorkoutHint = mode == 0 ? "키보드 · 운동량 미집계" : mode == 1 ? "몸무게 입력 후 계산" : reached ? "목표 달성!" : "동작 기반 추정치";
-                    Workout = BurnLabel + " / " + GoalLabel;
+                    kcal = nextKcal; goal = nextGoal; goalReached = reached;
+                    Workout = (kcal / 10.0).ToString("F1") + " / " + goal + " kcal" + (reached ? "  ✓" : "");
                 }
             }
             for (int i = 0; i < ItemLabels.Length; i++)

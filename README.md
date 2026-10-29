@@ -4,16 +4,15 @@
 
 ## 다운로드와 실행
 
-[최신 데모 릴리스 · v2026.10.26-r2](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)
+[최신 데모 릴리스 · v2026.10.26](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)
 
 | 파일 | 용도 |
 | --- | --- |
-| [전체 플레이 영상](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Mongscape-Gameplay-Full.mp4) | 2분 6초 · 자동 키보드 데모 · 게임 소리 포함 |
-| [Windows 게임](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Mongscape-RemoteClient-Windows-x64.zip) | ZIP 전체를 풀고 `StartGame.cmd` 실행 |
-| [PostgreSQL Docker 서버](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Mongscape-Identity-PostgreSQL-Docker.zip) | 여러 게임 PC가 공유할 얼굴 로그인 API·DB·HTTPS 배포 파일 |
-| [최신 기획서 V13](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Mongscape-Planning-V13.zip) | 화면별 기획서와 문서 검수 기록 |
-| [서버·클라이언트 연결 안내](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Deployment-Guide-KO.md) | 서버 설정과 게임 PC의 주소 지정 |
-| [SHA-256](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/SHA256SUMS.txt) | 다운로드 파일 검증값 |
+| [Windows 게임](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/Mongscape-RemoteClient-Windows-x64.zip) | ZIP 전체를 풀고 `StartGame.cmd` 실행 |
+| [PostgreSQL Docker 서버](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/Mongscape-Identity-PostgreSQL-Docker.zip) | 여러 게임 PC가 공유할 얼굴 로그인 API·DB·HTTPS 배포 파일 |
+| [최신 기획서 V13](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/Mongscape-Planning-V13.zip) | 화면별 기획서와 문서 검수 기록 |
+| [서버·클라이언트 연결 안내](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/Deployment-Guide-KO.md) | 서버 설정과 게임 PC의 주소 지정 |
+| [SHA-256](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/SHA256SUMS.txt) | 다운로드 파일 검증값 |
 
 게임 PC에는 Unity·Python·Docker를 따로 설치하지 않아도 됩니다. `Game` 폴더 전체를 유지하세요. 얼굴 기능 없이 키보드·몸동작으로 플레이할 수 있습니다. 얼굴 로그인을 사용하려면 서버를 먼저 배포하고 EXE 옆 `identity-server.json`에 서버 주소를 지정합니다.
 
@@ -22,9 +21,7 @@
 ## 이번 버전
 
 - 메인 메뉴·PC 프로필·코인 상점·거리 랭킹과 개발자/전시 모드 통합.
-- 거리·최고 기록·목표/소모 칼로리를 오른쪽 위에 표시하고 경찰 사이렌을 복원.
-- 손목 커서로 0.75초 머무르면 메뉴 선택. 성능에 따른 자동 화질 조절과 카메라 재검색.
-- 몸에 이어진 기린 목·코끼리 코와 쓰러지는 나무 장애물, 갈림길 방향 표지·선택 레일 강조.
+- 거리·최고 기록·운동 목표를 오른쪽 위에 모은 HUD. 방향 안내는 한 번에 하나만 표시.
 - 세 갈래 철로를 **120m에서 48m로 단축**, 선택 후 긴 직선을 제거하고 다음 맵 입구로 연결.
 - PostgreSQL 17·Docker Compose·Caddy HTTPS 중앙 얼굴 서버와 원격 서버 주소 설정.
 
@@ -43,8 +40,6 @@ Unity **6000.3.10f1**로 `PrisonRunner/Unity`를 열고 **Mongscape → Play Gam
 | 기획·개발·과거 기록 | [문서 목록](PrisonRunner/docs/README.md) |
 | 에셋 출처·재배포 조건 | [외부 리소스 안내](PrisonRunner/THIRD_PARTY_NOTICES.md) |
 
-최신 공개 소스의 Unity 검사와 실제 Windows 전체 플레이 영상은 [플레이 녹화·출시 검수](PrisonRunner/docs/reports/GAMEPLAY_RECORDING_2026_10_26.md)를 확인하세요. 앞선 서버 작업에서는 PostgreSQL 18개·SQLite 9개 테스트를 통과했습니다. 실제 Docker 컨테이너 기동·외부 HTTPS·여러 PC 접속·실물 웹캠은 별도 검수가 필요합니다. 자동 메뉴 캡처 종료 중 발생한 네이티브 오류 등 남은 항목은 진행 상태와 검수 보고서에 기록했습니다.
+철로 단축 후 Unity EditMode **115/115**, PlayMode **37/37**과 Windows 실행 검수를 통과했습니다. 앞선 서버 작업에서는 PostgreSQL 18개·SQLite 9개 테스트를 통과했습니다. 실제 Docker 컨테이너 기동·외부 HTTPS·여러 PC 접속·실물 웹캠은 별도 검수가 필요합니다. 자동 메뉴 캡처 종료 중 발생한 네이티브 오류 등 남은 항목은 진행 상태와 검수 보고서에 기록했습니다.
 
 개인 얼굴 DB·토큰·비밀번호·설치별 서버 주소·Unity 캐시와 재배포 제한이 있는 Mixamo 원본은 공개 소스에서 제외합니다. 공개 소스의 애니메이션은 자체 Blender 동작을 사용하며 리소스 조건은 외부 리소스 안내를 따릅니다. 이전 릴리스와 기획 기록은 보존합니다.
-
-[![플레이 영상 미리보기](PrisonRunner/docs/previews/GameplayRecording20261026/CartFork.png)](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Mongscape-Gameplay-Full.mp4)

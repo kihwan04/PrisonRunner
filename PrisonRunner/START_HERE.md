@@ -8,7 +8,7 @@
 
 ## 다른 PC에서 실행
 
-[최신 Windows 게임 ZIP](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26-r2/Mongscape-RemoteClient-Windows-x64.zip)을 내려받아 전부 압축 해제하고 `StartGame.cmd`를 실행합니다. `Game` 폴더 전체를 보관하세요. Unity·Python·Docker를 게임 PC에 따로 설치할 필요는 없습니다.
+[최신 Windows 게임 ZIP](https://github.com/kihwan04/PrisonRunner/releases/download/v2026.10.26/Mongscape-RemoteClient-Windows-x64.zip)을 내려받아 전부 압축 해제하고 `StartGame.cmd`를 실행합니다. `Game` 폴더 전체를 보관하세요. Unity·Python·Docker를 게임 PC에 따로 설치할 필요는 없습니다.
 
 타이틀 → 메인 메뉴 → 게임 시작 → 최초 PC 프로필 입력 → 탈출 준비에서 플레이 방식·칼로리 목표 선택 → 시작하기 순서입니다. 메인 메뉴에는 상점·거리 랭킹·프로필·얼굴 로그인도 있습니다. 얼굴 등록/로그인은 선택 사항이고 몸무게를 생략해도 플레이할 수 있습니다.
 

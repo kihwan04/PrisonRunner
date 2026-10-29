@@ -95,7 +95,6 @@ namespace Muhanok.Presentation
             if (session == null || Hidden) return;
             Matrix4x4 old = GUI.matrix;
             GUI.matrix = ViewportLayout.GuiMatrix;
-            GesturePointer.BeginPass();
             var state = session.Flow.State;
             if (state != GameFlowState.Result) resultOpen = false;
             if (Loading || Revealing) loading.Draw(LoadingImage, LoadingProgress, Loading, RevealOpacity);
@@ -118,7 +117,7 @@ namespace Muhanok.Presentation
         {
             switch (Page)
             {
-                case MenuPage.None: title.Draw(TitleLogo, Fade, OpenMainMenu); break;
+                case MenuPage.None: title.Draw(TitleLogo, Fade); break;
                 case MenuPage.Setup: setup.Draw(Data, BeginRun, OpenMainMenu, OpenSettings,OpenIdentity); break;
                 case MenuPage.Profile: profile.Draw(Data, AfterProfileSaved, OpenMainMenu); break;
                 case MenuPage.Shop: shop.Draw(Data, OpenMainMenu); break;

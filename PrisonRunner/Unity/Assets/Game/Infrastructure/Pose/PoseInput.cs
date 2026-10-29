@@ -143,13 +143,6 @@ namespace Muhanok.Infrastructure
             estimator?.Dispose(); estimator = null; estimatorFailed = false;
             if (UsesCamera) { var style = Style; Style = PlayStyle.Keyboard; SetStyle(style); }
         }
-        public void SetInferenceRate(float fps) { options.MaxInferenceRate=Mathf.Clamp(fps,15,30); }
-        public void RefreshCamera()
-        {
-            var style=Style;estimator?.Dispose();estimator=null;estimatorFailed=false;
-            if(UsesCamera){Style=PlayStyle.Keyboard;SetStyle(style);}
-            Recalibrate();
-        }
         public void Recalibrate() { classifier.Recalibrate(); smoother.Reset(); commands.Reset(0); }
         public void ResetCommands() => commands.Reset(classifier.Reading.Lane);
         public void Tick(double now, bool feedCommands)

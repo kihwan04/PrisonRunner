@@ -5,7 +5,6 @@ namespace Muhanok.Presentation.Map
 {
     public sealed class MuhanokMapChunk : MonoBehaviour
     {
-        public RailForkView ForkView {get;set;}
         public const float Length = 24f;
         public string AssetId;
         public int RouteType;

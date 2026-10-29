@@ -8,7 +8,7 @@
                                                        postgres-data volume
 ```
 
-배포 파일은 [공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26-r2)에서 제공합니다. 실제 서버·도메인은 아직 배포하지 않았습니다. 실제 PostgreSQL 17.11에서 로그인/기록/HTTP/이전 테스트를 통과했지만, 이 PC에는 Docker가 없어 Linux 컨테이너 기동과 외부 HTTPS는 아직 검증하지 못했습니다.
+배포 파일은 [공개 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)에서 제공합니다. 실제 서버·도메인은 아직 배포하지 않았습니다. 실제 PostgreSQL 17.11에서 로그인/기록/HTTP/이전 테스트를 통과했지만, 이 PC에는 Docker가 없어 Linux 컨테이너 기동과 외부 HTTPS는 아직 검증하지 못했습니다.
 
 ## 1. 배포 파일과 비밀번호 준비
 

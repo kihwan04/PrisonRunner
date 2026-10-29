@@ -50,32 +50,6 @@ namespace Muhanok.Tests
                 foreach(var gap in chunk.RailGaps)Assert.IsFalse(gap.gameObject.activeSelf);
             }
         }
-        [UnityTest] public IEnumerator ForkDirectionMarkersFollowPreviewThenLockedBranchWithoutNewPoolObjects()
-        {
-            yield return Load();var game=Object.FindFirstObjectByType<GameBootstrap>();Seek(game,119,0);
-            int created=game.Map.CreatedCount;
-            foreach(int lane in new[]{-1,0,1})
-            {
-                game.Session.Runner.Command(lane<0?MotionCommand.Left:lane>0?MotionCommand.Right:MotionCommand.Center);
-                game.Session.Runner.Tick(.25f,0);game.Map.AnimateGates(119);yield return null;
-                foreach(var item in game.Map.Active)
-                {
-                    var view=item.Chunk.ForkView;if(view==null||!view.isActiveAndEnabled)continue;
-                    Assert.AreEqual(lane,view.HighlightedBranch);
-                    for(int branch=-1;branch<=1;branch++)
-                    {
-                        var marker=view.transform.Find("DirectionMarker_"+branch+"/DirectionArrow");Assert.IsNotNull(marker);
-                        var rail=view.transform.Find("PhysicalRail_"+((branch+1)*2)).GetComponent<LineRenderer>();
-                        Assert.AreEqual(branch==lane?.2f:.11f,rail.startWidth,.001f);
-                        Assert.AreSame(rail.sharedMaterial,marker.GetComponent<Renderer>().sharedMaterial);
-                    }
-                }
-            }
-            game.Map.Tick(120);game.Map.AnimateGates(120);yield return null;
-            foreach(var item in game.Map.Active)if(item.Chunk.ForkView!=null&&item.Chunk.ForkView.isActiveAndEnabled)
-                Assert.AreEqual(RouteSurface.ActivePlan.ChoiceAt(item.Chunk.Sequence),item.Chunk.ForkView.HighlightedBranch);
-            Assert.AreEqual(created,game.Map.CreatedCount);
-        }
         [UnityTest] public IEnumerator ZooAnimalRowsRequireAndAcceptARealJump()
         {
             yield return Load();var game=Object.FindFirstObjectByType<GameBootstrap>();int branch=ZooBranch(game);Seek(game,480,branch);
@@ -236,10 +210,8 @@ namespace Muhanok.Tests
             while(game.Session.Runner.Lane!=lane)game.Session.Runner.Command(lane<game.Session.Runner.Lane?MotionCommand.Left:MotionCommand.Right);game.Session.Runner.Tick(.25f,0);
             peel.Evaluate(game.Session,z-1);peel.Evaluate(game.Session,z-1);yield return null;
             Assert.AreEqual(1,game.Session.BananaHits);Assert.IsTrue(game.PursuitCue.Visible);Assert.IsFalse(game.Capture.BatonVisible);
-            yield return null;Assert.IsTrue(game.GetComponent<HUDPresenter>().RunModel.ShowSiren);
             Assert.IsNull(game.OutputCamera.transform.Find("NearPoliceHandAndBaton"),"The warning must not create camera-space geometry");
             game.Session.Paused=true;yield return null;Assert.IsFalse(game.PursuitCue.Visible);
-            Assert.IsFalse(game.GetComponent<HUDPresenter>().RunModel.ShowSiren);
             game.Session.Paused=false;yield return null;Assert.IsTrue(game.PursuitCue.Visible);
             var avatar=game.Hero.GetComponent<FaceAvatarView>();avatar.Apply(Texture2D.whiteTexture);game.Hero.Apply(game.Session.Runner);
             game.Session.Hit(true);game.enabled=true;yield return new WaitForSecondsRealtime(1.5f);

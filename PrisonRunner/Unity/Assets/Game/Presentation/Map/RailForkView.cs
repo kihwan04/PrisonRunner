@@ -10,14 +10,9 @@ namespace Muhanok.Presentation.Map
         private const int Samples=49;
         public const float ExitHalfWidth=3f, ExitHeight=4.6f;
         private static readonly Dictionary<int,Mesh> decks=new Dictionary<int,Mesh>(), tunnels=new Dictionary<int,Mesh>(), supports=new Dictionary<int,Mesh>();
-        private static Material deckMaterial,railMaterial,ravineMaterial,selectedRailMaterial,dimRailMaterial,signMaterial;
-        private static Mesh signBoard;
-        private static readonly Mesh[] signArrows=new Mesh[3];
-        private readonly Renderer[] signs=new Renderer[3];
-        private int visualLane=99;
-        public int HighlightedBranch {get;private set;}
+        private static Material deckMaterial,railMaterial,ravineMaterial;
         private static readonly Material[] branchMaterials=new Material[3];
-        private static readonly Color[] colors={new Color(.64f,.7f,.74f),new Color(.64f,.7f,.74f),new Color(.64f,.7f,.74f)};
+        private static readonly Color[] colors={new Color(.43f,.45f,.46f),new Color(.43f,.45f,.46f),new Color(.43f,.45f,.46f)};
         private Transform environment;
         private bool restoreEnvironment;
         private MeshFilter deck;
@@ -51,7 +46,7 @@ namespace Muhanok.Presentation.Map
         {
             if(chunk.transform.Find("ThreeWayRails")!=null)return;
             var root=new GameObject("ThreeWayRails");root.transform.SetParent(chunk.transform,false);
-            var view=root.AddComponent<RailForkView>();view.Create();chunk.ForkView=view;root.SetActive(false);
+            var view=root.AddComponent<RailForkView>();view.Create();root.SetActive(false);
         }
         public static RailForkView Attach(MuhanokMapChunk chunk,int sequence)
         {
@@ -64,35 +59,20 @@ namespace Muhanok.Presentation.Map
                 view=root.AddComponent<RailForkView>();view.Create();
             }
             int local=RouteSurface.ActivePlan.LocalSequence(sequence);
-            chunk.ForkView=view;view.Configure(chunk,local);view.gameObject.SetActive(true);return view;
+            view.Configure(chunk,local);view.gameObject.SetActive(true);return view;
         }
         private static void Materials()
         {
             if(deckMaterial!=null)return;
             var shader=Resources.Load<Shader>("MuhanokUI/ForkSurface")??Shader.Find("Universal Render Pipeline/Lit");
             deckMaterial=new Material(shader){name="Fork timber",color=new Color(.32f,.20f,.105f)};
-            railMaterial=new Material(shader){name="Fork lamp glass",color=new Color(1,.66f,.25f)};
-            selectedRailMaterial=new Material(shader){name="Selected fork rail",color=new Color(1,.69f,.18f)};
-            dimRailMaterial=new Material(shader){name="Unselected fork rail",color=new Color(.27f,.31f,.34f)};
-            signMaterial=new Material(shader){name="Fork sign backing",color=new Color(.12f,.075f,.04f)};
-            var plate=new RouteMesh();plate.Box(Vector3.zero,new Vector3(1.5f,.9f,.12f));signBoard=plate.Build("Fork direction board");
-            for(int branch=-1;branch<=1;branch++)signArrows[branch+1]=BuildArrow(branch);
+            railMaterial=new Material(shader){name="Fork rail"};
             for(int i=0;i<3;i++)branchMaterials[i]=new Material(shader){name="Fork rail "+i,color=colors[i]};
             ravineMaterial=new Material(shader){name="Fork stone",color=new Color(.13f,.115f,.095f)};
         }
         private void Create()
         {
             Materials();
-            for(int branch=-1;branch<=1;branch++)
-            {
-                var marker=new GameObject("DirectionMarker_"+branch);marker.transform.SetParent(transform,false);
-                marker.AddComponent<MeshFilter>().sharedMesh=signBoard;
-                var board=marker.AddComponent<MeshRenderer>();board.sharedMaterial=signMaterial;board.shadowCastingMode=ShadowCastingMode.Off;
-                var arrow=new GameObject("DirectionArrow");arrow.transform.SetParent(marker.transform,false);arrow.transform.localPosition=Vector3.back*.075f;
-                arrow.AddComponent<MeshFilter>().sharedMesh=signArrows[branch+1];
-                var icon=arrow.AddComponent<MeshRenderer>();icon.sharedMaterial=branchMaterials[branch+1];icon.shadowCastingMode=ShadowCastingMode.Off;
-                signs[branch+1]=icon;
-            }
             var surface=new GameObject("TraversableDeck");surface.transform.SetParent(transform,false);
             deck=surface.AddComponent<MeshFilter>();surface.AddComponent<MeshRenderer>().sharedMaterial=deckMaterial;
             collisionSurface=surface.AddComponent<MeshCollider>();
@@ -135,14 +115,8 @@ namespace Muhanok.Presentation.Map
             if(wood!=null){deck.GetComponent<Renderer>().sharedMaterial=wood;timber.GetComponent<Renderer>().sharedMaterial=wood;}
             materialsChosen=true;
             if(environment!=null)environment.gameObject.SetActive(false);
-            sequence=chunk.Sequence;geometryMode=99;visualLane=99;RefreshSelection(chunk);ground.gameObject.SetActive(false);
-            float lampZ=localSequence==CartFork.FirstChunk?23:18;
-            float signZ=localSequence==CartFork.FirstChunk?21:18;
-            for(int branch=-1;branch<=1;branch++)
-            {
-                var marker=signs[branch+1].transform.parent;
-                marker.localPosition=new Vector3(CartFork.Offset(localSequence*24+signZ,branch),3.35f,signZ);
-            }
+            sequence=chunk.Sequence;geometryMode=99;RefreshSelection(chunk);ground.gameObject.SetActive(false);
+            float lampZ=localSequence==CartFork.FirstChunk?16:18;
             for(int branch=-1;branch<=1;branch++)lampGlass[branch+1].localPosition=new Vector3(CartFork.Offset(localSequence*24+lampZ,branch)-1.1f,3.6f,lampZ-.25f);
             for(int branch=-1;branch<=1;branch++)for(int side=0;side<2;side++)
             {
@@ -153,33 +127,6 @@ namespace Muhanok.Presentation.Map
                     rail.SetPosition(i,new Vector3(CartFork.Offset(localSequence*24+z,branch)+(side==0?-.7f:.7f),.12f,z));
                 }
             }
-        }
-        public void RefreshPreview(int lane,bool locked)
-        {
-            lane=Mathf.Clamp(lane,-1,1);int key=(lane+1)*2+(locked?1:0);
-            if(key==visualLane)return;visualLane=key;HighlightedBranch=lane;
-            for(int branch=-1;branch<=1;branch++)
-            {
-                bool chosen=branch==lane;
-                var material=chosen?selectedRailMaterial:locked?dimRailMaterial:branchMaterials[branch+1];
-                signs[branch+1].sharedMaterial=material;
-                for(int side=0;side<2;side++)
-                {
-                    var rail=rails[(branch+1)*2+side];rail.sharedMaterial=material;
-                    rail.startWidth=rail.endWidth=chosen?.2f:.11f;
-                }
-            }
-        }
-        private static Mesh BuildArrow(int direction)
-        {
-            var v=new List<Vector3>();var t=new List<int>();
-            // Rotate an upright arrow left/right; geometry remains readable without text or extra lights.
-            float angle=-direction*45*Mathf.Deg2Rad;
-            var outline=new[]{new Vector2(-.11f,-.3f),new Vector2(.11f,-.3f),new Vector2(.11f,.04f),new Vector2(.32f,.04f),new Vector2(0,.36f),new Vector2(-.32f,.04f),new Vector2(-.11f,.04f)};
-            foreach(var p in outline)v.Add(new Vector3(p.x*Mathf.Cos(angle)-p.y*Mathf.Sin(angle),p.x*Mathf.Sin(angle)+p.y*Mathf.Cos(angle),0));
-            // Rectangle stem plus arrow head, independent of polygon triangulation.
-            t.AddRange(new[]{0,1,2,0,2,6,5,3,4});
-            var mesh=new Mesh{name="ForkArrow_"+direction};mesh.SetVertices(v);mesh.SetTriangles(t,0);mesh.RecalculateNormals();mesh.RecalculateBounds();return mesh;
         }
         public void RefreshSelection(MuhanokMapChunk chunk)
         {
@@ -257,11 +204,6 @@ namespace Muhanok.Presentation.Map
                 Box(v,t,new Vector3(-5.6f,2.9f,8),new Vector3(.3f,5.8f,.35f));
                 Box(v,t,new Vector3(5.6f,2.9f,8),new Vector3(.3f,5.8f,.35f));
                 Box(v,t,new Vector3(0,5.7f,8),new Vector3(11.5f,.3f,.4f));
-                Box(v,t,new Vector3(-4,1.95f,21),new Vector3(.2f,3.9f,.25f));
-                Box(v,t,new Vector3(4,1.95f,21),new Vector3(.2f,3.9f,.25f));
-                Box(v,t,new Vector3(0,3.95f,21),new Vector3(8.2f,.2f,.25f));
-                for(int branch=-1;branch<=1;branch++)
-                    Box(v,t,new Vector3(CartFork.Offset(117,branch),3.85f,21),new Vector3(.08f,.3f,.08f));
             }
             else for(int branch=-1;branch<=1;branch++)for(int row=0;row<2;row++)
             {

@@ -100,7 +100,7 @@ namespace Muhanok.Presentation.Map
                 foreach(var item in active)
                 {
                     item.Chunk.PlaceOnRoute(item.Chunk.Sequence);item.Chunk.UpdateCartRoute();
-                    item.Chunk.ForkView?.RefreshSelection(item.Chunk);
+                    item.Chunk.GetComponentInChildren<RailForkView>(true)?.RefreshSelection(item.Chunk);
                 }
                 if(active.Count>0)nextPosition=active[active.Count-1].Chunk.Exit.position;
             }
@@ -149,17 +149,7 @@ namespace Muhanok.Presentation.Map
         }
         public void AnimateGates(float runnerZ)
         {
-            var plan=RouteSurface.ActivePlan;
-            foreach(var item in active)
-            {
-                item.Chunk.AnimateGates(runnerZ);
-                // Cached component on the pooled chunk; no hierarchy search in the per-frame path.
-                if(item.Chunk.ForkView!=null && item.Chunk.ForkView.gameObject.activeSelf)
-                {
-                    bool locked=plan?.ForkLocked(item.Chunk.Sequence*24)??false;
-                    item.Chunk.ForkView.RefreshPreview(locked?plan.ChoiceAt(item.Chunk.Sequence):session.Runner.Lane,locked);
-                }
-            }
+            foreach(var item in active) item.Chunk.AnimateGates(runnerZ);
         }
     }
 }
