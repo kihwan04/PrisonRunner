@@ -100,7 +100,7 @@ namespace Muhanok.Presentation.Map
                 foreach(var item in active)
                 {
                     item.Chunk.PlaceOnRoute(item.Chunk.Sequence);item.Chunk.UpdateCartRoute();
-                    item.Chunk.GetComponentInChildren<RailForkView>(true)?.RefreshSelection(item.Chunk);
+                    item.Chunk.ForkView?.RefreshSelection(item.Chunk);
                 }
                 if(active.Count>0)nextPosition=active[active.Count-1].Chunk.Exit.position;
             }
@@ -115,8 +115,6 @@ namespace Muhanok.Presentation.Map
                 var chunk = pool.Rent(type);
                 chunk.PlaceOnRoute(sequence);
                 chunk.Prepare(sequence, session.Difficulty.ObstacleChance(session.Score.Distance), random);
-                if (plan != null && (plan.IsForkChunk(sequence) || plan.IsForkTrackChunk(sequence)))
-                    foreach (var gap in chunk.RailGaps) gap.gameObject.SetActive(false);
                 chunk.gameObject.SetActive(true); active.Add(new ActiveChunk(type, chunk));
                 Decorator?.Decorate(chunk, sequence, type, random);
                 nextPosition = chunk.Exit.position; sequence++;
@@ -149,7 +147,17 @@ namespace Muhanok.Presentation.Map
         }
         public void AnimateGates(float runnerZ)
         {
-            foreach(var item in active) item.Chunk.AnimateGates(runnerZ);
+            var plan=RouteSurface.ActivePlan;
+            foreach(var item in active)
+            {
+                item.Chunk.AnimateGates(runnerZ);
+                // Cached component on the pooled chunk; no hierarchy search in the per-frame path.
+                if(item.Chunk.ForkView!=null && item.Chunk.ForkView.gameObject.activeSelf)
+                {
+                    bool locked=plan?.ForkLocked(item.Chunk.Sequence*24)??false;
+                    item.Chunk.ForkView.RefreshPreview(locked?plan.ChoiceAt(item.Chunk.Sequence):session.Runner.Lane,locked);
+                }
+            }
         }
     }
 }

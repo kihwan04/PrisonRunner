@@ -39,7 +39,7 @@ namespace Muhanok.Domain
         public float LaneSpacing = 2.2f, LaneSeconds = .20f, BaseSpeed = 9f, MaxSpeed = 17f;
         public float JumpHeight = 1.8f, Gravity = 24f, CrouchSeconds = .8f, HighKneeSeconds = .9f;
         public float LightHit = .18f, HeavyHit = .35f, Recovery = .018f, StumbleSeconds = .8f;
-        public int CleanBonus = 25;
+        public int CleanBonus = 25; // Unused since score v2; kept for saved settings.
         public float SlipSeconds = 2.4f, SlipSpeedMultiplier = .5f, CartSpeed = 9f;
         public float BananaCatchSeconds=1.2f;
         public float SpeedRampDistance = 120f;
@@ -67,19 +67,18 @@ namespace Muhanok.Domain
     {
         public float Distance { get; private set; }
         public int Coins { get; private set; }
-        public int Score => (int)(Distance * 10f) + bonus + (int)extra;
-        // Score items multiply points earned while they are active; already earned points never change.
-        public int Multiplier { get; set; } = 1;
-        private int bonus;
-        private float extra;
-        public void Advance(float metres)
-        {
-            float step = Math.Max(0f, metres); Distance += step;
-            if (Multiplier > 1) extra += step * 10f * (Multiplier - 1);
-        }
-        public void CleanPass(int points) { bonus += Math.Max(0, points) * Math.Max(1, Multiplier); }
-        public void CollectCoin() { Coins++; bonus += 10 * Math.Max(1, Multiplier); }
-        public void Reset() { Distance = 0f; bonus = 0; Coins = 0; extra = 0f; Multiplier = 1; }
+        // Distance plus exercise (RunScore); coins and clean passes do not score.
+        public int Score => RunScore.From(Distance, workout);
+        // Obstacles and rail gaps cleared; kept for the record only.
+        public int CleanPasses { get; private set; }
+        private readonly WorkoutEstimate workout;
+        public ScoreSystem(WorkoutEstimate runWorkout = null) { workout = runWorkout; }
+        public void Advance(float metres) { Distance += Math.Max(0f, metres); }
+        public void CleanPass() { CleanPasses++; }
+        // The double-coin item adds extra coins per pickup.
+        public int CoinMultiplier { get; set; } = 1;
+        public void CollectCoin() { Coins += Math.Max(1, CoinMultiplier); }
+        public void Reset() { Distance = 0f; Coins = 0; CleanPasses = 0; CoinMultiplier = 1; }
     }
 
     public sealed class DifficultyDirector
@@ -198,21 +197,28 @@ namespace Muhanok.Domain
     {
         public readonly GameFlowController Flow = new GameFlowController();
         public readonly ChaseSystem Chase = new ChaseSystem();
-        public readonly ScoreSystem Score = new ScoreSystem();
+        // Score reads Workout for the exercise part, so it is built in the constructor.
+        public readonly ScoreSystem Score;
         public readonly DifficultyDirector Difficulty = new DifficultyDirector();
         public readonly RunnerController Runner;
         public readonly RunConfig Config;
         public readonly WorkoutEstimate Workout=new WorkoutEstimate();
         public readonly PowerUpState Items=new PowerUpState();
         public bool Paused {get; set;}
+        // Tutorial runs never end in a capture: a mistake is only counted and the tutorial restarts the step.
+        public bool IsTutorial { get => tutorial; set { tutorial = value; TutorialMisses = 0; } }
+        public int TutorialMisses {get;private set;}
+        // The tutorial slows the runner in front of a lesson obstacle (1 = normal speed).
+        public float SpeedScale {get;set;}=1f;
+        private bool tutorial;
         public int BananaHits {get;private set;}
         public int ShieldSaves {get;private set;}
         public int DodgeStreak {get;private set;}
         public int BestDodgeStreak {get;private set;}
-        public void RecordDodge() { DodgeStreak++;BestDodgeStreak=Math.Max(BestDodgeStreak,DodgeStreak);if(DodgeStreak%5==0)Score.CleanPass(Config.CleanBonus*2); }
+        public void RecordDodge() { DodgeStreak++;BestDodgeStreak=Math.Max(BestDodgeStreak,DodgeStreak); }
         public bool BananaPursuit=>bananaCatchLeft>0;
         public float TargetSpeed => Config.IntervalMode ? IntervalSpeed() : Difficulty.Speed(Score.Distance, Config, Runner.Riding);
-        public float CurrentSpeed => Flow.State == GameFlowState.Running && !Paused ? MoveSpeed * Runner.SpeedMultiplier : 0f;
+        public float CurrentSpeed => Flow.State == GameFlowState.Running && !Paused ? MoveSpeed * Runner.SpeedMultiplier * SpeedScale : 0f;
         private float MoveSpeed => Config.IntervalMode ? smoothSpeed : TargetSpeed;
         // Interval rhythm comes from the route: walking chunks sprint, the cart ride rests.
         public bool Resting => Config.IntervalMode && Runner.Riding;
@@ -221,7 +227,9 @@ namespace Muhanok.Domain
         public CaptureReason Reason {get;private set;}
         private float bananaCatchLeft, smoothSpeed;
         private float lastHit = -100f, clock;
-        public RunSession(RunConfig config) { Config = config; Runner = new RunnerController(config); smoothSpeed = TargetSpeed; }
+        // Play time without pauses; shown to the player, not part of the score.
+        public float Elapsed => clock;
+        public RunSession(RunConfig config) { Config = config; Score = new ScoreSystem(Workout); Runner = new RunnerController(config); smoothSpeed = TargetSpeed; }
         private float IntervalSpeed()
         {
             if (Runner.Riding) return Config.RestSpeed;
@@ -234,9 +242,9 @@ namespace Muhanok.Domain
             clock += dt;
             float target = TargetSpeed;
             smoothSpeed = smoothSpeed < target ? Math.Min(target, smoothSpeed + Config.SpeedChangeRate * dt) : Math.Max(target, smoothSpeed - Config.SpeedChangeRate * 1.6f * dt);
-            Items.Tick(dt); Score.Multiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1;
+            Items.Tick(dt); Score.CoinMultiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1;
             float z = Runner.Z;
-            Runner.Tick(dt, MoveSpeed);
+            Runner.Tick(dt, MoveSpeed * SpeedScale);
             Score.Advance(Runner.Z - z);
             if(BananaPursuit)
             {
@@ -246,11 +254,14 @@ namespace Muhanok.Domain
             }
             else if (BananaHits==0&&clock - lastHit > 2f) Chase.Recover(Config.Recovery * dt);
         }
+        // Reads the item state at pickup time, so a coin in the same frame as the item already counts double.
+        public void CollectCoin() { Score.CoinMultiplier = Items.IsActive(ItemKind.DoubleScore) ? 2 : 1; Score.CollectCoin(); }
         public bool Hit(bool heavy)
         {DodgeStreak=0;return Fail(CaptureReason.Collision);}
         public bool Fail(CaptureReason reason)
         {
             if (Flow.State != GameFlowState.Running || Paused) return false;
+            if (tutorial) { Reason = reason; lastHit = clock; TutorialMisses++; return true; }
             if (reason == CaptureReason.Collision && Items.ConsumeShield())
             {
                 // The shield absorbs one solid hit: a stumble instead of a capture.
@@ -265,7 +276,10 @@ namespace Muhanok.Domain
         public bool Slip(bool banana=false)
         {
             if(Flow.State!=GameFlowState.Running||Paused||Runner.Riding)return false;
-            DodgeStreak=0;Runner.Slip();
+            DodgeStreak=0;
+            // The shield also absorbs one slip: no slowdown, no banana count, so no pursuit starts.
+            if(Items.ConsumeShield()){ShieldSaves++;lastHit=clock;return false;}
+            Runner.Slip();
             if(banana)
             {
                 BananaHits++;
@@ -274,6 +288,6 @@ namespace Muhanok.Domain
             }
             return true;
         }
-        public void Reset() { Runner.Reset(); Chase.Reset(); Score.Reset(); Workout.Reset(); Items.Reset(); Paused=false; clock = 0f; lastHit = -100f;BananaHits=0;ShieldSaves=0;DodgeStreak=BestDodgeStreak=0;bananaCatchLeft=0;Reason=CaptureReason.Collision; smoothSpeed = TargetSpeed; }
+        public void Reset() { Runner.Reset(); Chase.Reset(); Score.Reset(); Workout.Reset(); Items.Reset(); Paused=false; SpeedScale=1f; clock = 0f; lastHit = -100f;BananaHits=0;ShieldSaves=0;DodgeStreak=BestDodgeStreak=0;bananaCatchLeft=0;Reason=CaptureReason.Collision; smoothSpeed = TargetSpeed; }
     }
 }

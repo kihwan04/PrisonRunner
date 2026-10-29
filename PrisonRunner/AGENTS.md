@@ -4,7 +4,7 @@
 
 - 게임 이름은 **Mongscape(몽스케이프)**, 이전 이름은 무한옥이다. 내부 Muhanok/PrisonRunner 네임스페이스, GUID, 저장 키와 과거 문서 제목은 기존 참조를 유지한다.
 - 작업 대상은 이 체크아웃과 개인 저장소 `kihwan04/PrisonRunner`다. 별도 `leewono/muhanok` 저장소는 수정하지 않는다. 현재 소스는 `6e50060` 기반이며 이전 구현으로 되돌리지 않는다.
-- 2026-10-26 사용자 요청으로 개인 저장소 `kihwan04/PrisonRunner`의 소스·릴리스 업로드를 재개한다. 실제 외부 서버 배포는 별도 작업이며 아직 수행하지 않았다.
+- **2026-10-29 최신 사용자 지시: PR #20과 기존 로컬 개선·정리한 문서를 develop에 병합하는 것만 승인한다. 새 릴리스·태그·실행 파일/영상 게시·서버 배포와 기존 개인 DB 마이그레이션은 금지한다. 이전의 업로드 금지는 이 소스 병합 범위에 한해 변경됐다.**
 - 새 Windows 빌드의 기본 경로는 `Builds/Mongscape/Windows/Mongscape.exe`다. StartGame은 완료된 새 빌드를 우선하고 없으면 현재 소스를 Unity에서 실행한다. 이전 Muhanok.exe로 돌아가지 않는다.
 
 ## 먼저 읽을 문서
@@ -49,4 +49,4 @@
 
 생성·수정 파일, 구현 기능, 수행한 검증과 Compile Error 여부, 남은 문제와 다음 작업을 보고한다. 과거 검사 결과를 새로 수행한 결과처럼 쓰지 않는다.
 
-- 추가 UI 통합 기준은 `lilohdong/muhanok-test` main `b2215ef589e028c2a7efce6af814ac7f02e2ce55`다. 메뉴/상점/거리 랭킹은 `docs/GAME_FLOW_UI.md`를 따른다. 얼굴 서버/PostgreSQL과 기존 확장 경로를 유지하고 PC 지갑·랭킹을 중앙 DB 데이터로 혼동하지 않는다.
+- 추가 UI 통합 기준은 `lilohdong/muhanok-test` main `b2215ef589e028c2a7efce6af814ac7f02e2ce55`다. 메뉴/상점/거리 랭킹은 `docs/GAME_FLOW_UI.md`를 따른다. 얼굴 서버/PostgreSQL과 기존 확장 경로를 유지한다. 코인·해금은 회원 계정(중앙 DB)에만 쌓이고, 게임 PC에는 PC 랭킹(게스트·회원 판)만 남는다(예전 PC 지갑은 개발자/전시 모드 전용). 둘을 혼동하지 않는다.

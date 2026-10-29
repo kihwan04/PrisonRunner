@@ -10,9 +10,9 @@
 | 환경 메시·재질 | 자체 Blender/ProBuilder 및 런타임 경로 메시. 생성 재질 [출처](../References/GeneratedV6/Provenance.md) | 청크 경계, 바닥 겹침, 표시 거리와 풀 재사용 |
 | 몸동작 모델 | `Unity/Assets/Game/Content/Pose/Resources/MuhanokPose/` | BlazePose 검출/full/lite 모델과 샘플링 셰이더 참조 |
 | 얼굴 모델 | `Services/Identity/models/` | YuNet/SFace manifest·라이선스, 다운로드 SHA-256 |
-| 얼굴 사진 | 등록 동의 뒤 연결된 서버 DB에 저장 | 개인 데이터이므로 Git/배포 ZIP에 넣지 않음 |
+| 얼굴 특징값 | 등록 동의 뒤 연결된 서버 DB에 저장. 얼굴 사진은 서버에 저장하지 않고 로그인 응답으로만 전달 | 개인 데이터이므로 Git/배포 ZIP에 넣지 않음 |
 | 소리 | 실행 중 코드로 합성 | 실제 스피커와 프리셋별 동작 확인 |
 
 화면의 경찰은 자체 모델입니다. 과거 후보 상품의 취득 확인과 실제 파일 임포트를 혼동하지 않습니다. 새로운 구매나 다운로드를 수행한 목록이 아닙니다.
 
-현재 화면 기준은 [2026-10-25 검수 보고서](reports/LOCAL_COMPLETION_2026_10_25.md)와 `previews/Polish20261025/`입니다. 리소스의 공개/재배포 조건은 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), 제작 기준은 [아트 방향](ART_DIRECTION.md)을 확인하세요.
+현재 화면 기준은 [2026-10-25 검수 보고서](reports/LOCAL_COMPLETION_2026_10_25.md)입니다(당시 캡처는 Git 기록에 있음). 리소스의 공개/재배포 조건은 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), 제작 기준은 [아트 방향](ART_DIRECTION.md)을 확인하세요.

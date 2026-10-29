@@ -6,15 +6,16 @@ import zipfile
 from pathlib import Path
 
 PROJECT=Path(__file__).resolve().parents[2]
-OUTPUT=PROJECT.parent/'Deliverables'/'2026-10-26'/'ForkShort'
+OUTPUT=PROJECT.parent/'Deliverables'/'Local'/'PR20Merge20261029'
 SERVICE=PROJECT/'Services'/'Identity'
 SERVER_FILES=(
     'Dockerfile','.dockerignore','requirements.txt','compose.yaml','compose.https.yaml',
-    'Caddyfile','.env.example','README_DOCKER.md','server.py','schema.sql','setup_models.py',
+    'compose.tailscale.yaml','tailscale-serve.json',
+    'Caddyfile','.env.example','README_DOCKER.md','server.py','setup_models.py',
     'models/provenance.json','models/face_detection_yunet.LICENSE','models/face_recognition_sface.LICENSE',
-    'ConfigureClient.ps1','identity-server.example.json','test_identity.py','test_http.py',
-    'storage.py','schema.postgres.sql','init-postgres.sh','prepare_secrets.py','migrate_sqlite.py',
-    'test_postgres.py','setup_postgres_runtime.py',
+    'ConfigureClient.ps1','identity-server.example.json','test_identity.py','test_http.py','run_tests.ps1',
+    'storage.py','schema.postgres.sql','init-postgres.sh','prepare_secrets.py','migrate_account.py',
+    'setup_postgres_runtime.py',
 )
 
 
@@ -73,22 +74,17 @@ def main():
         entries['THIRD_PARTY_NOTICES.md']=PROJECT/'THIRD_PARTY_NOTICES.md'
         font_license=PROJECT/'Unity/Assets/Game/Content/UI/Resources/MuhanokUI/BlackHanSans-OFL.txt'
         if font_license.is_file():entries['LICENSES/BlackHanSans-OFL.txt']=font_license
-        guide='''# Mongscape PostgreSQL 중앙 서버용 Windows 클라이언트
+        guide='''# Mongscape 로컬 통합 Windows 클라이언트
 
-압축 전체를 해제하세요. Unity/Python/Docker는 게임 PC에 설치할 필요가 없습니다.
-1. PostgreSQL/Docker 서버를 먼저 배포하세요. 비밀번호 파일 준비와 실행 방법은 README_DOCKER.md에 있습니다.
-2. identity-server.example.json을 Game/identity-server.json으로 복사하고 url을 실제 HTTPS 서버 주소로 바꾸세요.
-3. StartGame.cmd를 실행하세요. 얼굴 등록/로그인과 기록은 연결된 서버 DB를 사용합니다.
+현재 변경은 로컬 검수 전용이며 업로드·배포하지 않습니다. ZIP 전체를 풀고 StartGame.cmd를 실행합니다. 게임 PC에 Unity·Python·Docker 설치는 필요 없습니다.
 
-이 ZIP은 실제 서버 주소나 개인 얼굴 DB를 포함하지 않습니다. 서버를 설정하지 않아도 키보드 게임은 실행할 수 있습니다.
-환경 변수 MONGSCAPE_IDENTITY_URL이 있으면 파일보다 우선합니다. 주소 변경 후 게임을 재시작하세요.
-A/D 좌우 이동, Space 점프, S 숙이기, W 하이니, F1 설정, F3 성능 표시.
-기존 2026-10-25 실행본은 원격 주소 설정을 지원하지 않으므로 이 새 클라이언트를 사용하세요.
-현재 클라이언트는 lilohdong/muhanok-test의 메뉴·프로필·상점·거리 랭킹과 기존 얼굴 로그인·칼로리 목표·수레 갈림길을 합친 소스의 빌드입니다.
-세 갈래 철로는 48m로 줄였으며 선택 후 긴 직선 없이 다음 맵 입구로 이어집니다. 좌우 간격과 진입 곡선도 함께 조정했습니다.
-메인 메뉴에서 게임 시작, 랭킹, 상점, 프로필, 얼굴 로그인, 설정과 게임 종료를 선택합니다. Ctrl+Shift+F12는 개발자/전시 모드입니다.
-상점·거리 랭킹·화면 설정은 PC 로컬이고, 얼굴 로그인·개인 운동 기록은 PostgreSQL 서버를 사용합니다.
-거리·최고 기록·운동 모드의 칼로리 목표는 오른쪽 위에 모으고 코인은 왼쪽 위에 표시합니다. 방향 안내는 한 번에 하나, 상세 수치는 일시정지/결과에서 확인합니다.
+타이틀 → 얼굴 로그인/회원가입/게스트 → 메인 메뉴 → 게임 시작/튜토리얼 순서입니다. 계정 서버 없이 게스트 플레이를 사용할 수 있습니다. 회원 코인·해금·통계는 서버, 게스트 기록은 이 PC에 저장합니다. 키보드는 운동 칼로리에 적립하지 않습니다.
+
+회원 기능은 PostgreSQL 전용 얼굴 서버와 Game/identity-server.json의 실제 HTTPS 주소가 필요합니다. 서버를 자동 배포하지 않으며 기존 DB 이전·사진 삭제도 자동 실행하지 않습니다. README_DOCKER.md를 확인하세요. 실제 서버 주소·개인 DB·비밀 설정은 이 파일 묶음에 넣지 않습니다.
+
+A/D 이동, C 갈림길 가운데, Space 점프, S 숙이기, W 하이니, F1 설정, F3 성능 표시. 목표·소모 칼로리, 경찰 사이렌, 연결된 목·코·쓰러지는 나무, 손 커서와 자동 화질 기능을 유지합니다.
+
+점수는 거리 + 65kg 기준 운동 칼로리×100이며 표시 운동량은 입력 몸무게(생략 시 65kg) 기준입니다. 실물 웹캠·외부 서버·여러 PC·다양한 하드웨어 검수는 별도입니다. iOS/Android 카메라는 Windows 웹캠으로 등록하는 외부 연결 방법이 필요합니다.
 '''
         launcher='@echo off\r\nsetlocal\r\nstart "" /d "%~dp0Game" "%~dp0Game\\Mongscape.exe" %*\r\n'
         write_archive(OUTPUT/'Mongscape-RemoteClient-Windows-x64.zip',entries,
@@ -99,20 +95,17 @@ A/D 좌우 이동, Space 점프, S 숙이기, W 하이니, F1 설정, F3 성능 
         records.append(dict(file=file.name,bytes=file.stat().st_size,
                             sha256=digest))
     (OUTPUT/'SHA256.json').write_text(json.dumps(records,indent=2),encoding='utf-8')
-    guide='''# Mongscape PostgreSQL 중앙 얼굴 서버 · 전달 안내 (2026-10-26)
+    guide='''# Mongscape 로컬 통합 파일 안내 (2026-10-29)
 
-- `Mongscape-Identity-PostgreSQL-Docker.zip`: PostgreSQL 17 + 얼굴 API + Caddy HTTPS 배포 파일입니다. README_DOCKER.md를 따라 먼저 비밀번호 파일을 생성하고 실제 도메인을 `.env`에 설정합니다.
-- `Mongscape-RemoteClient-Windows-x64.zip`: 게임 PC마다 풀어서 사용합니다. EXE 옆 `Game/identity-server.json`에 같은 실제 HTTPS 서버 주소를 지정한 뒤 StartGame.cmd를 실행합니다. 게임 PC에 Docker나 Python을 설치할 필요가 없습니다.
-- `SHA256.json`: ZIP 파일 크기와 SHA-256 검증값입니다.
+현재 변경은 로컬 전용이며 GitHub 업로드·PR 병합·릴리스·외부 서버 배포를 금지합니다. 이 도구는 파일 묶음만 생성하며 서버 시작이나 업로드를 하지 않습니다.
 
-실제 서버와 도메인은 아직 없고 외부 배포/인증서 발급은 하지 않았습니다. 이 PC에 Docker가 없어 컨테이너 빌드/기동은 미검증입니다. 개인 얼굴 데이터, DB, 토큰, 실제 서버 주소는 ZIP에 넣지 않았습니다. 이 도구는 로컬 파일만 준비하며 공개 다운로드는 저장소 릴리스를 확인하세요.
+- Windows 클라이언트 ZIP: 전체 압축을 풀고 StartGame.cmd 실행. 최신 빌드가 필요합니다.
+- 서버 ZIP: PostgreSQL 17 + 얼굴 API + Caddy/Tailscale 설정과 run_tests.ps1. 실제 배포를 수행한 결과물이 아닙니다.
+- SHA256.json: 로컬 ZIP 검증값.
 
-앞선 서버 작업 검증: 실제 PostgreSQL 17.11에서 얼굴/HTTP/트랜잭션/권한/SQLite 이전 테스트 18개, 기존 SQLite 얼굴·HTTP 테스트 9개 통과. PostgreSQL은 임시 로컬 클러스터에서 비관리자 앱 계정으로 확인했고 종료했습니다. 실제 개인 DB를 이전하지 않았습니다. 이번 철로 변경에서는 서버를 변경하지 않았습니다.
-Windows EXE는 lilohdong/muhanok-test b2215ef의 UI 기능을 기존 로컬 게임/얼굴/PostgreSQL 연결과 합친 소스에서 빌드합니다. 메뉴·상점·거리 랭킹·개발자 모드와 기존 갈림길/운동/얼굴 기능을 함께 사용합니다.
-철로 단축 후 Unity EditMode 115/115, PlayMode 37/37을 통과했습니다. Windows 빌드·세 방향 입구 화면·기본 플레이·정상 종료를 확인했습니다. 고정된 값의 HUD 모델 갱신도 관리 메모리 할당 0바이트를 유지했습니다(화면 렌더링 전체를 뜻하지 않음). 근거는 프로젝트의 docs/reports/FORK_SHORT_2026_10_26.md에 있습니다. 이번 경로 검수는 FPS 측정을 다시 수행한 결과가 아닙니다. 상점 지갑과 거리 랭킹은 PC 로컬 저장이며 서버 DB의 개인 운동 기록과 구분합니다.
-Docker 컨테이너 기동·외부 HTTPS·실물 웹캠/본인 얼굴/여러 PC의 실제 접속을 이번 작업에서 검증한 것은 아닙니다.
+회원 코인·해금·기록·통합 랭킹은 PostgreSQL 계정, 게스트 기록은 PC 랭킹입니다. 서버에 얼굴 사진을 저장하지 않으며 인식 특징값은 보관합니다. 기존 DB의 스키마 v2 이전·사진 삭제는 백업과 별도 확인이 필요하고 이번 로컬 통합에서 실행하지 않았습니다.
 
-다음 단계: 실제 서버와 도메인 준비 → 비밀번호 파일 생성 → PostgreSQL/Docker HTTPS 배포 → 외부 health 응답의 storage=postgres 확인 → 두 게임 PC에서 등록/로그인/기록 공유 확인.
+현재 검사와 남은 범위는 docs/reports/PR20_LOCAL_MERGE_2026_10_29.md를 기준으로 합니다. 과거 SQLite 검사 결과를 현재 PostgreSQL 전용 서버의 새 검사로 해석하지 않습니다. 실제 Docker/Tailscale·외부 HTTPS·실물 웹캠·여러 PC와 하드웨어는 별도 확인입니다.
 '''
     (OUTPUT/'배포_실행_안내.md').write_text(guide,encoding='utf-8')
 

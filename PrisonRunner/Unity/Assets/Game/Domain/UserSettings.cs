@@ -13,6 +13,8 @@ namespace Muhanok.Domain
         public float RenderScale = 1f;
         public int FrameCap = 60;          // 0 = unlimited
         public bool VSync = false;
+        public bool AutoPerformance = true;
+        public bool HandMenus = true;
         public ShadowSetting Shadows = ShadowSetting.High;
         public bool AmbientOcclusion = true;
         // GPU Resident Drawer: draws the many repeated chunk meshes in instanced batches.
@@ -26,6 +28,8 @@ namespace Muhanok.Domain
         public float LaneSensitivity = 1f; // >1 needs less body movement
         public bool PerformanceOverlay = false;
         public bool PoseDiagnostics = true;
+        // Webcam preview in the bottom-right corner while playing a camera style.
+        public bool InGameCamera = true;
         // Exhibition setup: every item unlocked, a name per run, today's ranking first and operator keys.
         public bool DeveloperMode = false;
 

@@ -23,7 +23,7 @@ namespace Muhanok.Presentation
             if (player != null) { name = player.Name; weightText = player.Weight; style = player.Style; goalText=player.CalorieGoal.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture); }
             data?.PreviewStyle(style);
         }
-        public void Draw(IHudData data, Action<PlayerProfile> beginRun, Action back, Action openSettings = null,Action openIdentity=null)
+        public void Draw(IHudData data, Action<PlayerProfile> beginRun, Action back, Action openSettings = null)
         {
             bool perRun = data != null && data.DeveloperMode;
             skin.Card(new Rect(0, 0, 1280, 720), Palette.A(Palette.Ground, .82f));
@@ -32,12 +32,11 @@ namespace Muhanok.Presentation
             if (openSettings != null && skin.FlatButton(new Rect(950, 92, 140, 44), "설정", false)) openSettings();
             if (back != null && skin.FlatButton(new Rect(800, 92, 140, 44), "뒤로", false)) back();
             GUI.color = Color.white;
-            if(openIdentity!=null && skin.FlatButton(new Rect(640,92,145,44),data is IIdentityData id && id.SignedIn?"내 얼굴":"얼굴 로그인",false))openIdentity();
             if (perRun)
             {
                 GUI.Label(new Rect(195, 150, 200, 34), "이름 (순위표)", skin.Label);
                 skin.Panel(new Rect(195, 186, 400, 50), 1f); GUI.SetNextControlName("MuhanokName"); name = GUI.TextField(new Rect(195, 186, 400, 50), name, 10, skin.Input);
-                GUI.Label(new Rect(195, 246, 260, 34), "몸무게 (선택)", skin.Label);
+                GUI.Label(new Rect(195, 246, 400, 34), "몸무게 (선택, 미입력 시 65kg)", skin.Label);
                 skin.Panel(new Rect(195, 282, 300, 50), 1f); GUI.SetNextControlName("MuhanokWeight"); weightText = GUI.TextField(new Rect(195, 282, 300, 50), weightText, 7, skin.Input);
                 GUI.Label(new Rect(510, 289, 70, 40), "kg", skin.Label);
             }
@@ -45,8 +44,8 @@ namespace Muhanok.Presentation
             {
                 skin.Panel(new Rect(195, 150, 400, 182), .95f);
                 GUI.Label(new Rect(215, 166, 360, 40), data?.SavedProfile.DisplayName ?? "플레이어", skin.Style(30, FontStyle.Bold));
-                GUI.Label(new Rect(215, 214, 360, 34), string.IsNullOrWhiteSpace(weightText) ? "몸무게 미입력 · 칼로리 계산 안 함" : "몸무게 " + weightText + " kg", skin.Small);
-                GUI.color = new Color(1, 1, 1, .7f); GUI.Label(new Rect(215, 280, 360, 34), "이름과 몸무게는 메인 메뉴 > 프로필에서 바꿉니다.", skin.Style(15, FontStyle.Normal)); GUI.color = Color.white;
+                GUI.Label(new Rect(215, 214, 360, 34), string.IsNullOrWhiteSpace(weightText) ? "몸무게 미입력 · 65kg으로 계산" : "몸무게 " + weightText + " kg", skin.Small);
+                GUI.color = new Color(1, 1, 1, .7f); GUI.Label(new Rect(215, 280, 360, 34), data is IIdentityData account && account.SignedIn ? "닉네임과 몸무게는 메인 메뉴 > 내 정보에서 바꿉니다." : "회원가입하면 닉네임과 설정이 계정에 저장됩니다.", skin.Style(15, FontStyle.Normal)); GUI.color = Color.white;
             }
             GUI.Label(new Rect(195, 344, 300, 34), "플레이 방식", skin.Label);
             for (int i = 0; i < 3; i++)

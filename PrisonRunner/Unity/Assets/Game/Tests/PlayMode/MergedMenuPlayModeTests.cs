@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Reflection;
+using Muhanok.Application;
 using Muhanok.Bootstrap;
 using Muhanok.Domain;
 using Muhanok.Infrastructure;
@@ -25,7 +25,8 @@ namespace Muhanok.Tests
             float deadline=Time.realtimeSinceStartup+10;
             while((game.IsLoading||game.IsRevealing)&&Time.realtimeSinceStartup<deadline) yield return null;
             yield return null;
-            Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State); Assert.IsFalse(hud.RunModel.ShowWorkout);
+            Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State); Assert.IsTrue(hud.RunModel.ShowWorkout);
+            StringAssert.Contains("0.0 kcal",hud.RunModel.BurnLabel);StringAssert.Contains("미집계",hud.RunModel.WorkoutHint);
             game.TogglePause(); yield return null;
             int searches=hud.RunModel.CueScans;
             yield return new WaitForSecondsRealtime(.3f);
@@ -58,22 +59,33 @@ namespace Muhanok.Tests
         }
 
         [UnityTest]
-        public IEnumerator ServerIdentityNameAndLocalProfileStaySeparate()
+        public IEnumerator IdentityScreenDrawsFaceGuideWithoutErrors()
         {
             yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
-            var game=Object.FindFirstObjectByType<GameBootstrap>();var data=(IHudData)game;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();var hud=game.GetComponent<HUDPresenter>();
+            ((ISettingsHost)game).Settings.DeveloperMode=false;game.ApplySettings(false);
+            game.OpenMainMenu();hud.ShowIdentity();Assert.IsTrue(hud.IdentityOpen);
+            // Let OnGUI lay out and repaint the camera view and face guide a few times.
+            for(int i=0;i<3;i++)yield return null;
+            Assert.IsTrue(hud.IdentityOpen);LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator MemberNicknameStaysTheServersAndSignOutReturnsToGuest()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();var data=(IHudData)game;var fake=new FakeAccountGateway();
+            game.UseAccountServices(fake);
             ((ISettingsHost)game).Settings.DeveloperMode=false;game.ApplySettings(false);
             data.SaveProfile(new PlayerProfile{Name="Local QA",Weight="70",Style=PlayStyle.Keyboard});
-            var identity=game.GetComponent<LocalProfileClient>();
-            var setter=typeof(LocalProfileClient).GetProperty("Profile").GetSetMethod(true);
-            var changed=typeof(LocalProfileClient).GetField("Changed",BindingFlags.Instance|BindingFlags.NonPublic);
-            setter.Invoke(identity,new object[]{new IdentityReply{ok=true,id="synthetic-profile",name="Server QA",token="synthetic-test-token"}});
-            ((Action)changed.GetValue(identity))?.Invoke();
-            Assert.IsTrue(game.SignedIn);Assert.AreEqual("Server QA",data.SavedProfile.DisplayName);
+            Assert.IsFalse(game.SignedIn);Assert.AreEqual("Local QA",data.SavedProfile.Name);CollectionAssert.IsEmpty(fake.Calls,"Guest settings stay in memory");
+            game.Account.SignInMember(new AccountProfile{id="synthetic-profile",name="Server QA",style=(int)PlayStyle.Keyboard},"synthetic-test-token");
+            Assert.IsTrue(game.SignedIn);Assert.AreEqual("Server QA",data.SavedProfile.DisplayName);Assert.AreEqual("Server QA",data.Player.Name);
             data.SaveProfile(new PlayerProfile{Name="Different",Weight="65",Style=PlayStyle.Keyboard,CalorieGoal=140});
-            Assert.AreEqual("Local QA",game.Store.Profile.Name);Assert.AreEqual("Server QA",data.Player.Name);
-            setter.Invoke(identity,new object[]{null});((Action)changed.GetValue(identity))?.Invoke();
-            Assert.IsFalse(game.SignedIn);Assert.AreEqual("Local QA",data.SavedProfile.Name);
+            Assert.AreEqual("Server QA",data.Player.Name);Assert.AreEqual(140,data.SavedProfile.CalorieGoal);
+            CollectionAssert.Contains(fake.Calls,"profile/update");
+            game.FaceLogout(false);
+            Assert.IsFalse(game.SignedIn);Assert.AreEqual(1,fake.Logouts);Assert.AreEqual(AccountSession.GuestName,data.SavedProfile.Name);
         }
     }
 }

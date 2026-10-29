@@ -43,7 +43,10 @@ namespace Muhanok.Tests
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             var mine=game.Map.Active[0].Chunk;game.Session.Runner.Command(MotionCommand.Right);game.Session.Runner.Tick(.10f,0);
             Assert.AreEqual(1.1f,game.Session.Runner.X,.001f);
-            game.Session.Runner.SetStartZ(mine.ExerciseObstacles[3].transform.position.z);
+            // The first chunk keeps either its jump row or its duck row for this seed; cross whichever is there.
+            ObstacleController row=null;foreach(var obstacle in mine.ExerciseObstacles)if(obstacle.gameObject.activeSelf)row=obstacle;
+            Assert.IsNotNull(row,"The first chunk opens with one full exercise row");
+            game.Session.Runner.SetStartZ(row.transform.position.z);
             foreach(var obstacle in mine.ExerciseObstacles)if(obstacle.FullExerciseRow)obstacle.Evaluate(game.Session,game.Session.Runner.Z-1);
             Assert.AreEqual(GameFlowState.Caught,game.Session.Flow.State);
         }
@@ -60,18 +63,55 @@ namespace Muhanok.Tests
                 foreach(var walking in active.Chunk.Obstacles)Assert.IsFalse(walking.gameObject.activeSelf);
                 foreach(var gap in active.Chunk.RailGaps)
                 {
+                    if(!gap.gameObject.activeSelf)continue;
                     game.Session.Reset();game.Session.Runner.SetStartZ(gap.transform.position.z-1);
                     game.Session.Runner.Command(gap.RequiredLean<0?MotionCommand.Left:MotionCommand.Right);
                     game.Session.Runner.Tick(.25f,0);game.Session.Runner.SetStartZ(gap.transform.position.z);
                     gap.Evaluate(game.Session,gap.transform.position.z-1);
                     Assert.IsTrue(gap.Passed);Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State);
-                    Assert.AreEqual(game.Settings.Run.CleanBonus,game.Session.Score.Score);
+                    Assert.AreEqual(1,game.Session.Score.CleanPasses);Assert.AreEqual(0,game.Session.Score.Score);
                     Assert.LessOrEqual(Mathf.Abs(game.Session.Runner.WorldLaneOffset),.161f);last=gap;
                 }
             }
             Assert.IsNotNull(last);last.ResetGap();game.Session.Reset();game.Session.Runner.SetStartZ(last.transform.position.z-1);
             game.Session.Runner.Command(last.RequiredLean<0?MotionCommand.Right:MotionCommand.Left);game.Session.Runner.Tick(.25f,0);
             game.Session.Runner.SetStartZ(last.transform.position.z);last.Evaluate(game.Session,last.transform.position.z-1);
+            Assert.AreEqual(GameFlowState.Caught,game.Session.Flow.State);Assert.AreEqual(CaptureReason.BrokenRail,game.Session.Reason);
+        }
+        [UnityTest] public IEnumerator RailWindowsFollowTheSeededLayoutAndChangeWhenThePooledChunkIsReused()
+        {
+            yield return SceneManager.LoadSceneAsync("GameScene");yield return null;
+            var game=Object.FindFirstObjectByType<GameBootstrap>();game.Session.Config.ExtendedRoutes=false;game.BeginRun("");
+            yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
+            MuhanokMapChunk cart=null;foreach(var active in game.Map.Active)if(cart==null&&active.Type==1)cart=active.Chunk;
+            Assert.IsNotNull(cart);
+            var layouts=new System.Collections.Generic.HashSet<string>();CartRailGap brokenGap=null;
+            for(int seed=0;seed<12;seed++)
+            {
+                if(seed>0)cart.Prepare(cart.Sequence,1,new System.Random(seed));
+                layouts.Add(string.Join(",",cart.Layout.RailGaps));int broken=0;
+                for(int i=0;i<cart.RailGaps.Length;i++)
+                {
+                    var gap=cart.RailGaps[i];int side=cart.Layout.RailGaps[i];broken+=side!=0?1:0;
+                    Assert.AreEqual(side>=0,gap.LeftRail.activeSelf,"Left rail pieces");Assert.AreEqual(side<=0,gap.RightRail.activeSelf,"Right rail pieces");
+                    Assert.AreEqual(side<0,gap.LeftBreak.activeSelf);Assert.AreEqual(side>0,gap.RightBreak.activeSelf);
+                    Assert.IsTrue(gap.Pieces.gameObject.activeInHierarchy);Assert.AreEqual(side!=0,gap.gameObject.activeSelf);
+                    foreach(var piece in gap.LeftRail.GetComponentsInChildren<MeshRenderer>(true))
+                        Assert.AreEqual(piece.name=="SingleRail"?"ForgedIron":"PaintedSteel",piece.sharedMaterial.name,"Rail pieces match the baked bridge rails");
+                    if(side!=0){Assert.AreEqual(-side,gap.RequiredLean);brokenGap=gap;continue;}
+                    // Riding straight through an intact window is never judged.
+                    float z=gap.transform.position.z;
+                    game.Session.Reset();game.Session.Runner.SetStartZ(z-1);game.Session.Runner.Tick(.25f,0);game.Session.Runner.SetStartZ(z);
+                    Assert.IsTrue(game.Session.Runner.Riding);gap.Evaluate(game.Session,z-1);
+                    Assert.IsFalse(gap.Passed);Assert.AreEqual(GameFlowState.Running,game.Session.Flow.State,"Intact window "+i);
+                }
+                Assert.GreaterOrEqual(broken,1);
+            }
+            Assert.Greater(layouts.Count,1,"Reusing the pooled chunk applies the new layout");
+            // A broken window catches a rider who does not lean away from it.
+            float at=brokenGap.transform.position.z;brokenGap.ResetGap();
+            game.Session.Reset();game.Session.Runner.SetStartZ(at-1);game.Session.Runner.Tick(.25f,0);game.Session.Runner.SetStartZ(at);
+            brokenGap.Evaluate(game.Session,at-1);
             Assert.AreEqual(GameFlowState.Caught,game.Session.Flow.State);Assert.AreEqual(CaptureReason.BrokenRail,game.Session.Reason);
         }
         [UnityTest] public IEnumerator ActualExerciseRowsMatchJumpDuckAndHighKneeWithoutAnEmptyLane()
@@ -170,7 +210,7 @@ namespace Muhanok.Tests
             game.Session.Tick(3);item.ResetItem();game.Session.Runner.SetStartZ(target-1);
             game.Session.Runner.Command(MotionCommand.Jump);game.Session.Tick(.15f);game.Session.Runner.SetStartZ(target);
             item.Evaluate(game.Session,target-1);Assert.IsTrue(item.Passed);Assert.IsFalse(game.Session.Runner.Slowing,"A jump must avoid a floor item");
-            zoo.Prepare(9,1,new System.Random(1));Assert.IsFalse(item.Passed);Assert.IsTrue(item.gameObject.activeSelf);
+            zoo.Prepare(9,1,new System.Random(1));Assert.IsFalse(item.Passed);Assert.AreEqual(zoo.Layout.FloorItems[0],item.gameObject.activeSelf,"Reuse follows the new layout");
         }
         [UnityTest] public IEnumerator ActualCartVisualBanksAndSolidObstacleEndsRunOnFirstContact()
         {

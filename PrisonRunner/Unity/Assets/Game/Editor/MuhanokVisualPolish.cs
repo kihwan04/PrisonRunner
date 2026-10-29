@@ -103,7 +103,7 @@ namespace Muhanok.Editor
             EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
             Debug.Log("MUHANOK_VISUAL_V6_PASS: painted atlas / six world-projected materials / two 512px point shadow lights");
         }
-        private static void ConfigureShadows(GameObject root)
+        internal static void ConfigureShadows(GameObject root)
         {
             foreach(var light in root.GetComponentsInChildren<Light>(true))
             {

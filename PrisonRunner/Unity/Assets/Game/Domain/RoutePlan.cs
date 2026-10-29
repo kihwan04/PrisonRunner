@@ -15,16 +15,19 @@ namespace Muhanok.Domain
         private readonly RunConfig config;
         private readonly bool interval;
         private int cycle;
+        // Leading laps without a cart fork (the tutorial's warm-up lap).
+        private readonly int plainLaps;
+        private bool ForkCycle(int c) => c >= plainLaps;
         private readonly List<int> starts = new List<int>();
         private readonly Dictionary<int, int> choices = new Dictionary<int, int>();
         private readonly List<int[]> destinations = new List<int[]>();
         public bool Extended => config != null && config.ExtendedRoutes;
         public const int ExtendedLapChunks = 48;
         public int LocalSequence(int sequence) { Ensure(sequence); return sequence - starts[cycles[sequence]]; }
-        public bool IsForkTrackChunk(int sequence) => Extended && LocalSequence(sequence) >= CartFork.FirstChunk && LocalSequence(sequence) <= CartFork.LastChunk;
+        public bool IsForkTrackChunk(int sequence) => Extended && LocalSequence(sequence) >= CartFork.FirstChunk && LocalSequence(sequence) <= CartFork.LastChunk && ForkCycle(cycles[sequence]);
         public bool RailChoiceLocked(float z)=>Extended&&ForkLocked(z)&&LapDistance(z)>=CartFork.Decision&&LapDistance(z)<CartFork.End;
         public float LapDistance(float z){int s=RouteSurface.SequenceAt(z);Ensure(s);return z-starts[cycles[s]]*RouteSurface.Length;}
-        public float PrefetchLimit(float z) => !Extended||ForkLocked(z)?float.MaxValue:z-LapDistance(z)+CartFork.End;
+        public float PrefetchLimit(float z) => !Extended||ForkLocked(z)||!ForkCycle(CycleAt(RouteSurface.SequenceAt(z)))?float.MaxValue:z-LapDistance(z)+CartFork.End;
         public float ChoiceLaneOffset(float z,float laneX)
         {
             if(!ForkWindow(z))return 0;
@@ -57,6 +60,7 @@ namespace Muhanok.Domain
         {
             if (!Extended) return false;
             int s = Math.Max(0, (int)(z / RouteSurface.Length)); Ensure(s);
+            if (!ForkCycle(cycles[s])) return false;
             float local = z - starts[cycles[s]] * RouteSurface.Length;
             return local >= CartFork.Start && local < CartFork.Decision;
         }
@@ -69,6 +73,7 @@ namespace Muhanok.Domain
         public bool IsForkChunk(int sequence)
         {
             if (!Extended) return false; Ensure(sequence);
+            if (!ForkCycle(cycles[sequence])) return false;
             int local = sequence - starts[cycles[sequence]];
             return local >= 2 && local <= CartFork.LastChunk;
         }
@@ -78,7 +83,7 @@ namespace Muhanok.Domain
             int s = Math.Max(0, (int)(z / RouteSurface.Length)); Ensure(s);
             int c = cycles[s], start = starts[c];
             float local = z - start * RouteSurface.Length;
-            if (local < CartFork.Decision || choices.ContainsKey(c)) return;
+            if (local < CartFork.Decision || choices.ContainsKey(c) || !ForkCycle(c)) return;
             lane = Math.Max(-1, Math.Min(1, lane)); choices[c] = lane;
             // No destination is exposed before commitment; all three directions are shuffled each lap.
             int[] lap = ExtendedLap(destinations[c][lane + 1]);
@@ -111,6 +116,13 @@ namespace Muhanok.Domain
             config = tuning; interval = tuning != null && tuning.IntervalMode; random = new Random(seed);
             Append(Extended ? ExtendedLap(0) : AuthoredLap);
         }
+        private RoutePlan(RunConfig tuning, int seed, int[] warmup)
+        {
+            config = tuning; interval = tuning != null && tuning.IntervalMode; random = new Random(seed); plainLaps = 1;
+            Append(warmup);
+        }
+        // Tutorial: a fixed warm-up lap without a fork, followed by the ordinary laps.
+        public static RoutePlan Tutorial(RunConfig tuning, int seed, int[] warmup) => new RoutePlan(tuning, seed, warmup ?? AuthoredLap);
         public static RoutePlan Authored() => new RoutePlan(null, 0);
         public int TypeAt(int sequence) { Ensure(sequence); return types[Math.Max(0, sequence)]; }
         public int CycleAt(int sequence) { Ensure(sequence); return cycles[Math.Max(0, sequence)]; }

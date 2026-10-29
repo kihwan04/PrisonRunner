@@ -16,6 +16,7 @@ namespace Muhanok.Bootstrap
         private static void Install()
         {
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "--muhanok-smoke") < 0) return;
+            UnityEngine.Application.runInBackground = true;
             new GameObject("Build Smoke").AddComponent<RuntimeSmokeCheck>();
         }
         private void Start() { game = FindFirstObjectByType<GameBootstrap>(); start = Time.realtimeSinceStartup; }

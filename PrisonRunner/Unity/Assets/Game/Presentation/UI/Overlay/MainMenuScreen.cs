@@ -4,14 +4,16 @@ using UnityEngine;
 
 namespace Muhanok.Presentation
 {
-    public enum MenuAction { None, Play, Ranking, Shop, Profile, Identity, Settings, Quit }
+    public enum MenuAction { None, Play, Ranking, Shop, Profile, Identity, Settings, Quit, Tutorial }
 
     // Main menu over the live title scene: logo on the left, actions on the right, coins and player name on top.
     internal sealed class MainMenuScreen
     {
         static readonly CultureInfo Num = CultureInfo.InvariantCulture;
-        static readonly string[] Labels = { "게임 시작", "랭킹", "상점", "프로필", "얼굴 로그인", "설정", "게임 종료" };
-        static readonly MenuAction[] Actions = { MenuAction.Play, MenuAction.Ranking, MenuAction.Shop, MenuAction.Profile, MenuAction.Identity, MenuAction.Settings, MenuAction.Quit };
+        // The login entry reads "로그아웃" for a member and "로그인 / 회원가입" for a guest; 내 정보 is shown to members only.
+        static readonly string[] Labels = { "게임 시작", "튜토리얼", "랭킹", "상점", "내 정보", "로그인 / 회원가입", "설정", "게임 종료" };
+        const string LogoutLabel = "로그아웃";
+        static readonly MenuAction[] Actions = { MenuAction.Play, MenuAction.Tutorial, MenuAction.Ranking, MenuAction.Shop, MenuAction.Profile, MenuAction.Identity, MenuAction.Settings, MenuAction.Quit };
 
         readonly OverlaySkin skin;
         public MainMenuScreen(OverlaySkin overlaySkin) { skin = overlaySkin; }
@@ -29,13 +31,17 @@ namespace Muhanok.Presentation
             DrawTopBar(data);
 
             var action = MenuAction.None;
-            for (int i = 0; i < Labels.Length; i++)
+            bool member = SignedIn(data);
+            for (int i = 0, row = 0; i < Labels.Length; i++)
             {
-                var r = new Rect(860, 142 + i * 68, 340, 58);
+                if (Actions[i] == MenuAction.Profile && !member) continue;
+                // Up to 8 rows (member) fit between the top bar and the bottom edge.
+                var r = new Rect(860, 112 + row++ * 66, 340, 56);
                 bool primary = i == 0;
+                string label = Actions[i] == MenuAction.Identity && member ? LogoutLabel : Labels[i];
                 bool pressed = primary
-                    ? skin.Button(r, Labels[i], Palette.Gold, Color.clear, Palette.Outline, 26)
-                    : skin.Button(r, Labels[i], Palette.A(Palette.Ground, 0.9f), Palette.Wood, Palette.Cream, 22);
+                    ? skin.Button(r, label, Palette.Gold, Color.clear, Palette.Outline, 26)
+                    : skin.Button(r, label, Palette.A(Palette.Ground, 0.9f), Palette.Wood, Palette.Cream, 22);
                 if (pressed) action = Actions[i];
             }
 
@@ -58,7 +64,11 @@ namespace Muhanok.Presentation
             if (data.DeveloperMode) return;
             var player = new Rect(800, 28, 220, 44);
             skin.BorderBox(player, Palette.A(Palette.Ground, 0.9f), Palette.Wood, 2);
-            skin.Text(player, data.SavedProfile.DisplayName, 18, Palette.Cream, TextAnchor.MiddleCenter, false, true);
+            skin.Text(player, PlayerLabel(data), 18, Palette.Cream, TextAnchor.MiddleCenter, false, true);
         }
+
+        static bool SignedIn(IHudData data) => data is IIdentityData identity && identity.SignedIn;
+        // "OOO님" for a member, "게스트" for a guest.
+        internal static string PlayerLabel(IHudData data) => SignedIn(data) ? data.SavedProfile.DisplayName + "님" : "게스트";
     }
 }

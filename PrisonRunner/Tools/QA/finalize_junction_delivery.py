@@ -36,8 +36,7 @@ report=f'''# Mongscape 로컬 수정본 · 바닥 깜빡임 / 난이도 강화 /
 
 - **Mongscape-Windows-x64.zip**: 모두 압축 해제한 뒤 **StartGame.cmd** 실행. Unity와 Python을 따로 설치할 필요가 없습니다.
 - **Mongscape-Unity-Source.zip**: Unity 6000.3.10f1 프로젝트, 리소스, 서버 소스, 검증·배포 도구.
-- **Mongscape-FaceLogin-DB.zip**: Python, OpenCV, YuNet/SFace 모델을 포함한 독립 로컬 얼굴 DB 서버.
-- **Mongscape-EmptyProfiles.sqlite3**: 빈 DB 스키마 확인용. 실제 실행 DB는 Services/Identity/data/profiles.sqlite3에 자동 생성합니다.
+- **Mongscape-FaceLogin-DB.zip**: Python, OpenCV, YuNet/SFace 모델을 포함한 얼굴 서버. PostgreSQL 연결 설정이 필요합니다.
 
 기존 파일과 이름이 같으므로 이번 ZIP을 새 폴더에 풀어 실행하세요. 개발 폴더에서는 루트 StartGame.cmd 또는 PrisonRunner/StartGame.cmd로 최신 검증 빌드를 실행합니다. 얼굴 사진·사용자 프로필·토큰·실제 DB는 ZIP에 포함하지 않습니다.
 

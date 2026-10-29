@@ -18,8 +18,11 @@ namespace Muhanok.Domain
         private float sumCx, sumSy, sumHy, sumScale, sumKneeL, sumKneeR, sumAnkle, sumNose;
         private int ankleSamples, noseSamples, kneeSamples;
         // Tracking state.
-        private double lostSince = -1, crouchPendingSince = -1, landingUntil, kneeUntil, lastStep, lastJump = -10, lastLaneChange = -10, pumpUntil;
-        private bool airborne, handsUp, duckOnLoss;
+        private double lostSince = -1, crouchPendingSince = -1, crouchSince = -10, landingUntil, kneeUntil, lastStep, lastJump = -10, lastLaneChange = -10, pumpUntil;
+        private bool airborne, hopping, handsUp, duckOnLoss;
+        // Previous full-body frame, for the rise speed of shoulders and hips.
+        private double lastTrackTime = -1;
+        private float lastSy, lastHy;
         // How far the last tracked frame was toward a duck (1 = threshold); a loss after a dip counts as ducking.
         private float dropRatio;
         private double actionLockUntil, laneCandidateSince;
@@ -31,6 +34,7 @@ namespace Muhanok.Domain
         private readonly double[] stepTimes = new double[8];
         private int stepIndex;
         public PoseStatus Status { get; private set; } = PoseStatus.Searching;
+        public bool Calibrated => calibrated;
         public float CalibrationProgress => calibrated ? 1f : Math.Min(1f, samples / (float)Math.Max(1, tuning.CalibrationFrames));
         public readonly MotionReading Reading = new MotionReading();
         public float StepsPerMinute { get; private set; }
@@ -39,8 +43,8 @@ namespace Muhanok.Domain
         public void SetStyle(PlayStyle next) { style = next; Recalibrate(); }
         public void Recalibrate()
         {
-            calibrated = false; samples = 0; smoothed = false; Reading.Clear(); airborne = handsUp = duckOnLoss = false; dropRatio = 0; actionLockUntil = 0; laneCandidate = 0;
-            crouchPendingSince = -1; kneeUntil = pumpUntil = 0; stepSign = pumpSign = 0; StepsPerMinute = 0;
+            calibrated = false; samples = 0; smoothed = false; Reading.Clear(); airborne = hopping = handsUp = duckOnLoss = false; dropRatio = 0; actionLockUntil = 0; laneCandidate = 0;
+            crouchPendingSince = -1; crouchSince = -10; lastTrackTime = -1; kneeUntil = pumpUntil = 0; stepSign = pumpSign = 0; StepsPerMinute = 0;
             Status = PoseStatus.Calibrating;
         }
 
@@ -148,11 +152,19 @@ namespace Muhanok.Domain
             float scale = Scale();
             float offset = (CentreX - bCx) / scale;
             float drop = (ShoulderY - bSy) / scale, hipRise = (bHy - HipY) / scale, shoulderRise = (bSy - ShoulderY) / scale;
+            // Rise speed of the slower of shoulders and hips, in body units per second.
+            double dt = now - lastTrackTime;
+            float riseSpeed = lastTrackTime >= 0 && dt > 0 && dt < .2 ? Math.Min(lastSy - ShoulderY, lastHy - HipY) / scale / (float)dt : 0f;
+            lastTrackTime = now; lastSy = ShoulderY; lastHy = HipY;
             dropRatio = drop / tuning.CrouchDrop;
+            // A fresh crouch may be a jump wind-up; it keeps the lane until the cancel window has passed.
+            bool windUp = now - crouchSince < tuning.CrouchJumpCancelSeconds;
             // A dip moves the shoulders; it must not read as a sideways step.
-            UpdateLane(offset, tuning.LaneEnter, tuning.LaneExit, now, Locked(now) || airborne || Reading.Crouch || dropRatio > .6f);
+            UpdateLane(offset, tuning.LaneEnter, tuning.LaneExit, now, Locked(now) || airborne || Reading.Crouch || windUp || dropRatio > .6f);
             bool feetUp = !AnklesSeen || float.IsNaN(bAnkle) || (bAnkle - AnkleY) / scale > tuning.JumpRise * .5f;
             bool up = hipRise > tuning.JumpRise && shoulderRise > tuning.JumpRise * .8f && feetUp;
+            // Jump wins over a crouch that only just confirmed: the dip was the take-off. No refractory lock.
+            if (up && Reading.Crouch && windUp) Reading.Crouch = false;
             if (up && !airborne && now - lastJump > .25 && !Locked(now) && !Reading.Crouch)
             {
                 Reading.JumpEdge = true; lastJump = now;
@@ -161,7 +173,10 @@ namespace Muhanok.Domain
             }
             if (up) airborne = true;
             else if (airborne && hipRise < tuning.JumpRise * .4f) { airborne = false; landingUntil = now + tuning.LandingGraceSeconds; }
-            UpdateCrouch(drop > tuning.CrouchDrop && !airborne && now >= landingUntil, drop < tuning.CrouchDrop * .65f, now);
+            // A low hop never reaches the jump line; a fast rise still earns the landing grace once the hips settle.
+            if (riseSpeed > tuning.JumpAttemptSpeed) hopping = true;
+            else if (hopping && hipRise < tuning.JumpRise * .4f) { hopping = false; landingUntil = Math.Max(landingUntil, now + tuning.LandingGraceSeconds); }
+            UpdateCrouch(drop > tuning.CrouchDrop && !airborne && now >= landingUntil, drop < tuning.CrouchDrop * .65f, now, tuning.CrouchConfirmSeconds, tuning.CrouchJumpCancelSeconds);
             // High knee: one knee rises toward its hip; squats and tucks move both knees, so require asymmetry.
             if (KneesSeen && ActionSeen(PoseJoint.LeftKnee) && ActionSeen(PoseJoint.RightKnee) && !float.IsNaN(bKneeL))
             {
@@ -196,7 +211,7 @@ namespace Muhanok.Domain
             if (hands && !handsUp && now - lastJump > .25 && !Locked(now)) { Reading.JumpEdge = true; lastJump = now; crouchPendingSince = -1; }
             if (hands) handsUp = true;
             else if (!wristsSeen || py[PoseJoint.LeftWrist] > ShoulderY || py[PoseJoint.RightWrist] > ShoulderY) handsUp = false;
-            UpdateCrouch((drop > tuning.UpperCrouchDrop || noseDuck) && !handsUp, drop < tuning.UpperCrouchDrop * .65f && !noseDuck, now);
+            UpdateCrouch((drop > tuning.UpperCrouchDrop || noseDuck) && !handsUp, drop < tuning.UpperCrouchDrop * .65f && !noseDuck, now, tuning.UpperCrouchConfirmSeconds, 0f);
             // Arm pumping replaces knee lifts: big alternation is the stair exercise, small alternation counts as running.
             if (wristsSeen && !handsUp)
             {
@@ -212,12 +227,13 @@ namespace Muhanok.Domain
             if (Reading.Lane == 0 && !handsUp && !Reading.Crouch && Math.Abs(offset) < tuning.UpperLaneExit * .5f) Drift();
         }
 
-        private void UpdateCrouch(bool down, bool released, double now)
+        // A crouch released within cancelSeconds of confirming ends without the refractory lock, so the jump it led into can count.
+        private void UpdateCrouch(bool down, bool released, double now, float confirmSeconds, float cancelSeconds)
         {
-            if (Reading.Crouch) { if (released) { Reading.Crouch = false; Lock(now, tuning.RefractorySeconds); } return; }
+            if (Reading.Crouch) { if (released) { Reading.Crouch = false; if (now - crouchSince >= cancelSeconds) Lock(now, tuning.RefractorySeconds); } return; }
             if (!down) { crouchPendingSince = -1; return; }
             if (crouchPendingSince < 0) crouchPendingSince = now;
-            if (now - crouchPendingSince >= tuning.CrouchConfirmSeconds) { Reading.Crouch = true; crouchPendingSince = -1; }
+            if (now - crouchPendingSince >= confirmSeconds) { Reading.Crouch = true; crouchPendingSince = -1; crouchSince = now; }
         }
 
         // Slowly follow a player who drifts while standing still, so the centre zone stays centred.

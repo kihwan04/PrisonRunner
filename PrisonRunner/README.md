@@ -1,5 +1,7 @@
 # Mongscape 개발 프로젝트
 
+**2026-10-29: PR #20과 기존 개선을 통합한 소스입니다. develop 병합만 진행하며 새 릴리스·태그·서버 배포는 하지 않습니다. 기존 공개 ZIP은 통합 이전 버전입니다.**
+
 Unity 6000.3.10f1 / C# 기반 Windows 운동 러너입니다. 현재 소스는 `leewono/muhanok`의 `6e50060`을 바탕으로 Mongscape 브랜딩, 게임 확장과 Docker 중앙 얼굴 서버 연결을 적용했습니다. 원본 외부 저장소는 수정하지 않습니다.
 
 ## 실행과 개발
@@ -24,6 +26,6 @@ Unity 6000.3.10f1 / C# 기반 Windows 운동 러너입니다. 현재 소스는 `
 
 [문서 목록](docs/README.md), [아키텍처](docs/ARCHITECTURE.md), [개발 규칙](AGENTS.md), [외부 리소스·공개 조건](THIRD_PARTY_NOTICES.md)을 기준으로 작업합니다. Mixamo 원본 FBX는 공개 소스에서 제외하며 자체 Blender 동작으로 대체 연결합니다.
 
-공개 저장소는 `kihwan04/PrisonRunner`이며 [최신 Windows 게임·서버·기획서 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)에서 다운로드합니다. 로컬 전달물은 작업 폴더의 `../Deliverables/2026-10-26/ForkShort/`에도 보관합니다.
+공개 저장소는 `kihwan04/PrisonRunner`이며 [통합 이전 Windows 게임·서버·기획서 릴리스](https://github.com/kihwan04/PrisonRunner/releases/tag/v2026.10.26)에서 다운로드합니다. 로컬 전달물은 작업 폴더의 `../Deliverables/2026-10-26/ForkShort/`에도 보관합니다.
 
-통합 UI는 [게임 화면 안내](docs/GAME_FLOW_UI.md)를 확인하세요. `lilohdong/muhanok-test` main `b2215ef`의 메뉴·상점·거리 랭킹·개발자 모드를 기존 게임/얼굴 서버와 함께 사용합니다.
+현재 계정·메뉴·상점·모드별 랭킹·튜토리얼은 [게임 화면 안내](docs/GAME_FLOW_UI.md)를 확인하세요. 초기 UI는 `lilohdong/muhanok-test` main `b2215ef`, 계정 v2와 게임 규칙은 PR #20 head `6880a33`을 바탕으로 기존 로컬 개선과 합쳤습니다.

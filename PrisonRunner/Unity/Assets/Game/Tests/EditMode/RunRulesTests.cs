@@ -127,17 +127,27 @@ namespace Muhanok.Tests
             foreach(var kind in new[]{ObstacleKind.Crate,ObstacleKind.Pipe,ObstacleKind.Stair})Assert.IsTrue(SafePatternValidator.IsActionRowSafe(7,kind));
             Assert.IsFalse(SafePatternValidator.IsActionRowSafe(7,ObstacleKind.Barrier));
         }
-        [Test] public void ScoreAccumulatesActualDistanceAndBonus()
+        [Test] public void ScoreWithoutExerciseIsTheRoundedDistance()
         {
-            var score = new ScoreSystem(); score.Advance(10.5f); score.Advance(-4); score.CleanPass(25);
-            Assert.AreEqual(130, score.Score); score.Reset(); Assert.AreEqual(0, score.Score);
+            var score = new ScoreSystem(); score.Advance(10.5f); score.Advance(-4); score.CleanPass();
+            Assert.AreEqual(11, score.Score, "Clean passes are recorded but do not score"); Assert.AreEqual(1, score.CleanPasses);
+            score.Reset(); Assert.AreEqual(0, score.Score); Assert.AreEqual(0, score.CleanPasses);
+        }
+        [Test] public void ElapsedCountsPlayTimeButNotPauses()
+        {
+            var run = new RunSession(new RunConfig());
+            run.Flow.Transition(GameFlowState.TitleIdle); run.Flow.Transition(GameFlowState.LoadingIntro); run.Flow.Transition(GameFlowState.Running);
+            run.Tick(1.5f); Assert.AreEqual(1.5f, run.Elapsed, .0001f);
+            run.Paused = true; run.Tick(10f); Assert.AreEqual(1.5f, run.Elapsed, .0001f);
+            run.Paused = false; run.Tick(.5f); Assert.AreEqual(2f, run.Elapsed, .0001f);
+            run.Reset(); Assert.AreEqual(0, run.Elapsed);
         }
         [TestCase(7, false)] [TestCase(3, true)] [TestCase(0, true)] [TestCase(5, true)]
         public void PatternLeavesAnEmptyLane(int mask, bool expected) { Assert.AreEqual(expected, SafePatternValidator.IsSafe(mask)); }
         [Test] public void CollectedCoinsCountAndResetIndependentlyOfDistance()
         {
             var score=new ScoreSystem(); score.Advance(12); score.CollectCoin(); score.CollectCoin();
-            Assert.AreEqual(2,score.Coins); Assert.AreEqual(140,score.Score); Assert.AreEqual(12,score.Distance);
+            Assert.AreEqual(2,score.Coins); Assert.AreEqual(12,score.Score,"Coins do not score"); Assert.AreEqual(12,score.Distance);
             score.Reset(); Assert.AreEqual(0,score.Coins); Assert.AreEqual(0,score.Score);
         }
         [Test] public void EachActionMatchesItsHazard()

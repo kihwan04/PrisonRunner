@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using Muhanok.Application;
 using Muhanok.Domain;
 using Muhanok.Presentation;
 using UnityEngine;
@@ -39,15 +40,21 @@ namespace Muhanok.Bootstrap
             game.SetDeveloperMode(false, false);
             yield return new WaitForSecondsRealtime(3f);
             var hud = game.Hud; var data = (IHudData)game;
+            // Screenshot review uses only a synthetic in-memory account, never the configured face server.
+            game.UseAccountServices(new ReviewAccountGateway());
 
             yield return Shot("01_Title");
-            game.OpenMainMenu(); yield return Shot("02_MainMenu_NewPlayer");
-            hud.ShowPage(MenuPage.Profile, true); yield return Shot("03_Profile_FirstRun");
+            game.OpenLogin(); yield return Shot("02_Login");
+            hud.ShowPage(MenuPage.SignUp); yield return Shot("03_SignUp_Consent");
+            hud.SignUp.Agree(); yield return Shot("03b_SignUp_Nickname");
+            game.OpenMainMenu(); yield return Shot("03c_MainMenu_Guest");
+            hud.ShowPage(MenuPage.Shop); yield return Shot("03d_Shop_Guest");
 
             Seed(data);
             hud.ShowPage(MenuPage.Profile); yield return Shot("04_Profile");
             hud.ShowPage(MenuPage.Shop); yield return Shot("05_Shop");
-            hud.ShowPage(MenuPage.Ranking); yield return Shot("06_Ranking");
+            // The review data is on this PC (keyboard runs); the member tab would ask the server.
+            hud.ShowPage(MenuPage.Ranking); hud.Ranking.Select(false, PlayStyle.Keyboard, false); yield return Shot("06_Ranking");
             game.OpenMainMenu(); yield return Shot("07_MainMenu");
             hud.ShowPage(MenuPage.Setup); yield return Shot("08_Setup");
             hud.ShowIdentity();yield return Shot("08_Face_Login");hud.ShowPage(MenuPage.Setup);
@@ -86,6 +93,9 @@ namespace Muhanok.Bootstrap
 
             game.SetDeveloperMode(true, false); game.ExitToMenu(); yield return Shot("12_MainMenu_Developer");
             game.OpenStartSetup(); yield return Shot("13_Setup_Developer");
+            // Close the text-entry page while the player window is still alive, then let queued IME events settle.
+            // Quitting directly from the setup field can trip the existing native Windows callback shutdown issue.
+            game.OpenMainMenu(); yield return new WaitForSecondsRealtime(.8f);
             if(failure!=null){Fail(failure);yield break;}
             Debug.Log("MUHANOK_UI_CAPTURE_PASS: " + destination);
             UnityEngine.Application.Quit(0);
@@ -100,15 +110,16 @@ namespace Muhanok.Bootstrap
         {
             while (shielded) { if (game.Session.Flow.State == GameFlowState.Running) game.Session.Items.Activate(ItemKind.Shield); yield return null; }
         }
-        // A profile, coins, one unlocked item and runs from today and yesterday.
+        // A profile, runs from today and yesterday, and a member with coins and one unlocked item.
         private void Seed(IHudData data)
         {
             data.SaveProfile(new PlayerProfile { Name = "탈옥왕", Weight = "65", Style = PlayStyle.Keyboard,CalorieGoal=180 });
             var today = DateTime.Now; var yesterday = today.AddDays(-1);
             float[] todayRuns = { 2310, 1530, 980, 640, 455 }, earlier = { 1820, 1240 };
-            for (int i = 0; i < todayRuns.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = todayRuns[i], Score = (int)todayRuns[i] * 3, Style = "키보드", Ticks = today.AddMinutes(-i * 7).Ticks }, todayRuns[i] / 25);
-            for (int i = 0; i < earlier.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = earlier[i], Score = (int)earlier[i] * 3, Style = "전신", Ticks = yesterday.AddMinutes(-i * 9).Ticks }, earlier[i] / 18);
-            game.Store.DepositCoins(240); game.Store.Unlock(ItemKind.Magnet);
+            for (int i = 0; i < todayRuns.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = todayRuns[i], Score = (int)todayRuns[i], ScoreVersion = RunScore.Version, Style = "키보드", Ticks = today.AddMinutes(-i * 7).Ticks }, todayRuns[i] / 25);
+            for (int i = 0; i < earlier.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = earlier[i], Score = (int)earlier[i] + 300, ScoreVersion = RunScore.Version, Style = "전신", Ticks = yesterday.AddMinutes(-i * 9).Ticks }, earlier[i] / 18);
+            // This synthetic token only reaches ReviewAccountGateway; it also exercises member stats panels.
+            game.Account.SignInMember(new AccountProfile { id = "ui-review", name = "탈옥왕", weight = 65, style = (int)PlayStyle.Keyboard, goal = 180, coins = 240, unlocked = new[] { (int)ItemKind.Magnet } }, "synthetic-ui-review");
         }
         private IEnumerator Shot(string name)
         {
@@ -127,6 +138,23 @@ namespace Muhanok.Bootstrap
         private void LogFailure(string message,string stack,LogType type){if(type==LogType.Exception&&failure==null)failure=message;}
         private void Update(){if(reviewStarted>0&&Time.realtimeSinceStartup-reviewStarted>180)Fail("UI review timeout");}
         private void OnDestroy(){UnityEngine.Application.logMessageReceived-=LogFailure;}
+        private sealed class ReviewAccountGateway : IAccountGateway
+        {
+            private readonly AccountProfile profile=new AccountProfile{id="ui-review",name="탈옥왕",weight=65,style=(int)PlayStyle.Keyboard,goal=180,coins=240,unlocked=new[]{(int)ItemKind.Magnet}};
+            private AccountReply Reply()=>new AccountReply{ok=true,profile=profile};
+            public void Health(Action<AccountResult> done)=>done?.Invoke(new AccountResult{ok=true});
+            public void NameCheck(string name,Action<AccountReply> done)=>done?.Invoke(new AccountReply{ok=true,available=true});
+            public void Enroll(AccountEnrollment request,Action<AccountReply> done)=>done?.Invoke(Reply());
+            public void Login(string[] images,Action<AccountReply> done)=>done?.Invoke(Reply());
+            public void FetchProfile(string token,Action<AccountReply> done)=>done?.Invoke(Reply());
+            public void UpdateProfile(string token,AccountProfileUpdate update,Action<AccountReply> done)=>done?.Invoke(Reply());
+            public void SaveRun(string token,AccountRun run,Action<AccountReply> done)=>done?.Invoke(new AccountReply{ok=true,coins=profile.coins});
+            public void Buy(string token,ItemKind item,Action<AccountReply> done)=>done?.Invoke(Reply());
+            public void Leaderboard(string token,PlayStyle mode,bool today,Action<LeaderboardReply> done)=>done?.Invoke(new LeaderboardReply{ok=true});
+            public void Stats(string token,Action<StatsReply> done)=>done?.Invoke(new StatsReply{ok=true,today_kcal=52.1,total_kcal=310,best_score=new[]{900,800,640}});
+            public void Logout(string token,Action<AccountReply> done)=>done?.Invoke(new AccountReply{ok=true});
+            public void Delete(string token,Action<AccountReply> done)=>done?.Invoke(new AccountReply{ok=true});
+        }
     }
 }
 #endif

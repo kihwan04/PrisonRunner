@@ -22,9 +22,10 @@ namespace Muhanok.Presentation.Map
             {
                 var filter = renderer.GetComponent<MeshFilter>();
                 if (filter == null || filter.sharedMesh == null) continue;
-                // Gameplay objects (hazards, coins, floor items, rail gaps) always stay visible.
+                // Gameplay objects (hazards, coins, floor items, rail gaps and their rail pieces) always stay visible.
                 if (renderer.GetComponentInParent<ObstacleController>(true) != null || renderer.GetComponentInParent<CoinController>(true) != null
-                    || renderer.GetComponentInParent<FloorItemController>(true) != null || renderer.GetComponentInParent<CartRailGap>(true) != null) continue;
+                    || renderer.GetComponentInParent<FloorItemController>(true) != null || renderer.GetComponentInParent<CartRailGap>(true) != null
+                    || RailPiece(chunk, renderer.transform)) continue;
                 // Mesh bounds times scale works while the pooled chunk is inactive (Renderer.bounds does not).
                 var size = Vector3.Scale(filter.sharedMesh.bounds.size, renderer.transform.lossyScale);
                 if (Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z)) >= budget.SmallPropSize) continue;
@@ -37,6 +38,12 @@ namespace Muhanok.Presentation.Map
                     lights.Add(light);var p=chunk.transform.InverseTransformPoint(light.transform.position);
                     if((chunk.RouteType==1||chunk.RouteType==2)&&Mathf.Abs(p.x-RouteSurface.LocalX(chunk.RouteType,p.z))>5.8f)enclosedExteriorLights.Add(light);
                 }
+        }
+
+        private static bool RailPiece(MuhanokMapChunk chunk, Transform item)
+        {
+            if (chunk.RailGaps != null) foreach (var gap in chunk.RailGaps) if (gap != null && gap.Pieces != null && item.IsChildOf(gap.Pieces)) return true;
+            return false;
         }
 
         public void Apply(float chunkStartZ, float runnerZ, RenderBudget budget, float detailScale)

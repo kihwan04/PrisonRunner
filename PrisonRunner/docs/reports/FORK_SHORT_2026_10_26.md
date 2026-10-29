@@ -25,7 +25,7 @@
 - 실제 Windows EXE에서 세 방향 곡선·목적지 입구를 캡처하고, 맵 이동·캐릭터 연출·결과까지 경로 검수를 완료했습니다. 종료 코드 0.
 - 기본 EXE 스모크(로딩·미끄러짐·120청크·충돌·결과·재시작) 통과, 종료 코드 0.
 
-캡처: [선택 구간](../previews/ForkShort20261026/03_Three_Unknown_Paths.png), [왼쪽](../previews/ForkShort20261026/03_Fork_0.png), [가운데](../previews/ForkShort20261026/03_Fork_1.png), [오른쪽](../previews/ForkShort20261026/03_Fork_2.png), [입구 예시](../previews/ForkShort20261026/16_Biome_Entry_1.png). 검수 캡처의 초록색 F3 계측 표시는 검수용이며 일반 플레이 표시 설정과 구분합니다. [검수 요약](../previews/ForkShort20261026/review.json).
+캡처(검수 캡처는 저장소에서 삭제했고 Git 기록에 남아 있습니다): 선택 구간, 왼쪽, 가운데, 오른쪽, 입구 예시. 검수 캡처의 초록색 F3 계측 표시는 검수용이며 일반 플레이 표시 설정과 구분합니다. 검수 요약.
 
 원본 편집기는 유지하고 `Builds/QA/HudPolish20261026/Isolated/Unity`의 복사본에서 검증했습니다. 원본/복사본 C# 파일을 해시로 대조했습니다. 테스트 XML·빌드 로그·전체 화면은 `Builds/QA/ForkShort20261026/`에 있습니다. 재검증 도구는 `Tools/QA/verify_unity_merge.ps1`, `Tools/QA/verify_short_fork.ps1`입니다.
 

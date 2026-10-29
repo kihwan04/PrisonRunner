@@ -35,4 +35,10 @@ try {
     if ($health.service -eq 'Mongscape Local Identity') { exit 0 }
     throw 'Port 8765 is occupied by another service.'
 } catch [System.Net.WebException] { }
+# The server stores profiles only in PostgreSQL; the usual setup is the Docker compose service (README_DOCKER.md).
+if (-not ($env:IDENTITY_DATABASE_URL -or $env:PGHOST -or $env:PGSERVICE)) {
+    Write-Warning ('Local face server not started: it needs PostgreSQL. Run the Docker compose service (README_DOCKER.md), ' +
+        'or set IDENTITY_DATABASE_URL (or PGHOST/PGPORT/PGDATABASE/PGUSER with PGPASSWORD_FILE) and run this again.')
+    exit 1
+}
 Start-Process -FilePath $Python -ArgumentList @(('"' + (Join-Path $PSScriptRoot 'server.py') + '"')) -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $PSScriptRoot 'identity.log') -RedirectStandardError (Join-Path $PSScriptRoot 'identity-error.log')

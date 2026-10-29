@@ -30,7 +30,6 @@ services:
     restart: unless-stopped
     environment:
       IDENTITY_HOST: 0.0.0.0
-      IDENTITY_DATABASE_BACKEND: postgres
       PGHOST: postgres
       PGPORT: "5432"
       PGDATABASE: mongscape

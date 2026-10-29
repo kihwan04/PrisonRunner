@@ -9,6 +9,7 @@ using Muhanok.Presentation;
 using Muhanok.Presentation.Map;
 using UnityEngine;
 using Unity.Cinemachine;
+using UnityEngine.UIElements;
 namespace Muhanok.Bootstrap
 {
     // Opt-in local review only. Normal play never installs this driver and it never saves player scores/profiles.
@@ -42,14 +43,32 @@ namespace Muhanok.Bootstrap
         {
             yield return null;game=FindFirstObjectByType<GameBootstrap>();if(game==null){Finish("Bootstrap missing");yield break;}
             var host=(ISettingsHost)game;
-            host.Settings.ApplyPreset(QualityPreset.Balanced);host.Settings.Fullscreen=false;host.Settings.MusicVolume=0;host.Settings.EffectsVolume=0;host.Settings.PerformanceOverlay=true;game.ApplySettings(false);
+            host.Settings.ApplyPreset(QualityPreset.Balanced);host.Settings.Fullscreen=false;host.Settings.MusicVolume=0;host.Settings.EffectsVolume=0;host.Settings.PerformanceOverlay=false;game.ApplySettings(false);
             Screen.SetResolution(1280,720,false);((IHudData)game).PreviewStyle(PlayStyle.Keyboard);
             yield return new WaitForSecondsRealtime(2);report.width=Screen.width;report.height=Screen.height;
-            yield return Capture("01_Title");game.OpenStartSetup();yield return new WaitForSecondsRealtime(.3f);yield return Capture("02_Setup");
+            yield return Capture("01_Title");
+            game.enabled=false;
+            yield return PointAt(new Vector2(640,650),.95f);
+            if(!game.MenuOpen){Finish("Synthetic hand could not open title menu");yield break;}
+            yield return Capture("19_Hand_Menu");
+            yield return PointAt(new Vector2(1020,510),.95f);
+            var window=FindFirstObjectByType<SettingsWindow>();
+            if(window==null||!window.IsOpen){Finish("Synthetic hand could not open settings");yield break;}
+            yield return Capture("20_Settings_Auto_Performance");
+            var root=window.GetComponent<UIDocument>().rootVisualElement;
+            yield return PointAt(ElementCenter(root,root.Q<Button>("tab-body")),.95f);
+            yield return PointAt(ElementCenter(root,root.Q<Button>("phone-camera-guide")),.95f);
+            if(root.Q<VisualElement>("phone-guide").resolvedStyle.display==DisplayStyle.None){Finish("Synthetic hand could not open phone guide");yield break;}
+            yield return Capture("21_Phone_Camera_Guide");
+            window.Close(false);GesturePointer.Reset();
+            game.OpenStartSetup();yield return new WaitForSecondsRealtime(.3f);yield return Capture("02_Setup");game.enabled=true;
             game.StartPlayerRun(new PlayerProfile{Name="QA",Style=PlayStyle.Keyboard,Weight="70",CalorieGoal=50});
             yield return new WaitUntil(()=>!game.IsLoading&&!game.IsRevealing);game.enabled=false;
             yield return new WaitForSecondsRealtime(2.5f);
             Seek(116,0);yield return new WaitForSecondsRealtime(.8f);yield return Capture("03_Three_Unknown_Paths");
+            var player=((IHudData)game).Player;player.Style=PlayStyle.FullBody;
+            game.Session.Workout.SetWeight("70");game.Session.Workout.SetGoal(50);game.Session.Workout.Met=PlayStyleInfo.Met(PlayStyle.FullBody);game.Session.Workout.TickActivity(60,true,true,true,0);
+            yield return new WaitForSecondsRealtime(.2f);yield return Capture("22_Workout_Synthetic_4_9kcal");player.Style=PlayStyle.Keyboard;game.Session.Workout.Met=PlayStyleInfo.Met(PlayStyle.Keyboard);
             for(int branch=-1;branch<=1;branch++)
             {
                 Seek(132,branch);yield return new WaitForSecondsRealtime(.8f);yield return Capture("03_Fork_"+(branch+1));
@@ -66,7 +85,7 @@ namespace Muhanok.Bootstrap
             foreach(var preset in new[]{QualityPreset.Balanced,QualityPreset.Low,QualityPreset.High})
             {
                 if(detailsOnly)break;
-                host.Settings.ApplyPreset(preset);host.Settings.Fullscreen=false;game.ApplySettings(false);
+                host.Settings.ApplyPreset(preset);host.Settings.Fullscreen=false;host.Settings.PerformanceOverlay=true;game.ApplySettings(false);
                 foreach(float z in new[]{132f,340f,580f,950f})
                 {
                     Seek(z,z==132?0:BranchFor(z==340?0:z==580?1:-1));game.Session.Score.Advance(Mathf.Max(0,z-2));driving=true;game.enabled=true;
@@ -84,6 +103,7 @@ namespace Muhanok.Bootstrap
                     yield return Capture("04_"+preset+"_"+sample.area);
                 }
             }
+            host.Settings.PerformanceOverlay=false;game.ApplySettings(false);
             for(int destinationType=-1;destinationType<=1;destinationType++)
             {
                 Seek(140,BranchFor(destinationType));yield return new WaitForSecondsRealtime(.6f);yield return Capture("15_Rail_Exit_"+(destinationType+1));
@@ -243,6 +263,24 @@ namespace Muhanok.Bootstrap
                 else if(hazard.Kind==ObstacleKind.Pipe)run.Runner.Command(MotionCommand.Crouch);
                 else if(hazard.Kind==ObstacleKind.Stair)run.Runner.Command(MotionCommand.HighKnee);
             }
+        }
+        private static Vector2 ElementCenter(VisualElement root,VisualElement element)
+        {
+            var b=element.worldBound;var viewport=ViewportLayout.Current;float scale=viewport.width/1280f;
+            return new Vector2((b.center.x/root.layout.width*Screen.width-viewport.x)/scale,(b.center.y/root.layout.height*Screen.height-(Screen.height-viewport.yMax))/scale);
+        }
+        private static IEnumerator PointAt(Vector2 position,float seconds)
+        {
+            GesturePointer.Reset();float until=Time.realtimeSinceStartup+seconds;
+            while(Time.realtimeSinceStartup<until)
+            {
+                var f=new PoseFrame{HasPose=true,Time=Time.realtimeSinceStartupAsDouble,Aspect=4f/3};
+                f.Points[11]=new PoseLandmark{X=.4f,Y=.4f,Visibility=1};f.Points[12]=new PoseLandmark{X=.6f,Y=.4f,Visibility=1};
+                f.Points[14]=new PoseLandmark{X=.6f,Y=.5f,Visibility=1};
+                f.Points[16]=new PoseLandmark{X=.5f+(position.x/1280-.5f)*.56f,Y=.4f-.2f*(4f/3)*1.25f+position.y/720*(.2f*(4f/3)*2.1f),Visibility=1};
+                GesturePointer.Feed(f,true,f.Time);yield return null;
+            }
+            GesturePointer.Reset();yield return null;
         }
         private void Finish(string failure)
         {
