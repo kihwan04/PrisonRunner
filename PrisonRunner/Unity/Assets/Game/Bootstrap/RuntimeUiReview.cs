@@ -56,6 +56,12 @@ namespace Muhanok.Bootstrap
             // The review data is on this PC (keyboard runs); the member tab would ask the server.
             hud.ShowPage(MenuPage.Ranking); hud.Ranking.Select(false, PlayStyle.Keyboard, false); yield return Shot("06_Ranking");
             game.OpenMainMenu(); yield return Shot("07_MainMenu");
+            // Settings: each tab, then cancel so the review leaves the stored settings untouched.
+            var settings = FindFirstObjectByType<SettingsWindow>();
+            game.OpenSettings();
+            foreach (var page in new[] { "graphics", "sound", "body", "display" }) { settings.ShowPage(page); yield return Shot("07s_Settings_" + page); }
+            settings.ShowPage("graphics"); settings.ScrollToEnd(); yield return Shot("07s_Settings_graphics_end");
+            settings.Close(false);
             hud.ShowPage(MenuPage.Setup); yield return Shot("08_Setup");
             hud.ShowIdentity();yield return Shot("08_Face_Login");hud.ShowPage(MenuPage.Setup);
 
@@ -119,7 +125,7 @@ namespace Muhanok.Bootstrap
             for (int i = 0; i < todayRuns.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = todayRuns[i], Score = (int)todayRuns[i], ScoreVersion = RunScore.Version, Style = "키보드", Ticks = today.AddMinutes(-i * 7).Ticks }, todayRuns[i] / 25);
             for (int i = 0; i < earlier.Length; i++) game.Store.Record(new RankingEntry { Name = "탈옥왕", Distance = earlier[i], Score = (int)earlier[i] + 300, ScoreVersion = RunScore.Version, Style = "전신", Ticks = yesterday.AddMinutes(-i * 9).Ticks }, earlier[i] / 18);
             // This synthetic token only reaches ReviewAccountGateway; it also exercises member stats panels.
-            game.Account.SignInMember(new AccountProfile { id = "ui-review", name = "탈옥왕", weight = 65, style = (int)PlayStyle.Keyboard, goal = 180, coins = 240, unlocked = new[] { (int)ItemKind.Magnet } }, "synthetic-ui-review");
+            game.Account.SignInMember(new AccountProfile { id = "ui-review", name = "탈옥왕", weight = 65, style = (int)PlayStyle.Keyboard, goal = 180, coins = 80, unlocked = new[] { (int)ItemKind.Magnet } }, "synthetic-ui-review");
         }
         private IEnumerator Shot(string name)
         {

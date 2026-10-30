@@ -156,7 +156,7 @@ namespace Muhanok.Presentation
             syncing = false;
         }
 
-        private void ShowPage(string page)
+        public void ShowPage(string page)
         {
             foreach (var name in Pages)
             {
@@ -167,6 +167,8 @@ namespace Muhanok.Presentation
             }
         }
 
+        // Screenshot review: show the bottom of a long page.
+        public void ScrollToEnd() { var scroll = root?.Q<ScrollView>("settings-content"); if (scroll != null) scroll.scrollOffset = new Vector2(0, scroll.verticalScroller.highValue); }
         public void Open()
         {
             if (root == null) return;
