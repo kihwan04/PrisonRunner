@@ -40,7 +40,14 @@ namespace Muhanok.Bootstrap
             game.SetDeveloperMode(false, false);
             yield return new WaitForSecondsRealtime(3f);
             var hud = game.Hud; var data = (IHudData)game;
-            // Screenshot review uses only a synthetic in-memory account, never the configured face server.
+            // One look at the login gate with the configured face server (connected or not), read-only: nothing is sent but /health.
+            game.OpenLogin();
+            float checkStarted = Time.realtimeSinceStartup;
+            while (((IIdentityData)game).ServerChecking && Time.realtimeSinceStartup - checkStarted < 10) yield return null;
+            yield return Shot("00_Login_ConfiguredServer");
+            Debug.Log("UI_CAPTURE_SERVER: " + (((IIdentityData)game).ServerProblem is { Length: > 0 } problem ? "unavailable: " + problem : "connected"));
+            hud.ShowPage(MenuPage.None);
+            // The rest of the review uses only a synthetic in-memory account, never the configured face server.
             game.UseAccountServices(new ReviewAccountGateway());
 
             yield return Shot("01_Title");
