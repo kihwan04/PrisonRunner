@@ -115,7 +115,7 @@ namespace Muhanok.Presentation
             var lines = new List<KeyValuePair<string, string>>();
             bool camera = PlayStyleInfo.UsesCamera(data?.Player?.Style ?? PlayStyle.Keyboard);
             // Keyboard runs keep the existing note: this run's calories are not counted.
-            lines.Add(new KeyValuePair<string, string>("이번 판", camera && session != null ? Kcal(session.Workout.EstimatedKcal) : RunHudModel.KeyboardKcal));
+            lines.Add(new KeyValuePair<string, string>("이번 판", camera && session != null ? Kcal(session.Workout.EstimatedKcal) : "키보드 제외"));
             if (!MemberResult) return lines;
             var stats = data?.LastStats;
             if (stats != null)

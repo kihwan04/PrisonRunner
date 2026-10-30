@@ -59,7 +59,7 @@ namespace Muhanok.Presentation
             GUI.color = server || checking ? Palette.Sand : Palette.Warn; GUI.Label(new Rect(760, 446, 440, 44), note, wrap);
             if (!server && !checking) { GUI.color = Palette.Muted; GUI.Label(new Rect(760, 490, 440, 36), "이유: " + problem, reason); }
             GUI.color = Color.white;
-            skin.Text(new Rect(760, 532, 440, 26), GesturePointer.Hint("숫자키 1~3을 누르세요."), 14, Palette.Muted, TextAnchor.MiddleLeft, false);
+            skin.Text(new Rect(760, 532, 440, 26), GesturePointer.Hint("숫자키 1~3을 누르세요."), 14, Palette.Sand, TextAnchor.MiddleLeft, false);
             if (skin.Button(new Rect(1050, 590, 150, 48), "설정", Palette.A(Palette.Ground, 0.9f), Palette.Wood, Palette.Cream, 20)) action = LoginAction.Settings;
             return action;
         }

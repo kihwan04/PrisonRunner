@@ -72,8 +72,9 @@ namespace Muhanok.Presentation
                 for (int i = 0; i < summary.Count; i++)
                 {
                     float sx = x + i * 150;
-                    skin.Text(new Rect(sx, 78, 64, 22), summary[i].Key, 14, Palette.Muted, TextAnchor.MiddleLeft, false);
-                    skin.Text(new Rect(sx + (summary[i].Key.Length > 2 ? 62 : 34), 78, 90, 22), summary[i].Value, 15, Palette.Cream, TextAnchor.MiddleLeft, false, true);
+                    float labelWidth = skin.Style(14, false, TextAnchor.MiddleLeft).CalcSize(new GUIContent(summary[i].Key)).x;
+                    skin.Text(new Rect(sx, 78, labelWidth + 4, 22), summary[i].Key, 14, Palette.Sand, TextAnchor.MiddleLeft, false);
+                    skin.Text(new Rect(sx + labelWidth + 8, 78, 90, 22), summary[i].Value, 15, Palette.Cream, TextAnchor.MiddleLeft, false, true);
                 }
             }
             else skin.Text(new Rect(x, 36, 300, 48), "랭킹", 44, Palette.Cream, TextAnchor.MiddleLeft);
